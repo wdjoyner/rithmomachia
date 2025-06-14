@@ -1,0 +1,4391 @@
+%% last revised by wdj on 2025-06-08
+
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{rotating}
+\usepackage{url}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{makeidx}
+\usepackage{latexsym}
+\usepackage{oplotsymbl}
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{overpic}
+
+% Define some colors
+\definecolor{RithmoBlue}{RGB}{46, 86, 137}
+\definecolor{RithmoGold}{RGB}{218, 165, 32}
+\definecolor{RithmoWhite}{RGB}{245, 245, 245}
+\definecolor{RithmoBlack}{RGB}{50, 50, 50}
+
+% Section command for poster
+\newcommand{\postersection}[1]{%
+    % \tcbmaketheletter removed as it's often paired with the advanced title styles
+    % and might not be necessary for the simplified version.
+    \begin{tcolorbox}[title=#1, noparskip]
+}
+\newcommand{\postersectionend}{\end{tcolorbox}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{axiom}{Axiom}
+\newtheorem{remark}{Remark}
+\newtheorem{question}{Question}
+\newtheorem{exercise}{Exercise}[section]
+
+\def\ppp{{\mathbb{P}}}
+\def\hhh{{\mathbb{H}}}
+\def\aaa{{\mathbb{A}}}
+\def\fff{{\mathbb{F}}}
+\def\qqq{\mathbb{Q}}
+\def\rrr{\mathbb{R}}
+\def\ccc{\mathbb{C}}
+\def\zzz{\mathbb{Z}}
+\def\nnn{\mathbb{N}}
+\def\pf{{\bf proof}:\ }
+\def\qed{$\Box$}
+\def\rithmomachia{$\frak{rithmomachia}\ $}
+
+\makeindex
+
+\begin{document}
+
+
+
+\author{\normalsize by David Joyner\thanks{email:
+    {\tt wdjoyner@gmail.com}.}}
+\title{\begin{overpic}[height=8.3cm,width=12.6cm]{rithmomachia-initial-state_cover-image}
+    \put(15,40){\bf {\it The recreational arithmetic of}}
+    \put(30,25){\huge{\bf \rithmomachia}}
+\end{overpic}}
+%The recreational arithmetic of\\ Rithmomachia}
+\date{2025-06-08}
+  
+\maketitle
+%\pagestyle{empty}
+\pagenumbering{arabic}
+
+\begin{quotation}
+Rithmomachia (or \rithmomachia if you prefer:-)
+is a two-player board game invented in the middle ages.
+According to medieval mathematics scholars,
+using the arithmetically-based rules governing the
+rithmomachia pieces helps students with
+logical and spiritual reasoning, allowing them to
+attain a closer connection the cosmos.
+Indeed, some cathedral-based schools at the time {\it banned} chess
+which they believed could lead to vices (such as gambling!),
+but allowed their students to play rithmomachia.
+
+In the sections below, the reader will find an introduction to the game,
+including a detailed description of the rules regarding the board and pieces.
+In particular, we describe the interesting way the pieces are
+set up initially, how they move, how they capture,
+and most importantly, how to win!
+%\footnote{Unfortunately, how to {\it defend} is not so easily described.}!
+Chess-like notation and
+easily readible board diagrams are used for examples and
+even a move-by-move presentation of two complete games.
+
+\end{quotation}
+
+\vskip.1in
+\postersection{Versions}
+Given the different rules among the different versions of rithmomachia,
+we narrow our focus here 
+to the rules of the game described by
+Claude de Boissi\`ere in 1556 \cite{Ri46}.
+%See \S \ref{sec:rules} below for details.
+\index{de Boissi\`ere, Claude}
+\postersectionend
+
+\vskip .3in
+%\newpage
+
+\tableofcontents
+
+%\newpage
+
+\vskip .3in
+
+As you can tell from the table of contents, the organization is pretty simple.
+First, we talks about the history of the game,
+which involves an unusual combination of mathematics, religion and
+philosophy. After that background is sketched out, the game rules are
+covered, with examples. In the next section a complete game,
+using the
+notation introduced earlier, is given. Finally, there is a summary with
+some open questions. Fun exercises and problems
+(and cartoons:-) are scattered throughout.
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=2.0cm,width=15.0cm]{Rithmomachia-game-pieces/white-triangles-green-border-in-line} 
+\caption{Rithmomachia White triangles pieces in a line. {\small{(The graphics for the pieces were made using
+{\tt SageMath} and Python.)}}}
+\label{fig:white-triangles-green-border-in-line}
+\end{figure}
+
+
+Let's start in the beginning, by explaining the fascinating Pythagorean
+philosophical origins of the game, the intruiguiging
+numerical relationships among its pieces,
+and how victory is seen as spiritual enlightenment.
+
+\section{The Philosopher's Game}
+
+It is known that the game goes back at least until the 11th century,
+but it may even go back further. As with chess, which has versions
+going back to 7th century Persia and India, this board game models
+a battle of sorts. Indeed, the {\it Rithmomachia}
+name itself means, roughly speaking, ``battle with numbers.''
+\index{chess}
+
+Rithmomachia is indeed called the {\it Battle of Numbers} but it's also
+called the {\it Philosopher's Game}, and one medieval
+author even called it the {\it Pythagorean Game}, believing
+(perhaps incorrectly)
+that it dated back to the time of the ancient Greeks.
+What spiritual connections
+did religious medieval scholars believe this game had with 
+the world as they saw it?
+
+%\vskip .3in
+
+To monastic scholars, rithmomachia was more than a medieval math
+game — it was a ritual of contemplation. The Pythagorean
+philosophers during the middle ages believed
+\begin{itemize}
+\item
+numbers are sacred,
+\item
+harmony is divine, and
+\item
+through the process of playing rithmomachia, the player
+gains a better understanding of the metaphysics of the soul
+and the cosmos.
+\end{itemize}
+
+\subsection{Pythagorean philosophy}
+
+This board game was popular in many parts of Europe from the 1100s
+to the 1600s \cite{Mo01}.
+While a reasonable hypothesis, there is no historical
+evidence that the origin of the game goes back to
+Pythagoras (who lived around 600-500 BCE). What is
+known is that the Greek scholar Nicomachus, a Pythagorean who
+lived around 60-120 CE, produced a mathematical text that
+eventually inspired the rules for rithmomachia. Nicomachus is best known as
+the author of {\it Introduction to Arithmetic} and (the musical text)
+{\it Manual of Harmonics}.
+A semantical word of caution: in the time of Nicomachus,
+``arithmetic'' had a different meaning that it does now.
+Then, arithmetic was a discipline of study
+-- primarily a philosophical discipline concerned with
+the essence and underlying principles of numbers,
+such as classification and their mystical significance.
+Developing skill to perform practical calculations was a separate
+discipline of study.
+Nicomachus more often viewed numbers as objects having mystical
+properties rather than mathematical properties. His work was
+translated into Latin and popularized by the Roman scholar Boethius
+around 500 CE. More on this important character in our story can be
+found in \S \ref{sec:math-edu} below.
+\index{Nicomachus}
+
+While not spiritual in the sense of religious doctrine, rithmomachia
+is deeply embedded in the philosophical and mathematical
+worldview of the Middle Ages, particularly Neoplatonism and Boethian
+number theory. It was conceived as more than just a game; it was an
+educational tool designed to instill an understanding of cosmic order
+through numbers.
+Playing it well was seen as both an intellectual achievement and
+a spiritual practice.
+
+The starting configuration on the $8\times 16$ board (split between White and
+Black halves) reflects a
+moral and metaphysical battlefield:
+\begin{itemize}
+\item
+White (Even): Often associated with order, reason, and
+light — placed at the bottom, symbolizing the soul's ascent from material
+beginnings.
+\item
+Black (Odd): Associated with dynamism, passion, and will — beginning
+at the top, perhaps symbolizing the descent of spiritual forces into the
+material.
+\end{itemize}
+The symmetry and numerical elegance of the starting rows
+mimic a cosmic harmony — much like a music scale (which Pythagoreans
+also based on ratios). The game’s goal, especially proper victories
+(by placing harmonically valued pieces in the enemy’s half), mirrors the soul
+achieving harmony within the world.
+\index{White/Even}
+\index{Black/Odd}
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=5.5cm,width=5.5cm]{Rithmomachia-game-pieces/ChatGPT-white-square-metaphor.png} 
+\caption{\rithmomachia pieces can get metaphysical. \small{Thanks chatGPT:-).}}
+\label{fig:ChatGPT-white-square-metaphor} 
+\end{figure}
+
+
+\subsection{Pieces and their spiritual significance}
+
+Rithmomachia features pieces with distinct shapes and numerical values
+that convey deep philosophical and spiritual meaning:
+\begin{itemize}
+\item
+The game uses four types of pieces: Circles, Triangles, Squares, and Pyramids.
+Each piece has a specific value assigned to it, with black and white
+forces having asymmetrical numerical values. This asymmetry was
+intentional and reflected medieval philosophical concepts about
+numerical harmony and cosmic order.
+
+\item
+The numerical values assigned to the pieces aren't arbitrary but represent
+mathematical proportions that help explain the fabric of the cosmos.
+\end{itemize}
+These numerical values and their relationships arose from the
+study of Boethian mathematical philosophy, which emphasized the natural
+harmony and perfection of number systems.
+According to the medieval interpretation,
+the world was created out of a knowledge of number and proportion
+(Boethius following Nicomachus, Pythagoras, and Plato),
+so these values are symbolic of spiritual laws that govern both
+the physical and metaphysical realms.
+The different shapes of pieces carried the range of Pythagorean symbolism:
+
+\begin{itemize}
+
+\item
+Triangles: Represent the trinity in Christian thought and the three-fold
+nature of existence (mind/body/spirit).
+Their two space movement pattern symbolized
+movement between different stages. Triangles stand for the mind or reason,
+able to reach farther than the (circular) soul.
+These pieces represent developing intellectual capacity.
+
+\vskip.1in
+\postersection{Triangular numbers}
+... count equally spaced dots inside an equilateral
+triangle ($6$, $10$, $15$, \dots).
+There is a simple algebraic formula for the $n$th triangular number:
+$n(n+1)/2$. The Pythagoreans believed they 
+represent growth, virtue, and human
+striving. They are associated with moral development.
+\postersectionend
+\index{triangle}
+\index{triangular number}
+
+\item
+Squares: Moving three spaces in any orthogonal direction was reminder
+of the four elements (earth/wind/fire/water) 
+and of the four seasons (summer/fall/winter/spring).
+Representing wisdom or even divine authority, their
+movement is the longest range — symbolizing fully realized power
+or divine insight.
+
+\vskip.1in
+\postersection{Square numbers}
+... count equally spaced dots inside a square ($4$, $9$, $16$, \dots).
+  They represent stability and justice in the cosmos.
+Pythagoreans saw squares as the foundation of order.
+\postersectionend
+\index{square}
+\index{square!numbers}
+
+\item
+  Pyramids: This is the most complicated and powerful piece.
+It also moves like a square, but one that
+contains several component sub-pieces of different
+values. Indeed, their total value is a sums of squares
+-- White's pyramid has value
+
+\[
+1^2 + 2^2 + 3^2 + 4^2 + 5^2
++ 6^2 = 1 + 4 + 9 + 16 + 25 + 36 = 91,
+\]
+while Black's is
+\[
+4^2+5^2+6^2+7^2+8^2=16+25+36+49+64=190.
+\]
+It's a spiritually significant piece, representing ascension
+and the hierarchy of knowledge. This piece is symbolic of
+higher wisdom.
+\index{pyramid}
+The pyramid piece moves like a square and
+contains several component sub-pieces.
+\begin{itemize}%[leftmargin=*, label=\textcolor{blue}]
+    \item \textbf{White's Pyramid (Value 91)}: Composed of six white sub-pieces with values $1^2, 2^2, 3^2, 4^2, 5^2, 6^2$ (i.e., 1, 4, 9, 16, 25, 36).
+    \item \textbf{Black's Pyramid (Value 190)}: Composed of five black sub-pieces with values $4^2, 5^2, 6^2, 7^2, 8^2$ (i.e., 16, 25, 36, 49, 64).
+    %\item Sub-piece components can be involved with captures. If a sub-piece is captured, its value is deducted from the pyramid.
+\end{itemize}
+
+\vskip.1in
+\postersection{Pyramid numbers}
+... count equally spaced dots inside a square-based pyramid
+($1$, $5$, $14$, \dots). 
+There is a formula for the $n$th such number:
+$Pyr_n = n(n+1)(2n+1)/6$. The first $9$ pyramid numbers are:
+\[
+1, 5, 14, 30, 55, 91, 140, 204.
+\]
+Note that the $7$th pyramid number is the value of the white pyramid.
+While the value $190$ of the black
+pyramid is not a pyramid number, it is a difference of them:
+$190=204-14$. Imagine that this way: if you take the $8\times 8$ pyramid
+and remove the $3\times 3$ pyramid from its top, you get the black pyramid. 
+
+The pyramid numbers occured in the works of Nicomachus \cite{Ni00}. 
+\postersectionend
+\index{pyramid!numbers}
+
+
+\item
+  Circles (or rounds): Symbolized perfection and unity,
+  representing the divine whole.
+Their limited movement (one space) reflected how fundamental principles
+operate within constrained natural laws. The one space they move is the
+smallest units — like the circle signifying the
+soul's first steps in understanding.
+\index{circle}
+\index{rounds}
+
+
+\vskip.1in
+\postersection{``Circular'' numbers?}
+Unlike triangular numbers, square numbers, and pyramid numbers,
+the corresponding definition for the circle doesn't work the same.
+{\it If} we defined a ``circular number'' to be those numbers
+that count equally spaced dots inside a circle ($1$, $5$, $13$, ...)
+then it is {\it much} harder to find a formula for these.
+Indeed, the problem of estimating such numbers is
+called the {\it Gauss circle problem}, named after Carl
+Frederich Guass who first made progress in the early 1800s.
+\index{Gauss circle problem}
+Indeed, for such numbers, the term ``circular number'' is not
+traditionally used. Instead, it is called the ``counting
+function for the Gauss circle problem.'' Much better:-)
+\index{``circular'' numbers}
+\postersectionend
+\end{itemize}
+
+The initial arrangement of pieces on the board reflected medieval concepts
+of universal order. This orderly arrangement mirrored the medieval concept
+of the universe as divinely ordered and mathematically harmonious.
+The numerical sequences used in the game followed mathematical progressions
+that were considered spiritually significant, such as arithmetic,
+geometric, and harmonic sequences. To the medieval students playing
+rithmomachia, these victorious patterns were not just game
+mechanics but reflections of divine proportions.
+
+
+
+\subsection{Victory as spiritual enlightenment}
+
+The various victory conditions in rithmomachia had spiritual significance:
+Players could achieve ``common victories'' by capturing certain numbers
+of pieces, or ``proper victories'' by arranging pieces in arithmetic,
+geometric, or harmonic proportions.
+
+The three proper victories — small, big, and great — require
+arranging at least 3 of your pieces in a ``coordinating progression''
+explained in detail later. For now, we simply list their names and
+spiritual meanings.
+\begin{itemize}
+\item
+Arithmetic progression (e.g., 3, 5, 7): representing justice and equity.
+\item
+Geometric progression (e.g., 2, 4, 8): symbolizing balance and proportion.
+\item
+Harmonic progression (e.g., 3, 5, 15): invoking celestial music
+and the soul’s harmony. Some medieval authors called
+this a ``musical progression''
+but harmonic progression is the most commonly used terminology.
+\end{itemize}
+All of this will be discussed in more detail later. For now, note
+that the Pythagoreans believed that achieving a ``great victory''
+is not just a tactical feat but a spiritual one as well,
+akin to uniting body, soul, and spirit in perfect balance.
+These higher victory conditions
+represented spiritual enlightenment - the ability to perceive and
+create cosmic harmony.
+
+
+
+\vskip .2in
+\begin{center}
+    \adjustimage{max size={1.0\linewidth}{0.9\paperheight}}{Rithmomachia-game-pieces/chatGPT_rithmomachia-logo15c}
+\end{center}
+
+\subsection{In mathematics education}
+\label{sec:math-edu}
+
+
+As mentioned, rithmomachia emerged from monastery and cathedral
+schools in the 11th
+century. One purpose was to teach Boethian number
+theory, a cornerstone of the medieval {\it quadrivium} (the four
+mathematical arts: arithmetic, geometry, music, and
+astronomy) which was the foundation of the educational system at the time.
+
+Ironically, Boethius lived in the final years of the Western Roman Empire.
+After its fall, it took hundreds of years to rebuild the
+system of mathematical education that was in place.
+Monasteries and cathedral schools contributed to the
+development of the new educational
+system. Of course, after the fall the influence of Islamic scholarship
+in the Iberian Peninsula was significant as well. In particular
+al-Kwarizimi (780-850 C.E.), who introduced algebra and the Hindu-Arabic
+numeral system, had an influence lasting until today,
+while the quadrivium curriculum supported by Boethius faded away
+by the end of the middle ages.
+None-the-less, Boethius' text (the above-mentioned Latin
+translation of \cite{Ni00})
+was used for hundreds of years after his death -- not just in these
+schools but many others in Europe.
+Indeed, one of the earliest universities to arise from the dust after the
+fall of the Western Roman Empire was the University of Paris, which
+coalesced, about 600 years after Boethius' lived,
+from an assimilation of the cathedral schools centered around
+Notre Dame. 
+\index{quadrivium}
+
+Many historians believe the game was first described
+(and possibly invented by) a German monk named
+Asilo around 1030 C.E.
+some believe that this monk was none other than Adalbero,
+nominated by Henry III in 1045 to be the highly influential
+Bishop Adelbero of W\"urzburg \cite{Mo01}.
+Since he was elevated to sainthood by Pope Leo XIII
+centuries later in 1883, he is now known as {\it Saint Adalbero}.
+\index{Asilo}
+\index{Saint Adalbero}
+
+While Asilo is a fascinating character, he was aided in the
+development of rithmomachia by a contemporary monk,
+Herman the Lame (1013-1054),
+who may even be more fascinating. Also known as
+Hermannus Contractus and as Blessed Hermann of Reichenau,
+Herman the Lame was an 11th-century Benedictine monk and scholar. 
+According to wikipedia, he was born with a cleft palate, cerebral palsy, and
+possibly had either amyotrophic lateral sclerosis or spinal
+muscular atrophy. Since the age of 20, he lived at the
+Abbey of Reichenau. In spite of his difficulties in movement
+and even in speaking, Herman became literate in several languages,
+and contributed scholarship to all four arts of the quadrivium.
+Herman is believed to have refined Asilo's original rules,
+writing one of the earliest treaties on the game
+\cite{MacT}. Despite the fact that these two scholars lived only
+about 200 miles from each other, it's not known if they ever met in person.
+In fact, some historians suggest Herman the Lame invented rithmomachia
+before Asilo \cite{SE11}.
+\index{Herman the Lame}
+\index{Blessed Hermann of Reichenau}
+
+\begin{figure}[h!] 
+\centering
+\begin{tabular}{cc}  
+  \includegraphics[height=5.5cm,width=5.5cm]{adalbero-of-wurzburg_crop} &
+  \includegraphics[height=5.5cm,width=4.5cm]{herman-the-lame} \\
+\end{tabular}  
+\caption{Who invented \rithmomachia? Asilo as Bishop Adalbero of W\"urzburg (left), Blessed Hermannn of Reichenau  (right)}
+\label{fig:asilo-herman} 
+\end{figure}
+\index{Bishop Asilo}
+
+Who exactly invented the game may be forever
+lost to the sands of time,
+but it is known that medieval monastic teachers believe that
+by playing the game of rithmomachia the student engages with
+the mathematical principles that govern the universe.
+
+%\fbox{%
+%    \parbox{\linewidth}{%
+\postersection{Virtue quotation}
+Indeed, de Boissi\`ere emphasized how the \dots
+
+ \begin{quotation}
+\dots game appeals to the weaker sides of human nature
+that seek diversion and entertainment; at the same time
+it leads the player to a more virtuous character.
+  
+\hskip 1.5in  - Ann Moyer \cite{Mo01}, page 91.
+\end{quotation}
+%    }%
+%}
+\postersectionend
+\index{de Boissi\`ere, Claude}
+\index{Moyer, Ann}
+\vskip .1in
+
+Influenced by the works of Boethius (like {\it De institutione arithmetica}),
+medieval scholars took a Neoplatonic view of mathematics.
+To them, numbers weren't just abstract quantities, they
+were fundamental principles governing divine order,
+harmony, and the structure of reality. Understanding
+numerical relationships was seen as a way to understand
+the mind of God and the cosmos.
+
+To help the student improve this numerical understanding,
+the teachers encourage students to play rithmomachia.
+Consider the rithmomachia rules for capture.
+The various capture methods (numbering, addition,
+subtraction, multiplication, division, siege) are direct
+exercises in calculation and recognizing numerical
+relationships (equality, sum, difference, product, ratio,
+spatial enclosure). They force the player to constantly
+analyze the numerical properties of the pieces and their
+spatial relationships.
+
+Rithmomachia was a widely used instructional
+tool to teach arithmetic in monasteries, universities and cathedral-based
+grade schools in the later half of the middle ages.
+Unfortunately, it appears that the
+numerous versions of the game, with variations from
+one kingdom to the next, may have contributed to its slow acceptance,
+while chess was becoming more popular. Ultimately, the decline of rithmomachia
+was more a result of wide-spread change in the curriculum for mathematics
+education in universities.
+Indeed, around the 1600s, university
+curriculum we decided more by subject matter experts
+and less by authority figures (see chapter 5 in \cite{Mo01}).
+Without the need to teach Boethian number theory
+and Pythagorean philosophy, there was no reason for teachers to
+promote the virtues of rithmomachia to their students.
+
+
+\vskip .1in
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=2.0cm,width=14.0cm]{Rithmomachia-game-pieces/black-circles-blue-border-in-line} 
+\caption{Rithmomachia Black circles pieces in a line}
+\label{fig:black-circles-blue-border-in-line} 
+\end{figure}
+
+\section{The battlefield}
+\label{sec:board}
+
+
+We shall adopt the {\it game board} as a $8\times 16$ board.
+It may be checkered like a chess board or plain like a go board.
+Following military terminology first introduced in the 1500s, 
+there are eight {\it files} and 16 {\it ranks}.
+\index{file (on gameboard)}
+\index{rank (on gameboard)}
+On a rithmomachia board, the ranks are lettered (a-p)
+while the files are numbered (1-8).
+The ranks {\tt a-h} comprise {\it Even/White territory}, while the
+ranks {\tt i-p} comprise {\it Odd/Black territory}.
+
+\vskip .1in
+
+{\small{
+\begin{center}
+\begin{tabular}{||c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c||c} \hline \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 1\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 2\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 3\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 4\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 5\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 6\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 7\\ \hline
+\quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & \quad  & \quad & \quad  & \quad & \quad & \quad & \quad & 8\\ \hline \hline
+a    &   b    & c     &   d   &   e    &   f   &    g   &   h   &   i   &   j    &   k   &   m    &   m   &   n  &    o  &   p  &  \\ 
+\end{tabular}
+\end{center}
+}}
+\index{battlefield}
+\index{territory!Odd}
+\index{territory!Even}
+
+\vskip .2in
+
+%\newpage
+%{\small{
+%%%%%% box
+\postersection{Coordinate notation}
+An alternative to the algebraic notation is the
+coordinate-based notation shown in Figures \ref{fig:latex-table} and
+\ref{fig:rithmomachia-initial-state-with-pyramid3}.
+Imagine the rithmomachia board as being a grid in the $1$st quadrant
+of the Cartesian $xy$ plane ranging from $0$ to $15$ in the $x$-direction
+and $0$ to $7$ in the $y$-direction. 
+%(In this paper, the rithmomachia board
+%is usually presented horizontally for typographical reasons.)
+\index{notation!coordinate}
+We order the coordinates in this grid as though they were entries
+in an $8\times 16$ matrix, with the count starting at $0$ (instead
+of starting at $1$).
+\newline
+{\it Example}: A White circle of value $6$ located in the
+upper left-hand corner is denoted
+$C6{:}(0,0)$ or, in exponential notation, $C^6(0,0)$.
+Another option is to use the circle symbol font:
+\circlet{\,}$^6(0,0)$.
+\postersectionend
+%}}
+\index{coordinate notation}
+
+A schematic for how the armies are initially arranged on the battlefield
+before battle commences is given below. 
+
+\vskip .1in
+\postersection{Initial Setup}
+\vskip .1in
+\begin{center}
+\textbf{White/Even's Back Ranks:}
+\newline
+{\small{
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{c|cccccccc} \hline
+  Rank d & xxxx &  xxxx &   C008 &  C006 &  C004 &  C002 &  xxxx &  xxxx \\
+  Rank c & T081 &  T072 &  C064 &  C036 &  C016 &  C004 &  T006  & T009 \\
+  Rank b & S153 &  P091 &  T049 &  T042 &  T020 &  T025 &  S045 &  S015 \\
+  Rank a & S289 &  S169  &  xxxx &  xxxx &  xxxx &   xxxx  &  S081 & S025\\ \hline
+\end{tabular}
+}}
+\end{center}
+\textit{(P denotes pyramid, T triangle, C circle, S square)}
+
+\vskip .1in
+Black's setup mirrors this on the opposite side with its own set of values.
+\vskip .1in
+
+\begin{center}
+\textbf{Black/Odd's Back Ranks:}
+\newline
+{\small{
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{c|cccccccc} \hline
+  Rank m &  xxxx &  xxxx &  c009 &  c007 &  c005 &  c003 &  xxxx &  xxxx \\
+  Rank n &   t100 &  t090 &  c081 &  c049 &  c025 &  c009 &   t012 &  t016 \\
+  Rank o &   p190 &  s120 &  t064 &  t056 &  t030 &  t036 &   s066 &  s028 \\
+  Rank p &   s361 &  s225 &  xxxx &  xxxx &  xxxx &  xxxx &   s121 &  s049 \\ \hline
+\end{tabular}
+}}
+\end{center}
+\textit{(p denotes pyramid, t triangle, c circle, s square)}
+\postersectionend
+
+\vskip .1in
+
+The symbols for the pieces will be described below.
+
+\section{The armies}
+\label{sec:pieces0}
+
+Initially, both Black/Odd and White/Even are provided with a company of
+twenty-four pieces, each divided up into $8$ platoon-like sets
+(to borrow the battlefield lingo):
+\index{platoon}
+\index{company}
+\begin{itemize}
+\item
+eight {\it circles} (denoted $C$ or {\circlet} for a white circle,
+$c$ or {\circletfill} for a black circle,
+when the color must be specified),
+\item
+eight {\it triangles} (denoted $T$ or {\trianglepa} for white, $t$ or
+{\trianglepafill} for black), and
+\item
+eight {\it squares} (denoted $S$ or {\squad} for white, or $s$ or
+{\squadfill} for black),
+\item
+For each side, exactly one of the square pieces is distinguished
+and called a {\it pyramid}, denoted $P$ = {\rhombus} (or $p$ = \rhombusfill).
+This type of piece is more powerful, and more complicated, than the
+others but will be explained in complete detail later.
+\end{itemize}
+The position of the pieces during a particular moment in a game
+will be called the (current) {\it state} or the {\it game state}.
+\index{piece!circle}
+\index{circle!piece}
+\index{piece!triangle}
+\index{triangle!piece}
+\index{piece!square}
+\index{square!piece}
+\index{piece!pyramid}
+\index{state}
+\index{game state}
+
+In chess, the files are named after the back-rank pieces initially
+occupying them:
+the queen rook file, the queen knight file, and so on. Likewise, in
+rithmomachia, we can name the file after the {\it most valuable} piece
+initially occupying it:
+
+\begin{center}
+{\tt 289},\quad {\tt 169},\quad  {\tt 49},\quad  {\tt 42},\quad {\bf 56},\quad {\bf 64},\quad {\bf 225},\quad {\bf 361}.
+\end{center}
+Note: the number is in {\bf bold} font if it is a Black piece,
+{\tt Courier} font if it is a White piece.
+Half of these are White/Even and half are Black/Odd!
+
+%\begin{center}
+%\begin{tabular}{|ccc|} \hline
+%The {\tt $289$ file} & \dots & \dots \\ \hline
+%The {\tt $169$ file} &  \dots & \dots \\ \hline
+%The {\tt $49$ file} &  \dots & \dots \\ \hline
+%The {\tt $42$ file} &  \dots & \dots \\ \hline
+% \dots & \dots &  The {$\mathbf{56}$ file}\\ \hline
+% \dots & \dots &  The {$\mathbf{64}$ file}\\ \hline
+% \dots & \dots   &  The {$\mathbf{225}$ file}\\ \hline
+% \dots & \dots   &  The {$\mathbf{361}$ file}\\ \hline
+%\end{tabular}
+%\end{center}
+
+Some other fun facts about the file numbers:
+
+\begin{enumerate}
+\item
+$289$ is
+\begin{itemize}
+\item
+  %(i)
+  a perfect square ($=17^2$),
+\item
+  %(ii)
+  a sum of perfect cubes ($1^3+2^3+4^3+6^3$), and
+\item
+  %(iii)
+  is the sum of the first 5 numbers raised to themselves
+($0^0+1^1+2^2+3^3+4^4$).
+\end{itemize}
+
+\item
+$169$ is
+\begin{itemize}
+\item
+  %(i)
+  a perfect square ($=13^2$),
+\item  
+  %(ii)
+  a centered hexagonal number.
+\end{itemize}
+
+\index{centered hexagonal number}
+\index{hexagonal number!centered}
+
+\begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{centered_hexagonal_numbers.jpg}
+\end{center}
+%
+%\begin{figure}[h] 
+%\centering 
+%\includegraphics[height=4.5cm,width=12.5cm]{centered_hexagonal_numbers.jpg} 
+%\caption{
+A centered hexagonal number $H_n$ counts the number of
+  equally spaced dots inside a hexagon. There is a formula for them:
+  $H_n = n^3-(n-1)^3$.
+ %}
+%\label{fig:centered_hexagonal_numbers}
+%\end{figure}
+
+\item
+$49$ is
+\begin{itemize}
+\item
+  %(i)
+  a perfect square ($=7^2$),
+\item
+  %(ii)
+  the smallest triple of three squares in arithmetic succession
+  $(1,25,49)$.
+\end{itemize}
+\item
+$42$ is 
+\begin{itemize}
+\item
+  not a perfect square, but ``near'' one: it's the product of consecutive
+  integers, $6\cdot 7$, one of which is perfect!
+\item
+  Anyone who has heard of Douglas Adams' book
+{\it The Hitchhiker's Guide to the Galaxy} knows all that is needed to know
+about the number 42!
+\end{itemize}
+
+\item
+$56$ is 
+\begin{itemize}
+\item
+  %(i)
+  the sum of the first six triangular numbers (so counts the equally spaced dots
+  in a regular tetrahedron whose base has length $6$),
+\item  
+  %(ii)
+  twice a perfect number ($=2\cdot 28$).
+\end{itemize}
+Plutarch \cite{Pl00} reported the Pythagoreans associated
+a regular polygon of $56$ sides with Typhon
+  (one of the deadliest creatures in Greek mythology).
+\index{Typhon}
+
+\item
+$64$ is 
+\begin{itemize}
+\item
+  %(i)
+  a perfect square,
+\item
+  %(ii)
+  a perfect cube,
+\item
+  % (iii)
+  a centered triangular number.
+\end{itemize}
+
+
+\begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{centered_triangular_numbers.jpg}
+\end{center}
+%\begin{figure}[h] 
+%\centering 
+%\includegraphics[height=4.5cm,width=12.5cm]{centered_triangular_numbers.jpg} 
+  %\caption{
+The centered triangular numbers are constructed by placing a
+dot in the center and all its other dots surrounding the center in successive
+equilateral triangular layers.
+%}
+%\label{fig:centered_triangular_numbers}
+%\end{figure}
+
+\vskip.1in
+%%%%%%%%%%%% box
+\postersection{centered triangular number}
+%hese numbers are very similar to a triangular
+%numbers, but there is a subtle distinction.
+The triangular numbers are constructed inductively
+in a different way:
+by adding a slightly larger base (depicted as dots along a line segment).
+
+If $C_n$ is the $n$th centered triangular number and $T_n$ is
+the $n$th triangular number then
+    there is a simple formula relating them: $C_n = 3T_n+1$.
+\postersectionend
+\index{centered triangular number}
+\index{triangular number!centered}
+
+\item
+Note $225$ is
+(i) a perfect square ($=15^2$), (ii) the square of a triangular number.
+
+\item
+ Note $361$ is (i) a perfect square ($=19^2$), (ii) a perfect cube,
+  (iii) a centered triangular number.
+\end{enumerate}
+
+
+\section{The rules}
+\label{sec:rules}
+
+%\begin{quotation}
+
+This history and philosophical underpinnings of the game presented
+in the previous section makes it clear that there were several
+design decisions made by the inventor (or inventors) or
+rithmomachia that are very spiritual in nature.
+Do today's players believe that by playing rithmomachia they
+become closer to God? Maybe they don't, but it seems the game
+was designed to be entertaining to those who did.
+
+
+Of all the many versions of rithmomachia, this
+section only records the rules and setup for the version described by
+Claude de Boissi\`ere in 1556.
+Not a lot is known about Claude de Boissi\`ere,
+  also known as Claudius Buxerius. Born around 1500 near Grenoble, he
+  was an influential French scholar active in promoting mathematical education.
+  He wrote and published texts on various subjects,
+  including poetry, music, and astronomy. His most renown work is
+\cite{dB56}, translated by Richards in \cite{Ri46}.
+\index{Claudius Buxerius}
+\index{de Boissi\`ere, Claude}
+%\end{quotation}
+
+%\tableofcontents
+
+%\newpage
+
+\vskip .3in
+
+%The focus of the discussion here is on the initial setup and rules for one
+%relatively common version of rithmomachia. However, the
+%fascinating history of the game will be mostly ignored.
+
+The current section delves into the fundamental rules governing
+the game of rithmomachia, based on the version described by
+de Boissi\`ere.  Sections \S\S \ref{sec:setup}-\ref{sec:pieces}
+detail the game's physical
+components, covering the specifics of the board and the various
+pieces involved.  Following this, \S \ref{sec:setup-pieces}
+explains the initial arrangement of these pieces on the board.
+The subsequent sub-sections will describe the distinct ways in which each
+piece can move (\S \ref{sec:move-pieces}) then the various methods for
+capturing an opponent's pieces (\S \ref{sec:capture-pieces}).
+Finally, \S \ref{sec:winning} describes the conditions that determine
+victory in a rithmomachia game.
+
+
+\subsection{Initial setup}
+\label{sec:setup}
+
+Like chess or checkers,
+rithmomachia is a board game played between two people, called
+Black (or Odd) and White (or Even). These different
+names (White and Even, for example) will be used interchangably.
+The two players alternate turns, each turn consisting of a move of a friendly
+piece and possibly captures of enemy pieces.
+According to de Boissi\`ere, White/Even has the first
+turn. Other versions of rithmomachia state Black/Odd moves first.
+Here, we give an overview of the game play process.
+
+To describe these
+rules more clearly, we distinguish between a move
+and a capture (where no friendly piece moves
+but an enemy piece is taken off the board).
+Details of how the pieces move will be described in
+\S \ref{sec:move-pieces} and how they capture will be described
+in \S \ref{sec:capture-pieces}.
+
+
+\vskip.1in
+\postersection{What is a player's turn?}
+A {\it turn} consists of three stages.
+\index{victory!conventions}
+
+\begin{itemize}
+\item
+Inital captures, if any.
+
+For instance, such captures could be the result of the opponent's previous
+move. In any case, more than one capture is allowed.
+
+\item
+A legal move.
+
+Exactly one move is made per turn, onto an unoccupied position on the board.
+This space could be the one occupied by an enemy piece just captured.
+
+\item
+Final captures, if any.
+
+This could be a capture that was made possible by move just made.
+\end{itemize}
+\postersectionend
+\index{turn}
+
+If it is a player's turn and no legal move can be made, then that
+player {\it loses} the game. This is in contrast to chess,
+where a stalemate results in a {\it draw}.
+\index{stalemate}
+
+There are no draws in this version of rithmomachia.
+
+\subsection{Board and pieces}
+\label{sec:pieces}
+
+
+Each piece has a value. These values are tabulated in Figures
+\ref{fig:whitepieces} and \ref{fig:blackpieces}.
+
+\begin{figure}[h!] 
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{c|cccc|c} 
+piece & & & & & formula \\ \hline
+circles \quad               &  9                  &   7  &   5 &   3        & $x$ \\
+circles {\circletfill}       &  81               &  49 &  25 &  9        & $x^2$ \\ \hline
+triangles \quad               & 90               &  56 &  30 &  12        & $x(x+1)$ \\
+triangles {\trianglepafill}  & 100                &  64  &  36 & 16        & $(x+1)^2$ \\ \hline
+squares \quad               & {\bf 190}\rhombusfill  &  120  & 66 & 28 & $(x+1)(2x+1)$ \\
+squares \squadfill \ \      & 361                 &  225 & 121 & 49         & $(2x+1)^2$ \\ \hline
+\end{tabular}
+\caption{\textcolor{gray}{Black pieces and their values, which total $1752$.
+    The black pyramid is the square $190$. You can imagine stretching this table
+    over the Black side of the board to see how the pieces are initially placed.
+    Note all the values of the back rank of the Black/Odd pieces are odd numbers,
+while all the values in the second-to-the-last rank of pieces are {\it even} integers.}}
+\label{fig:blackpieces}
+\end{center}
+\end{figure}
+
+
+%The 24 black pieces are tabulated, along with their values, in Figure \ref{fig:blackpieces}.
+%These 24 pieces are sometimes called the {\it Odd pieces},
+%even though the values of the pieces are not necessarily odd integers.
+%  \index{Odd pieces}
+  
+%Likewise, the 24 white pieces (sometimes called the
+%{\it Evens}) are in Figure \ref{fig:whitepieces} \cite{Ne98}.
+%Most of the white and black pieces have distinct values, but
+%repetitions are noted in the table caption.
+%\index{Even pieces}
+
+\begin{figure}[h!] 
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{c|cccc|c}
+piece                 &     & & & & formula \\ \hline
+circles               &  8  &   6   &   4              &  2   & $y$ \\
+circles  {\circlet}   &  64  &  36   &  16             &  4   & $y^2$ \\ \hline
+triangles              &  72 &  42   &  20              &  6   & $y(y+1)$ \\
+triangles  \trianglepa  &  81 &  49  &  25              &  9  & $(x+1)^2$ \\ \hline
+squares                & 153  &  15  &  {\bf 91}\rhombus & 45 & $(y+1)(2y+1)$ \\
+squares {\squad}       & 289  &  169  & 81              & 25  & $(2y+1)^2$ \\ \hline
+\end{tabular}
+\caption{\textcolor{gray}{White pieces and their values, which total $1312$.
+    The White pyramid is the square $91$. Note all the values of the back rank of the
+    Even/White pieces are {\it odd} integers.}}
+\label{fig:whitepieces}
+\end{center}
+\end{figure}
+
+
+Both
+sides have piece values $9$, $16$, $25$, $36$, $49$, $64$, $81$ in common.
+These values, all square numbers, are visible in the diagram of
+the initial board setup in Figure \ref{fig:latex-table} and
+in Figure \ref{fig:rithmomachia-initial-state-with-pyramid3}.
+%\newpages
+\index{piece!value(s)}
+
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+\begin{figure}[h!]
+\centering
+\begin{tabular}{c|c|c|c|c|c|c|c|c|}\hline
+\textcolor{gray}{$p$} &  \squadfill$_1$49 & \squadfill121 &\  & \   & \   & \   & \squadfill225  & \squadfill361  \\ \hline
+\textcolor{gray}{$o$} &  \squadfill28  & \squadfill66 & \trianglepafill36 & \trianglepafill30 & \trianglepafill56 & \trianglepafill64 & {\squadfill}120 & \rhombusfill190   \\ \hline
+\textcolor{gray}{$n$} &  \trianglepafill16  & \trianglepafill12 & \circletfill$_2$9 & \circletfill25 & \circletfill49 & \circletfill81 & \trianglepafill90 & \trianglepafill100  \\ \hline
+\textcolor{gray}{$m$} &   \ & \ & \circletfill3 & \circletfill5 & \circletfill7 & \circletfill$_1$9 & \ & \  \\ \hline
+\textcolor{gray}{$l$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$k$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$j$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$i$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$h$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$g$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$f$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$e$} &   \ & \ & \ & \ & \ & \ & \ & \  \\ \hline
+\textcolor{gray}{$d$} &   \ & \ & \circlet8 & \circlet6 & \circlet$_1$4 & \circlet2 & \ & \  \\ \hline
+\textcolor{gray}{$c$} &   \trianglepa 81 & {\trianglepa}72 & \circlet64 & \circlet36 & \circlet16 & \circlet$_2$4 &  \trianglepa 6 & {\trianglepa}9  \\ \hline
+\textcolor{gray}{$b$} &   {\squad}153 & {\rhombus}91  & {\trianglepa}49 & {\trianglepa}42 & {\trianglepa}20 & {\trianglepa}25 & {\squad}45 & {\squad}15  \\ \hline
+\textcolor{gray}{$a$} &  {\squad}289  & {\squad}169 & \ & \ & \ & \ & {\squad}81 & {\squad}$_1$25  \\ \hline
+\ \ &  \textcolor{gray}{$1$} & \textcolor{gray}{$2$} & \textcolor{gray}{$3$} & \textcolor{gray}{$4$} & \textcolor{gray}{$5$} & \textcolor{gray}{$6$} & \textcolor{gray}{$7$} & \textcolor{gray}{$8$}  \\ 
+\end{tabular}
+\newline
+\caption{{\small{
+      \textcolor{gray}{The initial state of rithmomachia, with \rhombus (at $b2$, in algebraic notation) and \rhombusfill
+        (at $o8$) as the pyramids.
+        Note there are duplicate pieces (eg, two White circles of value $4$ denoted \circlet$_1$4 and \circlet$_2$4),
+        distinguished using subscripts when necessarly. All these pieces, including the duplicates, will be listed in
+      \S \ref{sec:enum-pieces} below.}
+}}}
+\label{fig:latex-table}
+\end{figure}
+\end{center}
+
+%\begin{figure}[h] 
+%\centering 
+%\includegraphics[height=7.5cm,width=13.5cm]{rithmomachia-initial-state.jpg} 
+%\caption{Rithmomachia inital position, where $91$ is the value of the white pyramid and $190$ is that of the black pyramid}
+%\label{fig:rithmomachia-initial-state} 
+%\end{figure}
+
+These are the pieces and their values. 
+Next, we learn about some of the numerical relationships among
+a piece and its neighbors in their initial placement on the board.
+
+
+\subsection{Setting up the pieces}
+\label{sec:setup-pieces}
+
+%Fortunately, the initial setup of the pieces is more standardized across
+%the various versions of rithmomachia.
+
+The chess-like notation for the rows and columns used in
+Figure \ref{fig:latex-table} is borrowed from the book
+Codenotti-Resta \cite{CR22}.
+Unlike chess, there is no standardized notation yet for rithmomachia
+but this Codenotti-Resta notation is a place to good start.
+%In chess, the ranks are numbered (1-8) while the files are lettered (a-h).
+%In rithmomachia, the ranks are lettered (a-p) while the files
+%are numbered (1-8).
+
+It's natural to wonder how these piece values were selected.
+%There is an interesting, if somewhat numerological,
+%answer but for more details, please see the references in the papers
+%included in the bibliography below.
+%On the other hand, we do want to point out
+By design, the game contains some interesting patterns in the
+initial setup in Figure \ref{fig:rithmomachia-initial-state-with-pyramid3}.
+The arithmetical patterns in the setup of the pieces is displayed in the
+next two tables, presented next.
+
+Start with the top row of pieces in the initial position -- namely, $8, 6, 4, 2$
+for White and $9, 7, 5, 3$ for Black. For simplicity, we'll denote this row by
+$a,b,c,d$. The following lemma basically says
+very other piece value is easily determined from $a,b,c,d$.
+
+\begin{lemma}
+{\rm
+Each initial piece value can be computed using 
+a polynomial in the values of the forward-most piece values.
+}
+\end{lemma}  
+
+\begin{proof}
+This follows from Figures \ref{fig:blackpieces} and \ref{fig:whitepieces},
+but will also be established in the tables below.
+\end{proof}
+
+
+To get the value of the pieces in the second row, compute these
+(mostly) squares:
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+%\begin{figure}[h]
+%\centering
+\begin{tabular}{|c|c|c|c|c|c|c|c|}%\hline
+ &\  & \   & \   & \   &  &\  & \     \\ \hline
+ & \   & $\quad a\quad $  & $\quad b\quad $  &  $\quad c\quad $  &  $\quad d\quad $ & \   & \   \\ \hline
+$(a+1)^2$ & $a+a^2$  & $a^2$  & $b^2$  & $c^2$  &  $d^2$ & $d+d^2$   & $(d+1)^2$   \\ \hline
+\dots &\dots  & \   & \   & \   &  &\dots & \dots     \\ 
+\end{tabular}
+%\caption{The second row circles are squares of those on the top row.}
+%\label{fig:second-row-circles}
+%\end{figure}
+
+\vskip .1in
+{\bf Table: top two rows}
+\end{center}
+
+Rename these values of the 2nd row as $e, f, \dots, \ell$ for simplicity.
+The numerical relationships in the third row are also easy to describe:
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+%\begin{figure}[h]
+%\centering
+\begin{tabular}{|c|c|c|c|c|c|c|c|}%\hline
+\quad &\quad  & \   & \   & \   &  &\quad  & \quad     \\ \hline
+ & \   & $\quad a\quad $  & $\quad b\quad $  & $\quad c\quad $  &  $\quad d\quad $ & \   & \   \\ \hline
+$e$ & $f$  & $g$  & $h$  & $i$  &  $j$ & $k$   & $\ell$   \\  \hline
+$m$ & $n$  & $o$  & $p$  & $q$  &  $r$ & $s$   & $t$   \\ \hline
+$u$ & $v$  & 0   & 0   & 0   & 0  & $w$  & $x$    \\ \hline
+\end{tabular}
+%\caption{The second row circles are squares of those on the top row.}
+%\label{fig:second-row-circles}
+%\end{figure}
+\vskip .1in
+{\bf Table: all four rows}
+\end{center}
+We know already,
+
+\[
+e=(a+1)^2,\quad  f=a^2+a, \quad  g= a^2,\quad  h= b^2,
+\]
+\[
+i = c^2,\quad  j = d^2,\quad  k = d^2+d,\quad \ell = (d+1)^2,
+\]
+but the remaining expressions are easy to compute as well:
+
+\[
+m = (a+1)(2a+1), \quad n = (b+1)(2b+1),\quad o = (b+1)^2,\quad p = b^2+b,
+\]
+\[
+\quad q = c^2+c,\quad r = (c+1)^2,\quad s = (c+1)(2c+1), \quad t = (d+1)(2d+1).
+\]
+We leave the values of the pieces at the bottom to the reader.
+%\[
+%u = (2a+1)^2,\quad v = (2b+1)^2,\quad w = (2c+1)^2,\quad x = (2d+1)^2.
+%\]
+\begin{question}
+\label{question:1}  
+Can you find the arithmetical relationships that determine the numbers
+$u,v,w,x$ in the bottom row of the above table?
+Here, for example, $u=289, \dots, x = 25$
+if you are White and $u=361, \dots, x = 49$ if you are Black.
+What algebraic formula determines them from the other entries?
+(Hint: they are all perfect squares! The answer is at the end,
+just before the references.) 
+\end{question} 
+
+The symmetry and arithmetical properties of the setup of
+the rithmomachia pieces is remarkably beautiful, isn't it?
+The interested reader can find another discussion of the numerical
+relationships between the
+piece values on pages 74-75 of \cite{SE11}.
+
+
+\vskip.1in
+{\small{
+%%%%%%%%%%%% box
+\postersection{Algebraic notation}
+Each of the $128$ {\it coordinate positions}
+on the board can be described
+by a pair, which we
+juxtapose for simplicity: $a1$, $a2$, \dots, $p8$.
+\index{coordinates}
+The shape of the pieces can be described by its first letter:
+$C, P, S, T$ for the Even/White pieces and $c, p, s, t$ for the Odd/Black
+ones. The value of a piece can be described by a list of positive
+integers\footnote{Except the case of the multi-valued pyramid piece
+  and its subpieces, which is described in detail in
+  \S \S \ref{sec:pyramid1}, \ref{sec:pyramid2} below,
+  all these lists have only one element,
+  na,ely the value of the piece itself.}.
+\newline
+{\it Example}: A Black circle of value $3$ at location $h5$ is denoted
+$c3h5$, but we sometimes use exponential notation, $c^3h5$.
+Another option is to use the filled circle symbol font:
+\circletfill{\,}$^3h5$.
+\postersectionend
+}}
+\index{algebraic notation}
+
+
+The pieces are all listed in \S \ref{sec:enum-pieces} below, including all duplicates and
+component subpieces of the pyramid pieces.
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=7.5cm,width=13.5cm]{rithmomachia-initial-state-with-pyramid3.jpg} 
+\caption{\textcolor{gray}{Rithmomachia initial position, where
+    $91$ (at $(1,1)$ in coordinate notation) is the value of the white
+    pyramid and $190$ (at $(7, 14)$ in coordinate notation) is that of the black pyramid.
+    This diagram matches that of de Boissi\`ere's, as shown in
+\cite{Ri46}, Figure 8.} }
+\label{fig:rithmomachia-initial-state-with-pyramid3} 
+\end{figure} 
+
+
+
+\subsubsection{Enumerating the pieces}
+\label{sec:enum-pieces}
+
+If we count the White pieces, including the duplicates, the pyramid,
+and all its sub-pieces, we get $30$:
+
+\[
+S^{289},\ \  S^{169}, \ \ S^{153},\ \  P^{91},\ \  S^{81}, \ \ T^{81},\ \  T^{72},\ \  C^{64},\ \  T^{49},\ \  S^{45}, \ \ T^{42},
+\]
+\[
+C^{36},\ \  S^{36}, \ \ S_1^{25},\ \  S_2^{25}, T^{25},\ \  \ \ T^{20},\ \  C^{16},\ \  S^{16},\ \  S^{15},\ \  T^{9}, \ \ S^{9},\ \  C^{8},
+\]
+\[
+T^{6},\ \  C^{6},\ \  C_1^{4},\ \  C_2^{4},\ \  S^{4},\ \  C^{2}, \ \ S.
+\]
+(We use subscripts to notationally distinguish the two White circles of
+value $4$, and the two White square of value $25$.)
+On the other hand, the total number of distinct values used by the Even/White pieces is, due to the duplicates,
+only $20$.
+
+
+\vskip .1in
+\postersection{Duplicate values for the Even/White pieces}
+White has three 4s, two 6s, two 9s, two 16s,
+two 25s, two 36s, and two 81s.
+Other piece values are unique to the color.
+ Here is a histogram plot:
+ \index{duplicate values}
+
+\[
+\begin{array}{l|ccccccc}
+                    & \circ &      &        &       &       &       &      \\
+                    & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+                    & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\  \hline
+{\rm piece\ value}  &  4    &  6    & 9     & 16    & 25    &  36   &  81 \\ 
+\end{array}
+\]
+\postersectionend
+\vskip .1in
+
+A way to avoid using subscripts in the notation, yet still eliminate ambiguities caused by the repetition of
+piece values, is to include the initial coordinate of the piece:
+\begin{itemize}
+\item  
+There are $14$ {\squad}{'}s (counting duplicates and the pyramid as a square):
+
+\[
+S^{289}a1,\ \  S^{169}a2, \ \ S^{153}b1,\ \  P^{91}b2,\ \  S^{81}a7,\ \  S^{45}b7,
+\]
+\[
+S^{36}b2, \ \ S^{25}a8, \ \ S^{25}b2, \ \ S^{16}b2, \ \ S^{15}b8, \ \ S^9b2,\ \  S^4b2,\ \  S^1b2.
+\]
+\item
+There are $8$ $\triangle$s:
+
+\[
+T^{81}c1,\ \  T^{72}c2,\ \  T^{49}b3, \ \ T^{42}b4,\ \ T^{25}b6,\ \  T^{20}b5,\ \  T^{9}c8,\ \  T^6c7.
+\]
+\item
+There are $8$ of the \circlet:
+
+\[
+C^{64}c3,\ \  C^{36}c4,\ \  C^{16}c5,\ \  C^{8}d3,\ \  C^{6}d4, \ \ C^{4}c6,\ \  C^{4}d5,\ \  C^{2}d6.
+\]
+\end{itemize}
+
+
+If we count the Black pieces, including the duplicates, the pyramid,
+and all its sub-pieces, we get $29$:
+%Using subscripts to eliminate the ambiguities of the Odd/Black pieces:
+
+\begin{itemize}
+\item  
+There are $14$ {\squad}{'}s
+
+\begin{center}
+\squadfill{\,361},\ \  \squadfill{\,225}, \ \ \squadfill{\,190},\ \  \squadfill{\,121},\ \  \squadfill{\,120},\ \  \squadfill{\,66}, \ \ \squadfill{\,64}, \ \ \\
+\squadfill$_1${\,49}, \ \ \squadfill$_2${\,49},  \ \ \squadfill{\,36},\ \ \squadfill{\,28},\ \ \squadfill{\,25},\ \ \squadfill{\,16},\\
+
+\end{center}
+
+Note there are $2$ black squares with value $49$.
+
+\item
+  There are $8$ of the \trianglepafill{'}s:
+
+\begin{center}
+\trianglepafill{\,100},\ \ \trianglepafill{\,90}, \ \ \trianglepafill{\,64}, \ \ \trianglepafill{\,56},
+\trianglepafill{\,36}, \ \ \trianglepafill{\,30},\ \ \trianglepafill{\,16}, \ \ \trianglepafill{\,12},
+\end{center}
+
+\item
+  There are $8$ of the \circletfill{'}s:
+  
+\begin{center}
+  \circletfill{\,81},\ \  \circletfill{\,49}, \ \ \circletfill{\,25},\ \ \circletfill$_1${\,9},\ \
+  \circletfill$_2${\,9},\ \ \circletfill{\,7}, \ \ \circletfill{\,5}, \ \ \circletfill{\,3}.
+\end{center}
+
+Note there are $2$ black circles with value $9$.
+\end{itemize}
+On the other hand, the total number of distinct values used by the Black/Odd pieces is, due to the duplicates,
+only $22$.
+
+
+\vskip .1in
+\postersection{Duplicate values for the Odd/Black pieces}
+Black has two 9s, two 16s,
+two 25s, two 36s, three 49s, and two 64s.
+Other piece values are unique to the color.
+Here's a histogram plot:
+ \index{duplicate values!Black/Odd}
+ 
+\[
+\begin{array}{l|cccccc}
+                    &       &      &        &       & \circ &        \\
+                    & \circ & \circ & \circ & \circ & \circ & \circ  \\
+                    & \circ & \circ & \circ & \circ & \circ & \circ  \\  \hline
+{\rm piece\ value}  &  9    &  16    & 25     & 36  & 49    &  64    \\ 
+\end{array}
+\]
+\postersectionend
+
+%\begin{question}
+%Can you list the initial coordinates of all 29 Black pieces?
+%\end{question}
+
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=4.0cm,width=14.0cm]{Rithmomachia-game-pieces/black-squares-red-border-in-2lines} 
+\caption{Rithmomachia Black square pieces}
+\label{fig:black-squares-red-border-in-2lines} 
+\end{figure}
+
+
+
+
+
+\subsection{How the pieces move}
+\label{sec:move-pieces}
+
+The rules for how pieces move are pretty simple.
+
+\subsubsection{Movement notation}
+
+During a player's turn, only one move (as described in this section)
+can be made, but multiple captures are possible, and these can be performed
+before and/or after the move. Captures are described in a later section.
+\index{piece!moves}
+
+\vskip.1in
+%%%%%%%%% box
+\postersection{Move notation}
+Based on notation used for chess,
+one simple coordinate-based notation for a move 
+would be something like this:
+
+%{\small{
+\begin{center}
+{\tt  move = (shape+value):(starting coord.)-(ending coord.)}.
+\end{center}
+%}}
+For example, in coordinate notation
+$C2{:}(5,3)-(6,3)$ describes moving the white circle piece with
+value $2$ from the position/coordinate $(5, 3)$ to $(6, 3)$.
+In the more compact algebraic notation, this move would be $C2d6{-}d7$,
+or $C^2d6d7$, or even $\bigcirc^2d6d7$.
+\postersectionend
+
+For another example of a move in coordinate notation, 
+see Figure \ref{fig:rithmomachia-after-S81-60-30-with-pyramid2}
+for the move $S^{81}{:}(6,0){-}(3,0)$.
+That same move in the more chess-like notation of
+Figure \ref{fig:latex-table},
+would be written as $S^{81}a7{-}a4$ or $\square^{81}a7a4$.
+See the caption in Figure \ref{fig:rithmomachia-initial-state-with-pyramid3}
+for more coordinate examples.
+%The algebraic notation used here is the same
+%as that used in the book by Codenotti et al \cite{CR22}.
+
+
+\subsubsection{Movement rules}
+
+While it may seem complicated at first sight, the rules are pretty
+simple and easy to understand.
+
+\begin{itemize}
+\item  
+The players move alternately, each move must land on an empty space
+on the game board.
+
+Other versions of rithmomachia list this rule: ``No move
+  can return the game to a previous state.'' This is called
+  the {\it no repetition rule}.
+  This one is not used by de Boissi\'ere, so it is ignored here.
+\index{no repetition rule}
+
+\item  
+No piece is allowed to jump over another, a move
+possible in some other versions of rithmomachia. Howeever, de Boissi\`ere
+did not approve, calling the chess knight which can jump over other pieces,
+``the mad warrior'' (see page 199 in \cite{Ri46}).
+
+\item  
+Each shape has a different movement (although, the pyramid piece
+is skipped over for the time being).
+\item
+The movement of a piece doesn't depend on its value.
+\item  
+A circle piece moves exactly one space vertically
+or horizontally (but not diagonally) in any direction.
+\index{piece!circle}
+
+{\footnotesize{
+\begin{center}
+\begin{tabular}{c|c|c|c|c}
+ &            &             &          & \\ \hline
+ &             & \circlet  &         & \\ \hline
+ & \circlet    &    *     & \circlet & \\ \hline
+ &             & \circlet  &         & \\ \hline
+ &            &             &          & \\ \hline
+\end{tabular}
+\vskip .1in
+{\bf Table: Possible \circlet, \circletfill\, moves from *}
+\end{center}
+}}
+%provided, in doing so,
+%\begin{itemize}
+%\item
+%  there is no enemy piece in the intended position, and
+%\item
+%  the piece doesn't step off the edge of the board. 
+%\end{itemize}
+\item
+A triangular piece moves two spaces in any horizontal or vertical
+direction.
+\index{piece!triangle}
+
+{\footnotesize{
+\begin{center}
+\begin{tabular}{c|c|c|c|c}
+  \quad \    &     \quad \         &  \trianglepa           &   \quad  \      &   \quad \   \\ \hline
+ &             &   &         & \\ \hline
+ \trianglepa  &    &    *     &  &  \trianglepa  \\ \hline
+ &             &   &         & \\ \hline
+ &        \quad         &    \trianglepa           &          & \\ \hline
+\end{tabular}
+\vskip .1in
+{\bf Table: Possible \trianglepa, \trianglepafill\, moves from *}
+\end{center}
+}}
+  
+\item  
+A square piece moves exactly three squares but only vertically or horizontally.
+\index{piece!square}
+
+{\footnotesize{
+\begin{center}
+\begin{tabular}{c|c|c|c|c|c|c}
+  \quad  \    &  \quad \   &      \quad   \       &  \squadfill           &   \quad     \      & \quad  \   &   \quad   \   \\ \hline
+ &  &             &                 &          &   &      \\ \hline
+ &  &             &                 &          &   &      \\ \hline
+ \squadfill  &  &            &    *          &            &   & \squadfill \\ \hline
+ &  &             &                 &          &   &      \\ \hline
+ &  &             &                 &          &   &      \\ \hline
+ &  &            &  \squadfill           &          &  & \\ \hline
+\end{tabular}
+\vskip .1in
+{\bf Table: Possible \squad, \squadfill\, moves from *}
+\end{center}
+}}
+  
+\item
+For clarity we repeat: in this version of Rithmomachia no piece can move (or capture) diagonally.
+\end{itemize}
+
+
+\begin{remark}
+\label{rmk:parity1}
+{\rm
+A remark on a parity condition that these rules determine:
+
+\begin{itemize}
+\item  
+  %1)
+  As a consequence of these conditions, a triangle piece of either color
+with initial position in column 1 can never move to an even column
+(since it must move 2 spaces, hence this triangle can only move
+to an odd column).
+
+\item  
+  %2)
+  Likewise, if it's initially in column 2 it can never move to an odd
+  column.
+\end{itemize}
+}
+\end{remark}
+\index{parity conditions}
+
+\begin{question}
+  \label{question:parity1}
+A similar condition to that in Remark \ref{rmk:parity1}
+holds for the squares. Can you find it?
+\end{question}  
+
+
+%\begin{figure}[h!] 
+%\centering 
+%\includegraphics[height=7.5cm,width=13.5cm]{rithmomachia-after-S81-60-30-with-pyramid2.jpg} 
+%\caption{\textcolor{gray}{Rithmomachia position after the move $\square^{81}$a7a4.}}
+%\label{fig:rithmomachia-after-S81-60-30-with-pyramid2} 
+%\end{figure}
+%%      sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+%%      sage: GS = move_piece(GSp, (6, 0), (3, 0))
+%%      sage: board_plot2(GS, pyramid=True)
+
+\begin{figure}[h!] 
+\centering 
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad  & \quad  & \quad  & \quad  & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad  & \quad  & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \circletfill{\,}9 & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $e$ \\ \hline
+\quad  & \quad  & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \circlet{\,}2 & \quad  & \quad  & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad  & \squad{\,}81 & \quad  & \quad  & \quad  & \squad{\,}25 & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular} 
+\caption{\textcolor{gray}{Rithmomachia position after the move $\square^{81}$a7a4.}}
+\label{fig:rithmomachia-after-S81-60-30-with-pyramid2} 
+\end{figure}
+%%   sage: pclst = game_state_to_piece_list(GS)
+%%   sage: piece_list_to_latex(pclst, verbose = False)
+
+When a piece cannot move (due to the positions of other pieces)
+then it is {\it blocked}.
+\index{piece!blocked}
+        
+\subsubsection{The pyramid}
+\label{sec:pyramid1}
+
+In the de Boissi\`ere's set up, the pyramid piece moves just like the square piece.
+In all versions of rithmomachia,
+the pyramid piece can move to an unoccupied coordinate/position
+if and only if one of its component sub-pieces can legally move
+to that position.
+Since some versions allow circle and triangular
+subpieces of the pyramid (e.g., \cite{Ne98} and \cite{DG21}),
+such versions endow more flexibility
+of movement on the pyramid than we do here.
+
+The {\it white pyramid}, is initially set to be $S^{91}$,
+the white square with (total) value $91$. 
+Create the following six white {\it sub-pieces}, depicted in
+Figure \ref{fig:chatGPT_rithmomachia-logo12b}.
+
+\begin{center}
+{\squad}36, {\squad}25, {\squad}16,
+{\squad}9, {\squad\,}4, {\squad\,}1,
+\end{center}
+which are called the {\it sub-piece components} of the pyramid.
+These are not separate pieces, but can be involved with
+captures, as we will explain in more detail in \S \ref{sec:pyramid2}.
+\index{piece!pyramid}
+\index{pyramid!component sub-pieces}
+\index{piece!value(s)}
+%The de Boissi\'ere decomposition of the pyramid piece
+%displayed here differs from that in other versions of rithmomachia.
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=10.5cm,width=10.0cm]{Rithmomachia-game-pieces/chatGPT_rithmomachia-logo12b.png} 
+\caption{\rithmomachia pyramids are multi-valued because they have
+  subpieces. Thanks chatGPT for the visual humor!}
+\label{fig:chatGPT_rithmomachia-logo12b}
+\end{figure}
+
+
+Imagine a layer of $36$ equally spaced dots arranged in a $6\times 6$ grid.
+Centered over that, imagine a layer of $25$ equally spaced dots arranged in a $5\times 5$ grid.
+Continuing in this fashion, on to of that stack a $4\times 4$ layer,
+a $3\times 3$ layer, a $2\times 2$ layer, and finally a dot on top.
+This is one way to imagine the White pyramid.
+
+%\begin{remark}
+%
+%\end{remark}
+
+The {\it black pyramid}, is initially set to be $s^{190}$, the
+black square $190$.
+Create the following five black {\it sub-pieces}:
+%\footnote{Again,
+%  these are not separate pieces, but only can be used (and potentially
+%  captured) as part of the pyramid.}:
+\begin{center}
+{\squadfill}64, {\squadfill}49, {\squadfill}36, {\squadfill}25,
+{\squadfill}16,
+\end{center}
+which are called the {\it components} of the pyramid.
+\index{components}
+In the polynomial ring with variables $c$, $C$, $t$, $T$, $s$, $S$,
+
+\[
+R = \zzz[c,C,t,T,s,S],
+\]
+A sub-piece component only can be used (and potentially captured by White)
+as part of the pyramid. The list of values of $p$ is, by design,
+the sequence of five consecutiive squares whose total is $190$
+(namely, $16, 25, 36, 49, 64$).
+Imagine a layer of $64$ equally spaced dots arranged in an $8\times 8$ grid.
+Centered over that, imagine a layer of $49$ equally spaced dots arranged in a $7\times 7$ grid.
+Continuing in this fashion, on to of that stack a $6\times 6$ layer,
+a $5\times 5$ layer, and finally a $4\times 4$ layer.
+This is one way to imagine the Black pyramid.
+
+\vskip .1in
+\postersection{Pyramid decompositions}
+Algebraically, White's pyramid can be initially represented
+as
+
+\[
+P = S^{36}+S^{25}+S^{16}+S^9+S^4+S^1,
+\]
+or
+\[
+\rhombus = \square^{36} + \square^{25} +\square^{16} +\square^{9}
++\square^{4} +\square^{1},
+\]
+and its (list of) values as $[1, 4, 9, 16, 25, 36]$ and its total $91$.
+
+Black's pyramid can be initially represented as
+a polynomial belonging to $R$,
+\[
+p = s^{64}+s^{49}+s^{36}+s^{25}+s^{16},
+\]
+or
+\begin{center}
+\rhombusfill = {\squadfill}$^{{\,}64}$ + {\squadfill}$^{{\,}49}$ +
+{\squadfill}$^{{\,}36}$ + {\squadfill}$^{{\,}25}$ + {\squadfill}$^{{\,}16}$,
+\end{center}
+and its (list of values) as $[16, 25, 36, 49, 64]$ and its total $190$.
+\postersectionend
+\vskip .1in
+
+The Pythagoreans believed that elucidating such harmonious arithmetical relationships
+is spiritually significant.
+
+\index{pyramid!moves}
+The rules on capturing a pyramid, or one of its component
+sub-pieces, will be explained in \S \ref{sec:pyramid2}.
+
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=2.5cm,width=14.0cm]{Rithmomachia-game-pieces/white-circles-blue-border-in-line} 
+\caption{Rithmomachia White circles pieces in a line}
+\label{fig:white-circles-blue-border-in-line} 
+\end{figure}
+
+
+
+  
+\subsection{How the pieces capture}
+\label{sec:capture-pieces}
+
+As mention, a player's turn consists of captures and
+a piece move. How do captures work?
+
+We follow de Boissi\'ere’s set-up, as discussed in
+\cite{Ri46}.
+
+
+\vskip.1in
+\postersection{How Pieces Capture}
+%{\small{
+Capture of an enemy piece does not mandate a friendly piece move but
+requires permanent removal of the captured piece or subpiece.
+In particular, a captured piece can never be placed back on the board,
+even as the opposite color.
+If a pyramid sub-piece is captured, then that subpiece is removed
+and the value of the pyramid is deducted accordingly.
+%The capturing player need not move their capturing piece to replace the captured piece.
+%Chain captures are allowed.
+Captures are not mandatory.
+%}}
+\postersectionend
+
+
+A natural question arises: What about repeated captures?
+They are allowed in checkers but not in chess.
+What about for rithmomachia?
+\index{checkers}
+
+\begin{question}
+%To the best of my knowledge, no mention has been found of
+%repeated captures in the medieval rithmomachia game manuals.
+%(Not unreasonable, as repeated captures in an actual game
+%is probably a rare occurrence.)
+%None-the-less, there is no rule that blocks such captures.
+Assume you are playing a game and the following scenerio (or game state to use the
+technical term) arises:
+
+\begin{itemize}
+\item[(a)]
+you capture an opponent piece, and
+
+\item[(b)]
+its removal from the board exposes a second opponent piece for capture
+(by the same friendly piece or by some other).
+\end{itemize}
+Can you take it?
+\end{question}
+
+There is no rithmomachia rule that stops you from capturing that second opponent
+piece as well. If you are lucky enough to land in such a game state, the captures
+are allowed.
+ \index{capture!chain}
+ When at least two pieces are captured in this way,
+it is called a {\it chain capture}.
+
+Like chess, captures in rithmomachia are not mandatory. There are several types:
+\begin{itemize}
+\item
+capture by {\it numbering} (or {\it encounter}),
+\item
+by {\it addition} (or {\it ambush}),
+\item
+{\it subtraction} (also called an {\it ambush}),
+\item
+{\it multiplication} (or {\it assault}),
+\item
+{\it division} (also called an {\it assault}),
+\item
+and {\it siege} (or {\it surrounding}).
+\end{itemize}
+We will go into more detail about each of these below.
+
+If we ignore the pyramid pieces for the moment,
+a captured piece is {\it removed} from the board (and cannot be
+returned or replaced or swapped). To be perfectly clear:
+the capturing player need not move
+their capturing piece (e.g., to replace the captured piece,
+as in chess).
+Captures involving the pyramids are treated separately below,
+but to give a hint: if a subpiece of a pyramid is captured
+then that subpiece is removed but the pyramid is not removed.
+\index{capture!pyramid}
+\index{capture!numbering}
+\index{capture!addition}
+\index{capture!division}
+\index{capture!subtraction}
+\index{capture!multiplication}
+
+The captures by numbering, by addition, and by subtraction all
+have the special property called {\it local captures}.
+That is, such a capture is performed ``up close'' in the sense
+that the capturing piece(s) can, in one move, land on captured piece.
+\index{capture!local}
+
+
+\vskip.1in
+\postersection{Main ``local'' capture types}
+\begin{itemize}%[leftmargin=*, label=\textcolor{RithmoGold}{\faCrosshairs}]
+    \item \textbf{Numbering:} A piece captures an enemy piece if it can land on the enemy's square and both pieces have the \textbf{same value}.
+    \item \textbf{Addition/Subtraction:} Two friendly pieces capture an enemy piece if the \textbf{sum/difference} of their values equals the enemy's value, and each friendly piece can legally land on the enemy's square.
+    %\item \textbf{Subtraction:} Two friendly pieces capture an enemy if their \textbf{difference} in values equals the enemy's value, AND each friendly piece can land on it.
+\end{itemize}
+\postersectionend
+
+On the other hand, capturing by multiplication
+or by division has a different property, called {\it non-local}:
+such a capture can be performed at a distance not equal to the
+move distance.
+\index{capture!at distance}
+
+
+\vskip.1in
+\postersection{Main ``non-local'' capture types}
+\begin{itemize}%[leftmargin=*, label=\textcolor{RithmoGold}{\faCrosshairs}]
+\item
+  \textbf{Multiplication:} A friendly piece (value $v$) captures an enemy piece
+  (value $m \cdot v$) if there are exactly $m$ vacant squares in a straight orthogonal line between them ($m>0$).
+\item
+  \textbf{Division:} A friendly piece (value $d \cdot v$) captures an enemy piece
+  (value $v$) if there are exactly $d$ vacant squares in a straight orthogonal line between them ($d>0$).
+\item
+  \textbf{Siege:} An enemy piece is captured if it's surrounded by opposing pieces
+  (or board edges) such that it has no legal moves.
+%    \item \textbf{Pyramid Captures:}
+%    \begin{itemize}
+%        \item The pyramid can be captured using its total value.
+%        \item A component sub-piece can be captured; its value is deducted from the pyramid's total.
+%        \item The pyramid can capture using its total value or using the value of one of its component sub-pieces.
+%    \end{itemize}
+\end{itemize}
+\postersectionend
+
+An example of what this means is this: Suppose, during White's turn,
+one or more of Black's pieces is captured.
+White removes the capture(s) and now {\it must} make a move
+of some piece to an unoccupied board position
+%possibly the position that 
+%was previously occupied by a captured piece but can move elsewhere
+%as well
+(see \cite{Ri46}, pp 202-203).
+This is in contrast with chess - in chess, a capturing piece
+{\it must} replace the captured piece.
+%\footnote{With perhaps a small exception in the case of
+%the {\it en passant} capture of a chess pawn.},
+%However, in the de Boissi\`ere version of rithmomachia,
+%such replacement is not required 
+\index{capture!chess-like}
+
+%Notation for a capture could be something like this:
+%
+%{\small{
+%\begin{center}
+%{\tt  capture = (piece(s)+value(s):coord(s))$\times$(capture piece+value:coord.)}.
+%\end{center}
+%}}
+
+{\footnotesize{
+\begin{center}
+\begin{tabular}{|c|c|} \hline  
+capture type   & description \\ \hline    
+numbering  & 1 friendly takes 1 enemy, local \\
+addition   & 2 friendlies take 1 enemy, local \\
+subtraction & 2 friendlies take 1 enemy, local \\
+multiplication & 1 friendly takes 1 enemy, non-local \\
+division      &1 friendly takes 1 enemy, non-local \\
+siege &  many friendlies takes 1 enemy, local \\  \hline
+\end{tabular}
+\vskip .1in
+{\bf Table: piece capture types}
+\end{center}
+}}
+
+\subsubsection{Numbering}
+
+If a piece can move to a position where it lands on an enemy piece
+with the same number, then the enemy piece may be captured.
+%To emphasize what was already stated above:
+%{\it the capturing piece does not move.}
+
+For a numbering capture to occur, the values of two opposing pieces must
+be equal. As a matter of fact, here are the only
+values for which there is a piece of each color with that value:
+$9$, $16$, $25$, $36$, $49$, $64$, $81$.
+
+\vskip.1in
+\postersection{Capture by numbering notation}
+A capture by numbering could be written something like this:
+%
+{\small{
+\begin{center}
+{\tt  (attacking piece+value:coord.)$=$(captured piece+value:coord.)}.
+\end{center}
+}}
+However, often the context is clear and we simply write
+{\small{
+\begin{center}
+{\tt  (attacking piece+value)x(captured piece+value)}.
+\end{center}
+}}
+\postersectionend
+
+\begin{lemma}
+\label{lemma:numbering-count}  
+Given all pieces are on the board, there are $21$ possible
+White captures Black by numbering. 
+\end{lemma}  
+
+\begin{proof}
+The simplest verification is to simply list all such captures.
+
+First we list White piece/Black piece pairs that satisfy in theory
+capturing by numbering. Then we take parity conditions into account.
+The initial coordinates of the pieces are included below to avoid
+any ambiguities.
+
+{\footnotesize{
+\[
+S^{81} (6, 0)  =  c^{81} (5, 13),\quad
+T^{81} (0, 2)  =  c^{81} (5, 13),\quad
+C^{64} (2, 2)  =  s^{64} (7, 14),
+\]
+\[
+C^{64} (2, 2)  =  t^{64} (5, 14),\quad
+T^{49} (2, 1)  =  s^{49} (0, 15),\quad
+T^{49} (2, 1)  =  c^{49} (4, 13),
+\]
+\[
+T^{49} (2, 1)  =  s^{49} (7, 14),\quad
+C^{36} (3, 2)  =  s^{36} (7, 14),\quad
+C^{36} (3, 2)  =  t^{36} (2, 14),
+\]
+\[
+S^{36} (1, 1)  =  s^{36} (7, 14),\quad
+S^{36} (1, 1)  =  t^{36} (2, 14),\quad
+S^{25} (1, 1)  =  s^{25} (7, 14),
+\]
+\[
+S^{25} (1, 1)  =  c^{25} (3, 13),\quad
+S^{25} (7, 0)  =  s^{25} (7, 14),\quad
+S^{25} (7, 0)  =  c^{25} (3, 13),
+\]
+\[
+T^{25} (5, 1)  =  s^{25} (7, 14),\quad
+T^{25} (5, 1)  =  c^{25} (3, 13),\quad
+C^{16} (4, 2)  =  s^{16} (7, 14),
+\]
+\[
+C^{16} (4, 2)  =  t^{16} (0, 13),\quad
+S^{16} (1, 1)  =  s^{16} (7, 14),\quad
+S^{16} (1, 1)  =  t^{16} (0, 13),
+\]
+\[
+T^{9} (7, 2)  =  c^{9} (2, 13),\quad
+T^{9} (7, 2)  =  c^{9} (5, 12),\quad
+\]
+\[
+S^{9} (1, 1)  =  c^{9} (2, 13),\quad
+S^{9} (1, 1)  =  c^{9} (5, 12).
+\]
+}}
+%sage: wtb = white_takes_black_by_numbering()
+%sage: for x in wtb:
+%....:     print(latex(x[0][0]), x[0][2]," = ", latex(x[1][0]), x[1][2])
+
+The parity conditions mentioned in Remark \ref{rmk:parity1} and
+Question \ref{question:parity1} tell us that the following are impossible,
+
+%{\small{
+\[
+S^{25} (7, 0)  =  s^{25} (7, 14),\quad
+S^{16} (1, 1)  =  s^{16} (7, 14),\quad
+\]
+\[
+S^{36} (1, 1)  =  s^{36} (7, 14),\quad
+S^{25} (1, 1)  =  s^{25} (7, 14).
+\]
+%}}
+but don't rule out the remaining ones.
+This leaves 21.
+\end{proof}
+
+\begin{question}
+%{\rm
+%Ponder this:
+%
+%\noindent
+%Problem:
+Suppose it's White turn and a White triangle is able to
+capture an Black square by numbering. By the movement rules, this implies
+there is exactly {\it one} empty coordinate position between these
+two opposing pieces.
+
+Does this also means that, if it were instead Black's turn to move,
+the enemy square can capture the triangle by numbering?
+(Hint, hint\footnote{Indeed, the movement rules require {\it two} empty coordinate positions between them.}:-)
+%
+%}
+\end{question}
+
+None-the-less,
+it turns out there are also $21$ Black captures White by numbering.
+
+Before continuing, we need more notation.
+
+\vskip.1in
+\postersection{Modulus notation $\equiv$}
+The modulus notation, introduced by
+Carl Frederick Gauss in the 1800s, looks a little strange
+\index{Gauss, Carl Frederick}
+at first sight but it's easy to work
+with. For integers $a,b,d>0$, the expression
+
+\[
+a \equiv b\pmod d
+\]
+is pronounced ``$a$ is congruent to $b$ modulo $d$''
+and simply means that $d$ divides $b-a$. It's
+treated in practice more as an equality rather than a
+divisibility condition. For example, $13\equiv 1 \pmod{12}$
+simply says that ``$13$ is congruent to $1$ modulo $12$''.
+In non-technical language, that's the same as saying
+$13$ o'clock is the same as $1$ o'clock. Think of
+$a \equiv b\pmod d$ as ``$=$'' on the (analog) clock
+face with $d$ numbers spaced equally clockwise around
+the face.
+\postersectionend
+
+\begin{remark}
+\label{rmk:parity2}
+{\rm
+A remark on symmetry and parity considerations expanding on
+Remark \ref{rmk:parity1}.
+
+Since a triangle moves by 2, if one starts at a coordinate
+position $(i,j)$ then the only other positions it can possibly
+land on during the game are $(i+2a, j+2b)$, for some integers $a$ and $b$.
+To get a visual of this, imagine the Rithmomachia board is checkered,
+like a chess board. The above identity implies that if a
+triangle started on a black square, it can never land on a white square.
+}
+\end{remark}
+\index{parity conditions}
+\index{symmetry principle}
+
+Therefore, we have the following {\it Triangle Parity Lemma}.
+\index{Triangle Parity Lemma}
+  
+\begin{lemma}
+\label{lemma:TPL}  
+If we have one triangle at $(i_1,j_1)$
+and another triangle at $(i_2,j_2)$ then one can land on
+the other if and only if
+
+\[
+i_1\equiv i_2\pmod{2}\ \ \ \ \ {\rm and}\ \ \ \ j_1\equiv j_2\pmod{2}.
+\]
+\end{lemma}
+
+\begin{remark}
+\label{rmk:parity3}
+{\rm
+Similarly, if we have one square at $(i_1,j_1)$
+and another square at $(i_2,j_2)$ then one can land on
+the other if and only if
+
+\[
+i_1\equiv i_2\pmod{3}\ \ \ \ \ {\rm and}\ \ \ \ j_1\equiv j_2\pmod{3}.
+\]
+}
+\end{remark}
+
+Therefore, we have the following {\it Square Parity Lemma}.
+\index{Square Parity Lemma}
+
+\begin{lemma}
+\label{lemma:SPL}  
+If we have one square at $(i_1,j_1)$
+and another square at $(i_2,j_2)$ then one can land on
+the other if and only if
+
+\[
+i_1\equiv i_2\pmod{3}\ \ \ \ \ {\rm and}\ \ \ \ j_1\equiv j_2\pmod{3}.
+\]
+\end{lemma}
+In particular, the sub-piece $S^{36}$ of the white pyramid
+can never capture the sub-piece $s^{36}$ of the black pyramid
+since they have different coordinate parities.
+\index{capture!symmetry}
+
+
+\subsubsection{Addition}
+
+In this capture, two pieces on the same side must satisfy
+these conditions:
+\begin{itemize}
+\item
+there is an enemy piece that either capturing piece can legally land on,
+\item
+the value of the enemy piece is the sum of the values of the two
+capturing pieces.
+\end{itemize}
+Then the enemy piece can be captured.
+
+In particular, if White moves any piece of value $x$
+to a coordinate that is 
+\begin{itemize}
+\item[(a)] orthogonally next to a black circle piece with value $y$,
+\item[(b)] orthogonally next to another black circle piece with value $z$,
+\item[(c)] $x=y+z$, 
+\end{itemize}
+then Black can capture this White piece on the next move.
+
+
+
+{\small{
+\begin{center}
+\begin{tabular}{c|c|c|c|}
+  \quad \    &  \circletfill$^{\, x}$         &    \quad \   &                        \\ \hline
+              &  \squad$^{x+y}$             &           &  \trianglepafill$^y$\\ \hline
+             &                           &            &                         \\ %\hline
+\end{tabular}
+\vskip .1in
+{\bf Table: Addition: Black/Odd pieces of value $x, y$ capturing a White piece of value $x+y$}
+\end{center}
+}}
+
+
+\vskip.1in
+\postersection{Capturing by addition notation}
+A capture by addition could be written something like this:
+%
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1:coord.)+(attacking piece2+value2:coord.))$=$(captured piece3+value3:coord.)}.
+\end{center}
+}}
+However, often the context is clear and we simply write
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1)+(attacking piece2+value2)]x(captured piece3+value3)}.
+\end{center}
+Example: In the table above, we have $[c^x(i-1, j)+t^y(i+2,j)]\times S^{x+y}(i,j)$, where $i$ is the rank
+(row number) of the captured piece and $j$ is the file (column number).
+}}
+\postersectionend
+
+Another example of Black capturing by addition is depicted in
+Figure \ref{fig:rithmomachia-capture-by-addition-subtraction-with-pyramid3}.
+It is written in coordinate notation as,
+
+{\small{
+\begin{center}
+{\tt [$c^3$(1,3) + $c^5$(2,4)]$\times C^8$(2,3)} (addition)
+\end{center}
+}}
+
+\noindent
+and in algebraic notation, as
+
+{\small{
+\begin{center}
+{\tt [$c^3$d7 + $c^5$e6]$\times C^8$d6} (addition)\ .
+\end{center}
+}}
+
+There are at most $118$ ways for White to capture Black by
+addition. To be perfectly clear, the list of the value
+combinations that allow for a capture by addition has length
+$118$. As in the proof of Lemma \ref{lemma:numbering-count},
+one must check whether parity conditions rule any of these captures out.
+
+Some examples are listed below (using subscripts when there is
+ambiguity):
+
+\[
+[S^{289}   +  T^{72}]  \times  s^{361},\quad
+[S^{153}   +  T^{72}]  \times  s^{225},\quad
+[P^{91}   +  T^{9}] \times  t^{100},\quad
+\]
+\[
+[P^{91}   +  S^{9}] \times  t^{100},\quad
+[S^{81}  +  T^{9}] \times  t^{90},\quad
+[S^{81}  +  S^{9}] \times  t^{90},
+\]
+\[
+[T^{81}  +  T^{9}] \times  t^{90},\quad
+[T^{81}  +  S^{9}] \times  t^{90}, \quad\dots \ .
+\]
+
+There are at most $82$ ways for Black to capture White by addition.
+Some examples are listed below:
+
+\[
+[s^{225}  +  s^{64}] \times  S^{289},\quad
+[s^{225}  +  t^{64}] \times  S^{289},\quad
+[s^{120}  +  c^{49}] \times  S^{169},
+\]
+\[
+[s^{120}  +  s_1^{49}] \times  S^{169},\quad [s^{120}  +  s_2^{49}] \times  S^{169},\quad
+[s^{66}  +  s^{25}] \times  P^{91}, \quad\dots \ .
+\]
+
+\begin{question}
+What is the exact number of ways for Black to capture White by addition?
+Same question for White to capture Black by addition.
+\end{question}  
+
+\subsubsection{Subtraction}
+
+Very similar to addition: two pieces on the same side must satisfy
+these conditions:
+\begin{itemize}
+\item
+there is an enemy piece that either capturing piece can legally land on,
+\item
+the value of the enemy piece is the difference of the values of the two
+capturing pieces.
+\end{itemize}
+Then the enemy piece can be captured.
+
+\vskip.1in
+\postersection{Capturing by subtraction notation}
+A capture by subtraction could be written something like this:
+%
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1:coord.)-(attacking piece2+value2:coord.))$=$(captured piece3+value3:coord.)}.
+\end{center}
+}}
+However, often the context is clear and we simply write
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1)-(attacking piece2+value2)]x(captured piece3+value3)}.
+\end{center}
+}}
+\postersectionend
+
+\vskip .2in
+
+\noindent
+Example: In Figure \ref{fig:rithmomachia-capture-by-addition-subtraction-with-pyramid3},
+Black captures the piece $\bigcirc^2$ by subtraction,
+{\small{
+\begin{center}
+{\tt [$c^9$e3 - $c^7$e5]$\times C^2$d4} (subtraction).
+\end{center}
+}}
+or $(c^9-c^7)\times C^2$.
+
+\begin{figure}[h!] 
+\centering 
+%\includegraphics[height=7.0cm,width=13.5cm]{rithmomachia-capture-by-addition-subtraction-with-pyramid3.jpg} 
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad  & \quad  & \quad  & \quad  & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \circletfill{\,}5 & \quad  & \quad  & \circletfill{\,}9 & \quad  & \quad  & $e$ \\ \hline
+\quad  & \circletfill{\,}3 & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \circlet{\,}2 & \circletfill{\,}7 & \quad  & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad  & \quad  & \quad  & \quad  & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular} 
+\caption{\textcolor{gray}{Rithmomachia position before a capture by addition and a capture by subtraction.}}
+\label{fig:rithmomachia-capture-by-addition-subtraction-with-pyramid3} 
+\end{figure}
+% sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+% sage: GS = copy(GSp)
+% sage: GS[5, 4] = c^9; GS[5, 12] = 0; GS[6, 3] = c^7; GS[4, 12] = 0; GS[1, 3] = c^3; GS[2, 12] = 0; GS[2, 4] = c^5; GS[3, 12] = 0
+% sage: board_plot(GS)
+%%sage: pclst = game_state_to_piece_list(GS)
+%%sage: piece_list_to_latex(pclst, verbose = False)
+
+
+There are at most $141$ ways for White to capture Black by subtraction.
+Some examples are listed below:
+
+\[
+[S^{289}   -  S^{169}]  \times  s^{120},\quad
+[S^{289}   -  C^{64}]  \times  s^{225},\quad
+[S^{169}   -  S^{153}]  \times  s^{16} (7, 14),
+\]
+\[
+[S^{169}   -  S^{153}]  \times  t^{16},\quad
+[S^{169}   -  T^{49}]  \times  s^{120},\quad
+[S^{153}   -  T^{72}]  \times  c^{81},
+\]
+\[
+[P^{91}   -  T^{42}]  \times  s_1^{49},\quad
+[P^{91}   -  T^{42}]  \times  s_2^{49},\quad
+[P^{91}   -  T^{42}]  \times  c^{49}, \quad \dots 
+\]
+
+There are at most $119$ ways for Black to capture White by subtraction.
+Some examples are listed below:
+
+\[
+[s^{225}   -  t^{56}]  \times  S^{169},\quad
+[s^{121}   -  s^{120}]  \times  S^{1} ,\quad
+[s^{121}   -  c^{49}] \times  T^{72},
+\]
+\[
+[s^{121}   -  s_1^{49}] \times  T^{72},\quad
+[s^{121}   -  s_2^{49}] \times  T^{72},\quad
+[s^{121}   -  t^{30}]  \times  P^{91}, \quad \dots
+\]
+
+
+\begin{question}
+What is the exact number of ways for Black to capture White by subtraction?
+Same question for White to capture Black by subtraction.
+\end{question}
+
+\subsubsection{Multiplication}
+
+A friendly piece of value $v$ can capture an enemy piece of value
+$m {\cdot} v$ {\it if} the number of vacant coordinates
+along an unoccupied straight line (vertical, horizontal)
+drawn between these two pieces is exactly $m>0$.
+In the special case when
+$m=1$ then capturing by multiplication coincides with capture by
+{\it numbering}, in which case
+it {\it is} necessary for the friendly capturing piece to
+be able to land on the enemy captured piece.
+However, outside of this special case, it is not generally
+necessary for the friendly capture-by-multiplication piece
+to be able to land on the enemy captured piece on their next move.
+
+
+{\footnotesize{
+\begin{center}
+\begin{tabular}{c|c|c|c|c}
+ &            &             &          & \\ \hline
+\trianglepafill\, $x$  &  $\leftarrow$ \dots &    $m$     & \dots $\rightarrow$ & \squad\, $m\cdot x$\\ \hline
+ &            &             &          & \\ %\hline
+\end{tabular}
+\vskip .1in
+{\bf Table: Multiplication: Black piece of value $x$ capturing from a distance a White piece of value $mx$}
+\end{center}
+}}
+
+
+\vskip.1in
+\postersection{Capturing by multiplication notation}
+A capture by multiplication could be written something like this:
+%
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1:coord.)*distance))$\times$(captured piece2+value2:coord.)}.
+\end{center}
+}}
+However, often the context is clear and we simply write
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1)*distance]x(captured piece2+value2)}.
+\end{center}
+Example: Figure \ref{fig:rithmomachia-capture-by-multiplication-division-with-pyramid} depicts an
+example of Black capturing the piece $S^{15}$ by multiplication, denoted
+
+\begin{center}
+{\tt [$c^5$m4 * 3]$\times S^{15}$i4 (multiplication)}
+\end{center}
+}}
+\postersectionend
+\index{capture!by multiplication}
+
+
+\begin{figure}[h!] 
+\centering 
+%\includegraphics[height=7.0cm,width=13.5cm]{rithmomachia-capture-by-multiplication-division-with-pyramid.jpg} 
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad  & \quad  & \quad  & \quad  & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad  & \quad  & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \circletfill{\,}9 & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\quad  & \quad  & \quad  & \squad{\,}15 & \quad  & \quad  & \quad  & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $e$ \\ \hline
+\quad  & \quad  & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \circlet{\,}2 & \quad  & \quad  & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad  & \quad  & \quad  & \quad  & \quad  & \squad{\,}25 & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular} 
+\caption{\textcolor{gray}{Rithmomachia position before a Black capture by multiplication: $c^5$ takes $S^{15}$, or $c^5*3\times S^{15}$}}
+\label{fig:rithmomachia-capture-by-multiplication-division-with-pyramid} 
+\end{figure}
+%sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+%sage: GS = copy(GSp)
+%sage: GS[3, 8] = S^(15)
+%sage: GS[6, 0] = 0
+%sage: board_plot2(GS, pyramid=True)
+%%sage: pclst = game_state_to_piece_list(GS)
+%%sage: piece_list_to_latex(pclst, verbose = False)
+
+If you think about it, there can't be a ``huge'' number of possible captures by
+multiplication. The reason why is the {\it multiplication capture value
+constraint},
+
+\begin{equation}
+\label{eqn:mult-capture-value-constraint}
+{\tt  value}_1*{\tt distance} = {\tt value}_2,
+\end{equation}
+\index{multiplication capture value constraint}
+along with the the fact that both sides have only about 20 or so values
+to begin with means we can list (with the aid of a computer to keep track
+of the terms) all the possible cases in which
+equation (\ref{eqn:mult-capture-value-constraint}) holds.
+Some captures might be ruled out due to the parity
+conditions in Lemmas \ref{lemma:TPL} and \ref{lemma:SPL},
+but at least we will have an upper bound which is hopefully
+stll pretty close.
+These upper bounds are described below.
+
+There are at most $96$ ways for White to capture Black by multiplication.
+Some examples that are not capture by numbering are listed below:
+
+\[
+[S^{45}  *  5]  \times  s^{225}, \quad
+[S^{45}  *  2]  \times  t^{90}, \quad
+[S_1^{25}   *  9]  \times  s^{225}, \quad
+\]
+\[
+[S_2^{25}   *  9]  \times  s^{225}, \quad
+[S_1^{25}  *  4]  \times  t^{100}, \quad
+[S_2^{25}  *  4]  \times  t^{100}, \dots
+\]
+
+There are at most $61$ ways for Black to capture White by multiplication.
+Some examples that are not capture by numbering are listed below:
+
+\[
+[s^{16}  *  4]  \times  C^{64}, \quad
+[t^{12}  *  6]  \times  T^{72},\quad
+[c_1^{9}   *  9 ] \times  T^{81}, \quad
+\]
+\[
+[c_2^{9}   *  9 ] \times  T^{81}, \quad
+[c_1^{9}   *  9 ] \times  S^{81},\quad
+[c_2^{9}   *  9 ] \times  S^{81},
+\]
+\[
+[c^{7}  *  13]  \times  P^{91}, \quad
+[c^{7}  *  7 ] \times  T^{49},\quad
+[c^{3}  *  14]  \times  T^{42}, \quad
+[c^{3}  *  12]  \times  C^{36}, \dots
+\]
+
+\begin{question}
+Suppose on the very first move, White/Even plays
+{\tt $T^{72}$c2e2}. Can you find a move by Black/Odd that will
+enable the capture of that White \trianglepa?
+\end{question}  
+\index{opening trap}
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=9.5cm,width=6.5cm]{Rithmomachia-game-pieces/Gemini_rithmomachia-battle5.png} 
+\caption{\rithmomachia pieces can get intense. {\small{(Thanks gemini:-)}}}
+\label{fig:Gemini_rithmomachia-battle5} 
+\end{figure}
+
+
+\begin{question}
+What is the exact number of ways for Black to capture White by multiplication?
+Same question for White to capture Black by multiplication.
+\end{question}
+
+
+\subsubsection{Division}
+
+Similar to multiplication: A piece of value $d {\cdot} v$ can
+capture an enemy piece of value $v$ {\it if} the number
+of vacant coordinates
+along an unoccupied straight line (vertical, horizontal)
+drawn between these two pieces is exactly $d>0$.
+Like capture by multiplication, this capture by division boils down to
+capture by numbering if $d=1$.
+
+\vskip.1in
+\postersection{Capturing by division notation}
+A capture by division could be written something like this:
+%
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value:coord.)$\div$ distance))$\times$(captured piece2+value2:coord.)}.
+\end{center}
+}}
+However, often the context is clear and we simply write
+{\small{
+\begin{center}
+{\tt  [(attacking piece1+value1)$\div$ distance]x(captured piece2+value2)}.
+\end{center}
+}}
+Example: On White's turn, the white square $S^{15}$
+can capture $c^5$ by division ($\div$) in 
+Figure \ref{fig:rithmomachia-capture-by-multiplication-division-with-pyramid}.
+In coordinate  and algebraic notation:
+
+{\small{
+\begin{center}
+{\tt [S15{:}(3,8)$\div$ 3] $\times$ c5{:}(3,12) (division)} or $[S^{15}i4\div 3]\times c^5m4$.
+\end{center}
+}}
+\postersectionend
+\index{capture!symmetry}
+\index{capture!by division}
+
+There are symmetry considerations for this capture as well.
+  
+\begin{lemma}
+\label{lemma:M/DSP}
+  (multiplication/division symmetry principle)
+A White piece can capture a Black piece by division if and only if that
+Black piece can capture that White piece by multiplication.
+\end{lemma}
+\index{symmetry principle for captures}
+
+Looking at the counts for capturing by multiplication, the multiplication/division symmetry principle
+(Lemma \ref{lemma:M/DSP} above) tells us:
+\begin{itemize}
+\item
+there are at most $96$ ways for Black to capture White by division, and
+\item
+there are at most $61$ ways for White to capture Black by division.
+\end{itemize}
+\index{symmetry principle for captures}
+
+
+\begin{question}
+The game state displayed in the Rithmomachia diagram
+
+{\small{
+\renewcommand{\arraystretch}{1.5}
+\[
+\begin{array}{|c|c|c|c|c|c|c|c|} \hline
+ s^{49} & s^{121} & \ & \ & \ & \ & s^{225} & s^{361} \\ \hline 
+ s^{28} & s^{66} & t^{36} & t^{30} & t^{56} & t^{64} & s^{120} & p^{190} % + s^64 + s^49 + s^36 + s^25 + s^16
+ \\ \hline 
+ t^{16} & t^{12} & c^9 & c^{25} & c^{49} & c^{81} & t^{90} & t^{100} \\ \hline
+ \ & \ & c^3 & c^5 & c^7 & c^9 & \ & \ \\ \hline 
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline
+ \ & \ & \ & \ & \ & T^9 & \ & \ \\ \hline 
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline 
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline 
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline
+ \ & \ & \ & \ & \ & \ & \ & \ \\ \hline 
+ \ & \ & C^8 & C^6 & C^4 & C^2 & \ & \ \\ \hline
+ T^{81} & T^{72} & C^{64} & C^{36} & C^{16} & C^4 & T^6 & \ \\ \hline 
+ S^{153} & P^{91} %+ S^{36} + S^{25} + S^{16} + S^9 + S^4 + S
+          & T^{49} & T^{42} & T^{20} & T^{25} & S^{45} & S^{15} \\ \hline 
+ S^{289} & S^{169} & \ & \ & \ & \ & S^{81} & S^{25} \\ \hline
+\end{array}
+\]
+}}
+
+\vskip .1in
+\noindent
+has the curious property that a single piece can capture another by three
+of the six different methods.
+Can you name them?
+\end{question}
+
+{\footnotesize{
+\begin{center}
+\begin{tabular}{c|c|c|c|c}
+ &            &             &          & \\ \hline
+\circlet\, $m\cdot x$  &  $\leftarrow$ \dots &    $m$     & \dots $\rightarrow$ & \squadfill\, $x$\\ \hline
+ &            &             &          & \\ %\hline
+\end{tabular}
+\vskip .1in
+{\bf Table: Division: White piece of value $mx$ capturing from a distance a Black piece of value $x$}
+\end{center}
+}}
+
+\begin{question}
+Suppose on the very first move, White/Even played
+{\tt $T^{72}$c2e2} and then Black/Odd played {\tt $c^9$m6l6},
+but no captures. Can you find White's (second) move that will
+enable the capture of a Black \trianglepafill?
+\end{question}
+
+
+\subsubsection{Siege}
+
+We recall the definition from \cite{DG21}:
+If an enemy piece is surrounded by opposing pieces in such a way that
+the enemy piece has no legal moves then the ``besieged''
+enemy piece may be captured. For example, this capture can
+take place by an edge of the board, with the enemy piece partially surrounded by the enemy,
+or away from the edge, with the piece entirely surrounded by enemy pieces.
+\index{capture!siege}
+
+Figure \ref{fig:rithmomachia-capture-by-siege-with-pyramid3} depicts an
+example of White capturing the piece $c^{3}$ by siege.
+
+\begin{figure}[h!] 
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad  & \quad  & \quad  & \quad  & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad  & \quad  & \quad  & \circletfill{\,}5 & \circletfill{\,}7 & \circletfill{\,}9 & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $e$ \\ \hline
+\quad  & \quad  & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \circlet{\,}2 & \quad  & \quad  & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circletfill{\,}3 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad  & \quad  & \quad  & \quad  & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular}  
+%\includegraphics[height=7.0cm,width=13.5cm]{rithmomachia-capture-by-siege-with-pyramid3.jpg} 
+\caption{\textcolor{gray}{Rithmomachia position before a capture by siege, $c^3$ is surrounded by White and can't move.}}
+\label{fig:rithmomachia-capture-by-siege-with-pyramid3} 
+\end{figure}
+%% sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+%% sage: GS = copy(GSp)
+%% sage: GS[2, 2] = c^3
+%% sage: GS[2, 12] = 0
+%% sage: board_plot2(GS, pyramid=True)
+%%sage: pclst = game_state_to_piece_list(GS)
+%%sage: piece_list_to_latex(pclst, verbose = False)
+
+%{\small{
+%\begin{center}
+%{\tt {White}\,$\times$\,c3:(2,0) (siege)}
+%\end{center}
+%}}
+
+\vskip.1in
+\postersection{Capturing by siege notation}
+A capture by siege could be written something like this:
+if {\tt attacking piece1} is the last piece to move to help surround and block
+{\tt captured piece2} then
+%
+{\small{
+\begin{center}
+{\tt  (attacking piece1+value:coord.)$\cap$(captured piece2+value2:coord.)}.
+\end{center}
+}}
+However, often the context is clear and we simply write
+{\small{
+\begin{center}
+{\tt  (attacking piece1+value1)$\cap$ (captured piece2+value2)}.
+\end{center}
+}}
+{\it Example}: If White just moved his circle $C^8$ to $d3$ then this notation becomes
+
+{\small{
+\begin{center}
+{\tt $C^8d3$\,$\cap$\,$c^3c3$ (siege)}
+\end{center}
+}}
+\postersectionend
+
+
+\subsubsection{Captures of/with the pyramid}
+\label{sec:pyramid2}
+
+The pyramid piece can be captured using its total value. 
+In addition, any one of its component sub-pieces can be
+captured.%\footnote{There are variations on this rule but this version is the
+%simplest.}, as in Figure \ref{fig:rithmomachia-captureS25-by-c25numbering-with-pyramid}.
+\index{capture!pyramid}
+\index{pyramid!capture}
+In case only a sub-piece of the pyramid is captured,
+only that subpiece is removed from the board, never to return,
+and the value of that sub-piece is deducted from that of the pyramid piece.
+In the case the pyramid is captured using its full value,
+the entire piece (and all its component sub-pieces) must be
+removed from the board.
+
+\begin{example}
+For the original pyramid piece $p^{190}$ (see \S \ref{sec:pyramid1} above),
+Figure \ref{fig:rithmomachia-capture-C36-with-pyramid2} depicts
+a game state in which the component sub-piece $s^{36}$, the black
+square sub-piece of $p$ with value $36$, can capture the white
+circle $C^{36}$. 
+\end{example}
+
+\begin{question}
+What other captures (for both sides) can you find in the study
+depicted in Figure \ref{fig:rithmomachia-capture-C36-with-pyramid2}?
+\end{question}
+  
+
+The pyramid can capture an enemy piece, using its total value.
+Alternatively, the pyramid can capture an enemy piece including a
+component sub-piece of the enemy's pyramid, using the value of any
+one of its component sub-pieces.
+
+\begin{example}
+If $P=S^{91}$ was against the edge of the board and surrounded on the three
+other sides by $c^3$, $c^7$, and $c^{81}$,
+then Black can capture $P$ (as a whole) by siege. However, it cannot capture $P$
+by addition.
+\end{example}
+
+\begin{figure}[h!] 
+\centering 
+%\includegraphics[height=7.0cm,width=13.5cm]{rithmomachia-capture-C36-with-pyramid2.jpg}
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad  & \quad  & \quad  & \quad  & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \quad  & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \quad  & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad  & \quad  & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \circletfill{\,}9 & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \circletfill{\,}9 & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\quad  & \quad  & \quad  & \rhombus{\,}$P^{91}$ & \quad  & \quad  & \quad  & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \rhombusfill{\,}$p^{190}$ & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $e$ \\ \hline
+\quad  & \quad  & \circlet{\,}8 & \quad  & \circlet{\,}4 & \circlet{\,}2 & \quad  & \quad  & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \quad  & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad  & \quad  & \quad  & \quad  & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular} '
+\caption{\textcolor{gray}{A rithmomachia position before the triple capture using component
+    subpieces of the pyramid: $p^{190}f4\times S^{16}i4$, $p^{190}f4\times S^{25}i4$, $p^{190}f4\times S^{36}i4$.
+    This chain capure is an example of a series of capture by numberings.}}
+\label{fig:rithmomachia-capture-C36-with-pyramid2} 
+\end{figure}
+\index{pyramid!capture}
+%sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+%sage: GS = copy(GSp)
+%sage: GS[7, 14] = 0; GS[3,5] = p^(190) + s^(64) + s^(49) + s^(36) + s^(25) + s^(16)
+%sage: GS[1, 1] = 0; GS[3, 8] = P^(91) + S^(36) + S^(25) + S^(16) + S^9 + S^4 + S; GS[3,3] = 0
+%sage: GS[2,13] = 0; GS[3, 11] = c^9
+%%sage: pclst = game_state_to_piece_list(GS)
+%%sage: piece_list_to_latex(pclst, verbose = False)
+
+Here is a partial game involving a pyramid capture:
+
+\[
+\begin{array}{l|ll|ll|} \hline
+  \quad & Even\ moves & captures & Odd\ moves & captures \\ \hline
+  1 & T^9{\tt c8e8} &  & t^{12}{\tt n2l2} &   \\
+\end{array}
+\]
+This last move by Black makes a threat that White ignores.
+
+\[
+\begin{array}{l|ll|ll|} \hline
+  \quad & Even\ moves & captures & Odd\ moves & captures \\ \hline  
+  2 & T^6{\tt c7e7} &  & t^{12}{\tt l2j2} & t^{12}\times T^{72}  \\
+  3 & T^9{\tt e8g8} &  & t^{12}{\tt j2h2} &   \\
+\end{array}
+\]
+This last move by Black makes a threat that White also ignores.
+
+\[
+\begin{array}{l|ll|ll|} \hline
+  \quad & Even\ moves & captures & Odd\ moves & captures \\ \hline  
+  4 & S^{15}{\tt b8e8} &  & t^{12}{\tt h2f2} & t^{12}\times S^{36}  \\
+\end{array}
+\]
+This last partured piece $S^{36}$ was a subpiece of the 
+pyramid $P^{91}$. That pyramid has had it's value deducted, making it now
+
+\[
+P^{55} = S^{25}+S^{16}+S^9+S^4+S^1.
+\]
+
+
+\begin{example}
+A slaughterfest of captures awaits the curious player
+in the example study depicted in
+Figure \ref{fig:rithmomachia-numerous-captures-with-pyramid}.
+
+\begin{question}
+Can you find all captures in
+Figure \ref{fig:rithmomachia-numerous-captures-with-pyramid}, if
+\begin{itemize}
+\item[(a)]
+  it is White's turn, and
+\item[(b)]
+  it is Black's turn?
+\end{itemize}
+\end{question}
+\end{example}
+\index{piece!circle}
+\index{capture!circle}
+
+\begin{figure}[h!] 
+\centering 
+%\includegraphics[height=7.0cm,width=13.5cm]{rithmomachia-numerous-captures-with-pyramid.jpg}
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\circletfill{\,}7 & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \trianglepa{\,}42 & $p$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $o$ \\ \hline
+\quad  & \quad  & \quad  & \squadfill{\,}361 & \quad  & \trianglepa{\,}72 & \trianglepafill{\,}90 & \quad  & $n$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \squad{\,}289 & \squadfill{\,}49 & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \squad{\,}169 & \quad  & \quad  & \squadfill{\,}120 & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \circlet{\,}4 & \quad  & \quad  & \quad  & \quad  & \quad  & $e$ \\ \hline
+\quad  & \circlet{\,}4 & \circletfill{\,}7 & \circlet{\,}16 & \quad  & \quad  & \quad  & \quad  & $d$ \\ \hline
+\quad  & \quad  & \circlet{\,}2 & \circletfill{\,}9 & \quad  & \quad  & \trianglepa{\,}9 & \quad  & $c$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $b$ \\ \hline
+\rhombus{\,}$P^{91}$ & \quad  & \quad  & \quad  & \quad  & \quad  & \circletfill{\,}9 & \quad  & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular}
+\caption{\textcolor{gray}{All types of captures are illustrated in this rithmomachia study. Have fun finding them all! }}
+\label{fig:rithmomachia-numerous-captures-with-pyramid} 
+\end{figure}
+%sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+%sage: GS = copy(GSp)
+%sage: GS = GS*0
+%sage: c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
+%sage: GS[0,0] = P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S
+%sage: GS[0,0] = P^(91) + S^(36) + S^(25) + S^(16) + S^9 + S^4 + S
+%sage: GS[0, 15] = c^7; GS[7, 15] = T^(42)
+%sage: GS[6, 2] = T^9; GS[6, 13] = t^(90); GS[6, 0] = c^9
+%sage: GS[4, 7] = S^(169); GS[7, 7] = s^(120); GS[4, 10] = s^(49)
+%sage: GS[3, 10] = S^(289); GS[3, 13] = s^(361); GS[5, 13] = T^(72)
+%sage: GS[2, 2] = C^2; GS[2, 4] = C^4; GS[3, 3] = C^(16); GS[1, 3] = C^4; GS[2, 3] = c^7; GS[3, 2] = c^9
+%%sage: pclst = game_state_to_piece_list(GS)
+%%sage: piece_list_to_latex(pclst, verbose = False)
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=4.0cm,width=14.0cm]{Rithmomachia-game-pieces/white-squares-red-border-in-2lines.jpg} 
+\caption{Rithmomachia White square pieces}
+\label{fig:white-squares-red-border-in-2lines} 
+\end{figure}
+
+
+\subsection{How a game is won}
+\label{sec:winning}
+
+As mentioned in \S \ref{sec:setup}, if it's a player's turn yet that player
+has no legal move then the player loses that rithmomachia game.
+There are several other ways to win a game of rithmomachia, broken down
+below into two distinct types.
+\index{stalemate}
+
+
+\vskip.1in
+\postersection{How to Win a Game}
+A player loses when it is their turn and no legal move can be made, or when
+\begin{itemize}
+\item
+{\it common}: The number and values of the captured pieces satisfy certain conditions.
+\item
+{\it proper}:
+A certain type of configuration of at least 3 enemy pieces is arranged in friendly territory.
+\end{itemize}
+\postersectionend
+\index{territory}
+
+One type of win is called {\it common} (or {\it minor})
+and the other type of win is called {\it proper} (or {\it major}).
+As explained below, some types of victory discussed here
+{\it require} White and
+Black to agree upon a certain conventions before the game.
+\index{victory!conventions}
+
+\subsubsection{Common}
+
+As mentioned, in addition to common, this is also called a minor victory,
+because it is somewhat easier to manage.
+\index{victory!common}
+
+\begin{itemize}
+\item
+%body
+Assume that White and Black previously agreed upon a value for the
+number of captured pieces, say, $N_0$. As an example, de Boissi\`ere
+gives $N_0=4$ (see page 204 of \cite{Ri46}). Another source suggests
+a larger proportion of the pieces, say $50\%$ (so $N_0 = 12$).
+
+The first player to capture $N_0$ of the enemy's pieces (irregardless of their
+values) is declared the {\it winner by body}
+(sometimes called a {\it de Bonis victory}).
+\index{victory!common!of the body}
+
+\item
+%goods
+Assume that White and Black previously agreed upon a number for the
+total value of captured pieces, say, $N_1$. For example, de Boissi\`ere
+gives $N_1=100$ (see page 205 of \cite{Ri46}). Another source suggests
+a larger proportion of the total value, say $50 \%$.
+Recall from Figures \ref{fig:whitepieces} and \ref{fig:blackpieces},
+the total value of the pieces depends
+on whether they are Odd/Black or Even/White pieces,
+but in any case that total is in the range $1300$-to-$1800$.
+
+The first player to capture enemy's pieces whose total
+equals
+or exceeds $N_1$ is declared the {\it winner by goods}
+(also called a {\it de Lite victory}).
+Another alternative is for White and Black to agree
+that such a victory only occurs is $N_1$ is attained exactly by
+a combination of captured enemy piece values.
+\index{victory!common! of the goods}
+
+\item
+%law-suit
+Assume that White and Black previously agreed upon two
+numbers, $N_2$ and $N_3$, for the total value of a number of
+captured pieces. As an example, de Boissi\`ere
+gives $N_2=4$ and $N_3=100$ (see page 205 of \cite{Ri46}).
+
+The first player to capture at least $N_2$ enemy's pieces whose total
+equals or exceeds $N_3$ is declared the {\it winner by law-suit}.
+The winner can capture more than $N_2$ pieces but of them,
+there are $N_2$ captured enemy pieces whose total is
+at least $N_3$.
+\index{victory!common! of the law-suit}
+
+\item
+%honor
+This type of victory is similar to the
+law-suit, but the
+total value must be attained exactly. 
+The first player to capture $N_2$ enemy's pieces whose total
+equals $N_3$ is declared the {\it winner by honor}.
+The winner can capture more than $N_3$ pieces but of them,
+there are $N_2$ captured enemy pieces whose total is exactly $N_3$.
+\index{victory!common! of honor}
+
+\item
+%law-suit/honor
+This type of victory is similar to the honor and the 
+law-suit, but the total number of captures and the
+total value must both be attained exactly. 
+
+We use the same notation.
+The first player to capture $N_2$ enemy's pieces (no more, no less)
+whose total equals $N_3$ is declared the {\it winner by honor and law-suit}.
+To win by this method, the player must capture exactly $N_2$
+enemy pieces and their total must be exactly $N_3$, no more
+and no less.
+\index{victory!common! of honor and law-suit}
+
+
+\end{itemize}
+These are all the common victories.
+
+
+%{\footnotesize{
+%\begin{center}
+%\begin{tabular}{|c|c|} \hline  
+%common type   & description \\ \hline    
+%by body  & first player to capture more than $N_0$ enemy pieces wins \\
+%by goods  & first player to capture enemy pieces, total value exceeds $N_1$ wins \\
+%by lawsuit & capture more than $N_0$ enemy pieces, total value exceeds $N_1$ \\
+%by honor & capture $N_0$ enemy pieces, total value equals $N_1$ \\ \hline
+%\end{tabular}
+%\vskip .1in
+%{\bf Table: piece capture types}
+%\end{center}
+%}}
+
+\vskip .1in
+\postersection{Common victories:}
+\begin{itemize}%[leftmargin=*, label=\textcolor{RithmoGold}{\faTrophy}]
+    \item \textbf{By Body:} First to capture an agreed number of enemy pieces (e.g., $N_0 = 4$).
+    \item \textbf{By Goods:} First to capture enemy pieces whose total value equals or exceeds an agreed sum (e.g., $N_1 = 100$).
+    \item \textbf{By Law-suit:} Capture $\ge N_2$ pieces whose total value is $\ge N_3$ (e.g., $N_2=4, N_3=100$).
+    \item \textbf{By Honor:} Capture $N_2$ pieces whose total value is exactly $N_3$.
+\end{itemize}
+\postersectionend
+
+
+\subsubsection{Proper}
+
+
+\begin{quotation}
+\dots this is called a proper victory with good reason.
+For just as those who make war win a victory after routing  
+the enemy's battle-line and arranging everything in
+accordance with their own will, so too the harmony
+and arrangement of numbers \dots
+
+\hskip 1in
+Claude de Boissi\`ere (\cite{Ri46}, pages 206-207)
+\end{quotation}
+\index{battlefield harmony}
+\index{de Boissi\`ere, Claude}
+
+\vskip .2in
+
+Each of these proper victories involve
+placing a fixed number of friendly pieces in the enemy
+territory such that the values of these pieces form
+eith an arithmetical or geometrical or harmonic
+progression. We will call any such progressions a
+{\it coordinating progression}. Such progressions were known to
+Pythagoras and covered in the book by Nicomachus \cite{Ni00}. 
+\index{victory!proper}
+\index{coordinating progression}
+\index{progression!coordinating}
+
+There are three types of proper wins
+(see \cite{Ri46} pages 206-212, \cite{Ne98}, \cite{DG21}.
+
+\begin{itemize}
+\item
+{\it Small},
+\index{victory!proper! small}
+  
+\item
+{\it Big},
+\index{victory!proper! big}
+
+\item
+{\it Great}.
+\index{victory!proper! great}
+\end{itemize}
+%A quick glance at the literature in the bibliography shows
+%the variation of alternative names for these wins.
+Each of these win types require a certain (coordinating) arrangement
+of $3$ or $4$ pieces, the arrangement being a pattern of $3$ or $4$
+values of pieces in enemy territory must all belong to either an
+{\it arithmetic} progression, a {\it geometric} progression, or a
+{\it harmonic} progression. Definitions and a examples of some of these can be found
+in Figure \ref{fig:great-win-harmonies}.
+\index{harmonic progression}
+
+Since each side has only about $20$ or so values amongest their pieces,
+there are lots of $3$-term or $4$-term arithmetic progressions
+which {\it aren't} formed from these values. We used the programming
+language Python to extract the $3$-term arithmetic/geometric/harmonic progressions
+which {\it are} formed from three piece values.
+The algorithm used did not distinguish between pieces {\it themselves} but rather
+between the values of the pieces. Of course, the values of pieces
+can repeat (like Odd/Black's {\tt c9}s and Even/White's {\tt T6}
+and {\tt C6}). These lower bounds are woven in the discussion below.
+
+\begin{itemize}
+\item
+An {\it arithmetical progression} is a sequence $a,b,c$ satisfying $b-a=c-b$.
+%The differences are (reading from top to bottom) as follows,
+%\[
+%1, 2, 4, 20, 30, 57, 72, 105, 39.
+%\]
+\index{arithmetical progression}
+
+\begin{itemize}
+\item
+ White has at least $11$ such progressions:
+
+\[
+\{(2, 4, 6), (2, 9, 16), (4, 6, 8), (4, 20, 36), (8, 25, 42), (8, 36, 64),
+\]
+\[
+(9, 45, 81), (9, 81, 153), (15, 20, 25), (20, 42, 64), (49, 169, 289)\},
+\]
+\item
+Black has at least $9$ such progressions:
+
+\[
+\{(3, 5, 7), (5, 7, 9), (7, 16, 25), (7, 28, 49), (7, 64, 121),
+\]
+\[
+(12, 56, 100), (12, 66, 120), (16, 36, 56), (28, 64, 100)
+\}.
+\]
+\end{itemize}
+
+%Recall from the above:
+%White/Even has 15 repeated values, while Black/Odd has 13.
+
+\begin{question}
+Accounting for the repeated values can you determine the
+{\it exact} number of arithmetical progressions possible for
+White? For Black?
+\end{question}
+
+\item
+A {\it geometric progression} is a sequence $a,b,c$ 
+satisfying $b/a=c/b$.
+\index{geometrical progression}
+
+For example, White has at least $11$ such progressions:
+
+\[
+\{
+(2, 4, 8), (4, 6, 9), (4, 8, 16), (4, 16, 64), (9, 15, 25), (16, 20, 25),
+\]
+\[
+ (16, 36, 81), (25, 45, 81), (36, 42, 49), (64, 72, 81), (81, 153, 289)
+\}.
+\]
+Black has at least $10$ such progressions:
+
+\[
+\{
+(9, 12, 16), (9, 30, 100), (16, 28, 49), (16, 36, 81), (25, 30, 36),
+\]
+\[
+(36, 66, 121), (36, 90, 225), (49, 56, 64), (64, 120, 225), (81, 90, 100)
+\}.
+\]
+
+\begin{question}
+Accounting for the duplicate piece values can you determine the
+{\it exact} number of geometrical progressions possible for
+White? For Black?
+\end{question}
+
+\item
+The {\it harmonic progressions} $a,b,c$ in each row of the harmonic table
+satisfy $1/a - 1/b = 1/b - 1/c$, so their reciprocals form an
+arithmetical sequence.
+
+White has $2$ of them $(9, 15, 45)$ and $(9, 16, 72)$,
+while Black has none.
+\index{harmonic!progression}
+
+\begin{question}
+Can you determine the smallest number of White must make in a game
+of rithmomachia to achieve a small proper win by harmonic progression
+with the
+sequence $9,15,45$?
+\end{question}
+\end{itemize}
+
+\vskip .1in
+\postersection{Offensive capabilities}
+Each player who wants to achieve such a small proper win will
+naturally want to have as many or more triples of pieces
+which form a coordinating progression. To win, the pieces in
+such an ``offensive'' triple (a {\it fireteam}, in the battlefield lingo)
+\index{fireteam}
+must all invade enemy territory.
+The White/Even player has $60$ pairs of values which belong
+to at least one coordinating progression. For example, each of the
+pairs $(4, 6)$ and $(20, 25)$ belong to at least {\it two}
+coordinating progressions.
+The Black/Odd player has $57$ pairs of values which belong
+to at least one coordinating progression. For example, each of the
+pairs $(5, 7)$ and $(28, 49)$ belong to at least {\it two}
+coordinating progressions.
+From this perspective, the two sides seem to have roughly
+equal offensive capabilities.
+\index{offensive triple}
+\postersectionend
+
+%\begin{center}
+\begin{figure}
+\begin{tabular}{c|c|c}    
+\begin{tabular}{ccc} \hline
+   &  arithmetical   &    \\ \hline
+2     &     4        &  6 \\ 
+{\bf 3}  &  {\bf 5}    &  {\bf 7} \\   \hline
+\end{tabular}
+&
+\begin{tabular}{cccc} \hline
+&  geometric   &      &     \\ \hline
+2              &  4   &   8 \\ 
+{\bf 100}      & {\bf 190}  & {\bf 361} \\ \hline
+\end{tabular}
+&
+\begin{tabular}{cccc} \hline
+ & harmonic   &        &     \\ \hline
+9            &   15    &  45 \\ 
+9      &   16    &  72 \\   \hline
+\end{tabular}
+\end{tabular}
+\caption{\textcolor{gray}{Example coordinating configurations for a {\it proper win}.}}
+\label{fig:great-win-harmonies}
+\end{figure}
+%\end{center}
+
+According to de Boissi\`ere (see \cite{Ri46}, page 206),
+such coordinating progressions of pieces are a metaphor for the
+cooperation and coordination of the corresponding fireteam on
+the battlefield.
+\index{battlefield harmony}
+
+\vskip.1in
+\postersection{Proper victories:}
+%Require placing friendly pieces in enemy territory in an arithmetical/geometrical/harmonic progression. No linear arrangement of the pieces is required in de Boissière's version.
+\begin{itemize}%[leftmargin=*, label=\textcolor{RithmoGold}{\faStar}]
+\item
+\textbf{Small victory:} Place \textbf{three} friendly pieces
+in enemy territory whose values $a,b,c$ form an arithmetic, geometric,
+or harmonic progression.
+  %  \begin{itemize}
+  %      \item Arithmetic: $a, b, c$ 
+  %      \item Geometric: $a, b, c$ 
+  %      \item Harmonic: $a, b, c$ 
+  %  \end{itemize}
+\item
+\textbf{Big victory:} Four pieces in enemy territory; one subset
+of three forms a coordinating progression, and another subset of
+three forms another.
+
+\item
+\textbf{Great victory:} Among the four pieces, there are subsets
+of $3$ that form arithmetic, geometric, and harmonic progressions.
+\end{itemize}
+%Achieving these "harmonies" reflected divine proportions.
+\postersectionend
+\index{victory!small}
+\index{victory!big}
+\index{victory!great}
+
+In other words, a player wins by a great victory when they have a big win
+but, moreover, there exists among the four pieces in enemy territory,
+
+\begin{itemize}
+\item
+a subset of three of the four whose values form an
+arithmetic progression, 
+\item
+a subset of three of the four whose values form a
+geometric progression, and
+\item
+a subset of three of the four whose values form a
+harmonic progression.
+\end{itemize}
+
+\begin{remark}
+{\rm  
+In some versions of rithmomachia, 
+these three pieces must be arranged in a straight line
+(vertical, horizontal, or diagonal).
+Other versions of rithmomachia allow these pieces to be
+arranged in the shape of a right angled triangle.
+No such linear or geometric conditions exist for the de
+Boissi\`ere version here.
+}
+\end{remark}
+\index{linear condition, none}
+
+
+%{\small{
+%\begin{center}
+%\begin{tabular}{|c|c|}  \hline
+%progression & small proper victory description \\ \hline
+%arithmetical   & 3 friendly pieces in enemy terr, values form an arith. prog.\\
+%geometrical  & 3 friendly pieces in enemy terr, values form a geom. prog.\\
+%harmonic      &  3 friendly pieces in enemy terr, values form a harmonic prog.\\ \hline
+%\end{tabular}
+%\vskip .1in
+%       {\bf Table: Winning by a small proper victory}
+%\end{center}
+%}}
+
+
+\noindent
+{\it Example}:
+Figure \ref{fig:rithmomachia-white-win-geometrical-harmony2} depicts an
+example of White winning by geometrical progression.
+White has three pieces, at $i1$, $i4$, $i7$,
+%equally spaced along a line
+in enemy territory with values $(2, 4, 8)$ in geometrical progression.
+\index{victory!!proper!by arithmetic progression}
+\index{victory!!proper!by geometric progression}
+\index{victory!!proper!by harmonic progression}
+
+
+\begin{figure}[h!] 
+\centering 
+%\includegraphics[height=7.0cm,width=13.5cm]{rithmomachia-white-win-geometrical-harmony2.jpg} 
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad  & \quad  & \quad  & \quad  & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad  & \quad  & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \circletfill{\,}9 & \quad  & \quad  & $m$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $l$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $k$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $j$ \\ \hline
+\circlet{\,}2 & \quad  & \quad  & \circlet{\,}4 & \quad  & \quad  & \circlet{\,}8 & \quad  & $i$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $h$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $g$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $f$ \\ \hline
+\quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & \quad  & $e$ \\ \hline
+\quad  & \quad  & \quad  & \circlet{\,}6 & \quad  & \quad  & \quad  & \quad  & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad  & \quad  & \quad  & \quad  & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 &  2 &  3 &  4 &  5 &  6 &  7 &  8  &  \\
+\end{tabular} 
+\caption{\textcolor{gray}{A Rithmomachia position depicting a White win by geometrical harmony.}}
+\label{fig:rithmomachia-white-win-geometrical-harmony2} 
+\end{figure}
+%sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+%sage: GS = copy(GSp)
+%sage: GS[2,3] = 0; GS[6, 8] = C^8; GS[4,3] = 0; GS[3, 8] = C^4; GS[5,3] = 0; GS[0, 8] = C^2
+%sage: board_plot(GS)
+%%sage: pclst = game_state_to_piece_list(GS)
+%%sage: piece_list_to_latex(pclst, verbose = False)
+\index{geometrical progression}
+
+
+\noindent
+{\it Example}:
+The game in \S \ref{sec:example-game} provides an example
+of a small geometric (proper) victory of Even/White over Odd/Black.
+
+
+\begin{question}
+Can you find an example of a final position that achieves a big
+victory winning position?
+\end{question}
+  
+
+\begin{question}
+Can you find an example of a final position that achieves a great
+victory winning position?
+\end{question}
+
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=15.0cm,width=10.cm]{Rithmomachia-game-pieces/chatGPT_rithmomachia-logo5} 
+\caption{Yeah, \rithmomachia!  \small{(thanks chatGPT:-)}}
+\label{fig:chatGPT_rithmomachia-logo5}
+\end{figure}
+
+
+%\newpage
+
+
+\section{Two example games}
+\label{sec:example-game}
+
+A couple of example games are given next.
+
+\subsection{An arithmetical win}
+
+In this case, it's easy to describe this game. White has a plan to place
+three pieces in a coordinating progression. Black is moves more-or-less
+randomly so has little chance of stopping this plan from being implemented.
+\index{coordinating progression}
+
+\newpage
+%\begin{enumerate}
+%\item
+
+White plays first. After the first few moves,
+the position of the board and moves were as follows. The last move played
+is underlined.
+\index{game state}
+
+\vskip .1in
+
+%{\footnotesize{
+{\small{
+\begin{tabular}{c}
+The first few turns \\
+\begin{tabular}{r|cc|cc}
+ & Even moves &     & Odd moves             & \\    \hline 
+1   &  {\tt C002d6e6} &  &  \underline{\tt s121p2p5} &  \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \quad & \quad & \quad & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \circletfill{\,}9 & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 &\trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular} 
+\end{tabular}
+}}
+
+%\newpage
+
+%\item  
+%\noindent
+%After a few more turns, the board and moves (there were no captures) were
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 2 game state \\
+\begin{tabular}{r|cc|cc}
+   & Even moves & captures   & odd moves & captures \\    \hline 
+1. & C{\tt 002d6e6}  & \quad & {\tt s121p2p5} & \quad  \\
+2. & {\tt C002e6f6} & \quad &  {\tt c007m5l5} & \quad  \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \quad & \quad & \quad & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \quad & \circletfill{\,}9 & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \quad & \circletfill{\,}7 & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+
+%\noindent
+%After a few more turns (again, there were no captures), the position was like this:
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 3 game state \\
+\begin{tabular}{r|cc|cc}
+& Even moves &     & odd moves &  \\    \hline  
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+2   &  {\tt C002e6f6} & \quad &  {\tt c007m5l5} & \quad \\
+3   &  {\tt C002f6g6} & \quad &  \underline{\tt c009m6m5} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \quad & \quad & \quad & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}9 & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \quad & \circletfill{\,}7 & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+%\item  
+%\noindent
+%After the next round of turns, call it round 4:
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 4 game state\\   
+\begin{tabular}{r|cc|cc}
+ & Even moves & captures   & odd moves & captures  \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+2   &  {\tt C002e6f6} & \quad &  {\tt c007m5l5} & \quad \\
+3   &  {\tt C002f6g6} & \quad &  {\tt c009m6m5} & \quad \\
+4   &  {\tt C002g6h6} & \quad &  \underline{\tt s121p5p2} & \quad \\
+\end{tabular}
+\\      
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \quad & \quad & \quad & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \trianglepafill{\,}90 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}9 & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \quad & \circletfill{\,}7 & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+%\newpage
+
+%\item
+\noindent
+White's 2-circle {\tt C2} is finally in the desired position:
+
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 5 game state\\   
+\begin{tabular}{r|cc|cc}
+    & Even moves         & captures    & odd moves   &  captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+ \vdots  &  \vdots    & \quad &  \vdots        & \quad \\
+%2   &  {\tt C002e6f6} & \quad &  {\tt c007m5l5} & \quad \\
+%3   &  {\tt C002f6g6} & \quad &  {\tt c009m6m5} & \quad \\
+4   &  {\tt C002g6h6} & \quad &  {\tt s121p5p2} & \quad \\
+5   &  {\tt C002h6i6} & \quad &  \underline{\tt t090n7l7} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \quad & \quad & \quad & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 &
+\trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}9 & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \quad & \circletfill{\,}7 & \quad & \trianglepafill{\,}90 & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \circlet{\,}4 & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+\vskip .1in
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 6 game state \\      
+\begin{tabular}{r|cc|cc}
+    & Even moves     &  captures     & odd moves    & captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%4   &  {\tt C002g6h6} & \quad &  {\tt s121p5p2} & \quad \\
+5   &  {\tt C002h6i6} & \quad &  {\tt t090n7l7} & \quad \\
+6   &  {\tt C004d5e5} & \quad &   \underline{\tt c005m4l4}  & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \quad & \quad & \quad & \squadfill{\,}225 & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \quad & \circletfill{\,}9 & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \trianglepafill{\,}90 & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 &
+\trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+\vskip .1in
+
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 7 game state\\      
+\begin{tabular}{r|cc|cc}
+ & Even moves & captures   & odd moves & captures \\ \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%5   &  {\tt C002h6i6} & \quad &  {\tt t090n7l7} & \quad \\
+6   &  {\tt C004d5e5} & \quad &   {\tt c005m4l4}  & \quad \\
+7   &  {\tt C004e5f5} & \quad &   {\tt s225p7p4} &  \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \quad & \circletfill{\,}9 & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \trianglepafill{\,}90 & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular} 
+\end{tabular}
+}}
+  
+%\newpage
+
+\vskip .1in
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 8 \\      
+\begin{tabular}{r|cc|cc}
+ & Even moves & captures   & odd moves & captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%6   &  {\tt C004d5e5} & \quad &   {\tt c005m4l4}  & \quad \\
+7   &  {\tt C004e5f5} & \quad &    {\tt s225p7p4} &  \quad \\
+8   &  {\tt C004f5g5} & \quad &   {\tt c009m5m4} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}9 & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \trianglepafill{\,}90 & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+\vskip .1in
+
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 9 \\      
+\begin{tabular}{r|cc|cc}
+ & Even moves & even captures    & odd moves & odd captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+8   &  {\tt C004f5g5} & \quad &  {\tt c009m5m4} & \quad \\
+9   &  {\tt C004g5h5} & \quad &  {\tt c081n6n7} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \quad & \circletfill{\,}81 & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}9 & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \trianglepafill{\,}90 & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+\vskip .1in
+ 
+\noindent
+White/Even's 4-circle {\tt C4} is in enemy territory (in row $i$):
+
+\vskip .1in
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 10 \\
+\begin{tabular}{r|cc|cc}
+ & Even moves &    & odd moves &  \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%8   &  {\tt C004f5g5} & \quad &  {\tt c009m5m4} & \quad \\
+9   &  {\tt C004g5h5} & \quad &  {\tt c081n6n7} & \quad \\
+10  &  {\tt C004h5i5} & \quad &  {\tt c081n7n6} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}9 & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \trianglepafill{\,}90 & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \circlet{\,}6 & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+\vskip .1in
+
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 11 game state \\
+\begin{tabular}{r|cc|cc}
+ & Even moves & even captures    & odd moves & odd captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%9   &  {\tt C004g5h5} & \quad &  {\tt c081n6n7} & \quad \\
+10  &  {\tt C004h5i5} & \quad &  {\tt c081n7n6} & \quad \\
+11  &  {\tt C006d4e4} & \quad &  {\tt t090l7j7} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}9 & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \trianglepafill{\,}90 & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \circlet{\,}6 & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \quad & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+\newpage
+
+
+\vskip .1in
+
+\noindent
+Presumably, White's strategy is clear now: to win by (small proper) arithmetical progression.
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 12 game state \\
+\begin{tabular}{r|cc|cc}
+ & Even moves & even captures    & odd moves & odd captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%10  &  C004h5i5 & \quad &  c081n7n6 & \quad \\
+11  &  {\tt C006d4e4} & \quad &  {\tt t090l7j7} & \quad \\
+12  &  {\tt C006e4f4} & \quad &  {\tt c003m3l3} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \quad & \circletfill{\,}9 & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \trianglepafill{\,}90 & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \circlet{\,}6 & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \quad & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular} 
+\end{tabular}
+}}
+
+%\newpage
+\vskip .1in
+
+%\noindent
+%Round 13:
+
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 13 game state \\
+\begin{tabular}{r|cc|cc}
+ & Even moves & even captures    & odd moves & odd captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+%11  &  {\tt C006d4e4} & \quad &  {\tt t090l7j7} & \quad \\
+12  &  {\tt C006e4f4} & \quad &  {\tt c003m3l3} & \quad \\
+13  &  {\tt C006f4g4} & \quad &  {\tt c009m4m3} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}9 & \quad & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \circletfill{\,}7 & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \trianglepafill{\,}90 & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \circlet{\,}6 & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \quad & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+%\vskip .1in
+
+
+\vskip .1in
+
+{\small{
+%{\footnotesize{
+\begin{tabular}{c}
+Round 14 game state \\
+\begin{tabular}{r|cc|cc}
+ & Even moves &    & odd moves &  \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+\vdots &  \vdots    & \vdots  & \vdots    & \vdots \\  
+12  &  {\tt C006e4f4} & \quad &  {\tt c003m3l3} & \quad \\
+13  &  {\tt C006f4g4} & \quad &  {\tt c009m4m3} & \quad \\
+14  &  {\tt C006g4h4} & \quad & \underline{\tt c007l5k5} & \quad \\
+\end{tabular}
+\\
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}9 & \quad & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \quad & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \circletfill{\,}7 & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \trianglepafill{\,}90 & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \quad & \circlet{\,}4 & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \circlet{\,}6 & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \quad & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{tabular}
+}}
+
+%\newpage
+
+
+\vskip .1in
+
+\noindent
+Round 15: The strategy for White/Even is very simple: march three
+pieces to enemy territory. If their values form a coordinating progression
+then White/Even can declare a small proper victory over
+Black/Odd.
+
+After 15 moves, finally White/Even now has an arithmetical progression
+on row $j$, which is in enemy territory.
+\index{arithmetical progression}
+
+\vskip .1in
+{\small{
+\begin{center}
+\begin{tabular}{r|cc|cc}
+ & {Even moves} & even captures    & Odd moves & odd captures \\    \hline 
+1   &  {\tt C002d6e6} & \quad &  {\tt s121p2p5} & \quad \\
+2   &  {\tt C002e6f6} & \quad &  {\tt c007m5l5} & \quad \\
+3   &  {\tt C002f6g6} & \quad &  {\tt c009m6m5} & \quad \\
+4   &  {\tt C002g6h6} & \quad &  {\tt s121p5p2} & \quad \\
+5   &  {\tt C002h6i6} & \quad &  {\tt t090n7l7} & \quad \\
+6   &  {\tt C004d5e5} & \quad &  {\tt c005m4l4} & \quad \\
+7   &  {\tt C004e5f5} & \quad &  {\tt s225p7p4} & \quad \\
+8   &  {\tt C004f5g5} & \quad &  {\tt c009m5m4} & \quad \\
+9   &  {\tt C004g5h5} & \quad &  {\tt c081n6n7} & \quad \\
+10  &  {\tt C004h5i5} & \quad &  {\tt c081n7n6} & \quad \\
+11  &  {\tt C006d4e4} & \quad &  {\tt t090l7j7} & \quad \\
+12  &  {\tt C006e4f4} & \quad &  {\tt c003m3l3} & \quad \\
+13  &  {\tt C006f4g4} & \quad &  {\tt c009m4m3} & \quad \\
+14  &  {\tt C006g4h4} & \quad &  {\tt c007l5k5} & \quad \\
+15  &  {\tt C006h4i4} & \quad &  1-0 & \quad \\
+%15  &  C006h4i4 & \quad &  c007k5j5 & \quad \\
+\end{tabular}
+\end{center}
+}}
+
+
+\vskip .1in
+
+\noindent
+Here 1-0 means the first player (White or Even) has scored a win
+(so earns the 1) over Black or Odd (who sadly scores 0).
+
+%\newpage
+game state:
+
+\vskip .1in
+{\footnotesize{
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c||c} \hline
+\squadfill{\,}49 & \squadfill{\,}121 & \quad & \squadfill{\,}225 & \quad & \quad & \quad & \squadfill{\,}361 & $p$ \\ \hline
+\squadfill{\,}28 & \squadfill{\,}66 & \trianglepafill{\,}36 & \trianglepafill{\,}30 & \trianglepafill{\,}56 & \trianglepafill{\,}64 & \squadfill{\,}120 & \rhombusfill{\,}$p^{190}$ & $o$ \\ \hline
+\trianglepafill{\,}16 & \trianglepafill{\,}12 & \circletfill{\,}9 & \circletfill{\,}25 & \circletfill{\,}49 & \circletfill{\,}81 & \quad & \trianglepafill{\,}100 & $n$ \\ \hline
+\quad & \quad & \circletfill{\,}9 & \quad & \quad & \quad & \quad & \quad & $m$ \\ \hline
+\quad & \quad & \circletfill{\,}3 & \circletfill{\,}5 & \quad & \quad & \quad & \quad & $l$ \\ \hline
+\quad & \quad & \quad & \quad & \circletfill{\,}7 & \quad & \quad & \quad & $k$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \trianglepafill{\,}90 & \quad & $j$ \\ \hline
+\quad & \quad & \quad & \circlet{\,}6 & \circlet{\,}4 & \circlet{\,}2 & \quad & \quad & $i$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $h$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $g$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $f$ \\ \hline
+\quad & \quad & \quad & \quad & \quad & \quad & \quad & \quad & $e$ \\ \hline
+\quad & \quad & \circlet{\,}8 & \quad & \quad & \quad & \quad & \quad & $d$ \\ \hline
+\trianglepa{\,}81 & \trianglepa{\,}72 & \circlet{\,}64 & \circlet{\,}36 & \circlet{\,}16 & \circlet{\,}4 & \trianglepa{\,}6 & \trianglepa{\,}9 & $c$ \\ \hline
+\squad{\,}153 & \rhombus{\,}$P^{91}$ & \trianglepa{\,}49 & \trianglepa{\,}42 & \trianglepa{\,}20 & \trianglepa{\,}25 & \squad{\,}45 & \squad{\,}15 & $b$ \\ \hline
+\squad{\,}289 & \squad{\,}169 & \quad & \quad & \quad & \quad & \squad{\,}81 & \squad{\,}25 & $a$ \\ \hline
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & \\
+\end{tabular}
+\end{center}
+}}
+\index{victory!small, proper}
+%\end{enumerate}
+
+%The game is over once White can declare a small proper victory after
+%playing {\tt C006h4i4}.
+
+
+%\newpage
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=2.0cm,width=15.0cm]{Rithmomachia-game-pieces/black-triangles-red-border-in-line} 
+\caption{Rithmomachia Black/Odd triangles pieces in a line}
+\label{fig:black-triangles-red-border-in-line}
+\end{figure}
+
+\vskip 3in
+
+\subsection{A harmonic win}
+
+The moves of the second game analyzed here is recorded as follows:
+
+
+\[
+\begin{array}{l|ll|ll|} \hline
+  \quad & Even\ moves & captures & Odd\ moves & captures \\ \hline
+  1 & T^9{\tt c8e8} &  & t^{90}{\tt n7l7} &   \\
+  2 & T^6{\tt c7e7} &  & t^{90}{\tt l7j7} &   \\
+  3 & T^9{\tt e8g8} &  & s^{120}{\tt o7l7} &   \\
+  4 & S^{15}{\tt b8e8} &  & s^{225}{\tt p7m7} &   \\
+  5 & T^9{\tt g8i8} &  & s^{121}{\tt p2p5} &   \\
+  6 & T^6{\tt e7e5} &  & t^{16}{\tt n1l1} &   \\
+  7 & S^{15}{\tt e8h8} &  & t^{16}{\tt l1j1} &   \\
+  8 & T^6{\tt e5g5} &  & s^{28}{\tt o1l1} &   \\
+  9 & S^{15}{\tt h8h5} &  & s^{49}{\tt p1m1} &   \\
+  10 & S^{15}{\tt h5k5} &  & t^{90}{\tt j7h7} &   \\
+  11 & S^{45}{\tt b7e7} & S^{45}\times t^{90} & s^{120}{\tt l7i7} &   \\
+  12 & S^{45}{\tt e7h7} &  & s^{225}{\tt m7j7} &   \\
+  13 & S^{45}{\tt h7h4} &  & s^{120}{\tt i7f7} &   \\
+  14 & S^{45}{\tt h4k4} &  & 1-0 &   \\
+  \quad & \quad & \quad & \quad & \quad \\ \hline
+\end{array}
+\]
+The Python program for playing rithmomachia was revised since the
+game in the previous section. Now Black's strategy is more
+in line with defending against a possible White invasion.
+
+After White's first move, the position is depicted here:
+
+\begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{rithmomachia-2025-05-27-move1w.png}
+\end{center}
+After the second Black move, the position is depicted here:
+
+\begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{rithmomachia-2025-05-27-move2b.png}
+\end{center}
+Imagine, in this position, that the triangle $T^6$ was moved to the side, so there is a
+clear shot from $T^{45}$ to $t^{90}$. 
+You can see that White can't move the $S^{45}$ piece ahead in the {\bf $225$}
+file without fear of being captured (by division) by $t^{90}$ on the next move.
+In some sense, Black's blockage using $t^{90}$ has successfully stymied White's plans for now.
+However, White evades the blockage by
+making a few moves to switch files and invade via the $42$ file.
+The final position is here:
+\begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{rithmomachia-2025-05-27-move14w}
+\end{center}
+
+
+\section{Last but not least}
+
+
+Rithmomachia is a board game emphasizing pattern recognition,
+logical thinking, and numerical relationships between the pieces.
+It has an interesting history, and presents us with
+a pleasant diversion involving logic, strategy, twinged with philosophical
+ideas.
+
+\subsection{Open questions}
+
+A few open questions remain.
+
+\begin{question}
+Assuming best play, does one side had an advantage over the other?
+\end{question}  
+
+There are arguments on both sides:
+\begin{itemize}
+\item  
+We know that Odd/Black has higher total piece value ($1752$)
+than Even/White ($1312$), so Odd/Back has the advantage from this
+point of view.
+\item
+  On the other hand,
+\begin{itemize}
+\item[(a)]
+there are at most $118$ ways for White to capture Black
+by addition, and 
+\item[(b)] there are at most $141$ ways for White to
+  capture Black by subtraction.
+
+\vskip .1in
+\noindent
+Compare that with: 
+\item[(c)] there are at most $82$ ways for
+Black to capture White by addition, and 
+\item[(d)] there are at most $119$ ways for
+  Black to capture White by subtraction.
+\end{itemize}
+So it seems Even/White has the advantage from this perspective.
+\end{itemize}
+
+\vskip .1in
+\postersection{Defense}
+As we've seen in the example games, a proper win can be quickly
+achieved by invading the enemy territory with a fireteam.
+To counter White's infiltration strategy, Black can perform this checklist:
+
+\begin{itemize}
+\item
+scan for two White pieces in Black territory that are part of a
+potential coordinating sequence.
+\item
+Identify if a third White piece can be moved into
+Black territory to complete this sequence.
+\item
+  If such a threat exists, Black must either
+  (a) capture one of White's two pieces already in the formation,
+  (b) block the path of the incoming third White piece.
+\end{itemize}
+Easier said than done!
+\postersectionend
+
+\vskip .1in
+As far as we know, this next one is also an open question.
+
+\begin{question}
+Will Odd/Black always win with perfect play from both sides in rithmomachia? 
+\end{question}
+
+
+
+\begin{figure}[h!] 
+\centering 
+\includegraphics[height=10.5cm,width=8.5cm]{Rithmomachia-game-pieces/Gemini_rithmomachia-battle6.png} 
+\caption{\rithmomachia pieces can get mad too. 
+  Watch out especially for that hot head \circlet{\,}{\tt 8}! (Thanks gemini:-)}
+\label{fig:Gemini_rithmomachia-battle6} 
+\end{figure}
+
+\subsection{Summary of Rithmomachia Rules and Setup}
+
+\begin{itemize}
+    \item \textbf{Board:} The game is played on an 8-by-16 rectangular board. 
+
+    \item \textbf{Players and Pieces:} Each player controls 24 pieces (white/even and black/odd), comprising:
+      8 \emph{circles}, 8 \emph{triangles}, and 8 \emph{squares}. One of these squares is a
+      special multi-valued piece called a {\it pyramid}. 
+
+    \item \textbf{Movement:}
+    \begin{itemize}
+        \item Circles move orthogonally one.
+        \item Triangles move exactly two spaces orthogonally.
+        \item Squares and pyramids move exactly three spaces orthogonally.
+        \item No piece may jump over another; movement must be unobstructed.
+    \end{itemize}
+
+    \item \textbf{Capturing:}
+    \begin{itemize}
+        \item \emph{capture by numbering:} The attacking piece is one move away.
+        \item \emph{capture by addition/subtraction:} One move away for each of the attacking pieces.
+        \item \emph{capture by multiplication/division:} Attacking piece at distance $d$, if its value
+          equals $d$ (divided by/times) the enemy’s value.
+        \item \emph{Siege capture:} An enemy piece is flanked on all sides by friendly pieces.
+    \end{itemize}
+
+    \item \textbf{Victory Conditions:}
+    \begin{itemize}
+        \item \textbf{Proper victory:} 
+          Three of your pieces in arithmetic, geometric, or harmonic progression
+          on the opponent's side of the board.
+        \item \textbf{Common victory:} Some pre-agreed proportion of
+          your opponents pieces (by count or by total value).
+\end{itemize}
+           
+
+    \item \textbf{Philosophical and Mathematical Themes:}
+    \begin{itemize}
+        \item Game emphasizes harmony, proportion, and the balance of opposites (odd/even).
+        \item Influenced by Pythagorean number mysticism and Boethian arithmetic.
+        \item Intended as a didactic tool for exploring numerical relationships and moral virtues.
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{Play a game!}
+
+If you're still curious, then play a game.
+A board is simply an $8\times 16$ grid of squares -- easy to
+make from cardboard and even two chess/checker boards
+side-by-side will work.
+Pieces aren't hard to make with cardboard, scissors, and a
+couple of different colored pens/crayons.
+%The board can be made by taping together a few pieces of graph paper.
+
+%
+%\begin{center}
+%    \adjustimage{max size={0.9\linewidth}{0.8\paperheight}}{Rithmomachia-game-pieces/rithmomachia-set7-PXL_20250530b}
+%\end{center}
+
+Hopefully, you'll have a little fun bringing this forgotten
+game back to life.  If finding a human opponent is challenging,
+consider exploring computer versions, though ({\it caveat emptor})
+be mindful that rule variations may exist.
+
+You can even reach out to the
+author for a free copy of their Python/{\tt SageMath}
+program to get started. The good news is that it's free, while the
+bad news is that there is a learning curve to installing and
+using the mathematical software program {\tt SageMath} that my
+program currently relies on.
+The example in \S \ref{sec:example-game} was played using that program.
+
+\vskip .3in
+\noindent
+{\it Answer to Question \ref{question:1}}:
+$u = (2a+1)^2$, $v = (2b+1)^2$, $w = (2c+1)^2$, $x = (2d+1)^2$.
+
+\vskip .3in
+\begin{thebibliography}{99}
+
+
+\bibitem[CR22]{CR22} 
+B. Codenotti, G. Resta, {\bf Rithmomachia: alla riscoperta di un gioco medievale},
+Messaggerie Scacchistiche, Italy, 2022. ({\it in Italian})
+
+\bibitem[Co84]{Co84} 
+M.E. Coughtrie,
+{\bf Rhythmomachia : a propaedeutic game of the middle ages},
+PhD thesis (Philosophy Dept, Univ. Cape Town), 1984.
+
+\bibitem[dB56]{dB56}
+Claude de Boissi\`ere,
+{\bf The Very Excellent and Ancient Pythagorean Game, called Rithmomachia}
+(in French), 1556.
+
+\bibitem[DG21]{DG21} 
+R. Durnil and T. Guardia
+{\it Rithmomachia: An Academic Proposal of Rules},
+Espacio Matem\'atico Vol. 2 No. 2 (2021) 130--143.
+
+\bibitem[Fo03]{Fo03} Menso Folkerts,
+{\it ``Rithmomachia,'' a Mathematical Game from the Middle Ages},
+in {\bf Essays on Early Medieval Mathematics} (by Menso Folkerts),
+Routledge, 2003.
+
+\bibitem[MacT]{MacT} Herman the Lame biography at
+\newline
+\url{https://mathshistory.st-andrews.ac.uk/Biographies/Hermann_of_Reichenau/}
+
+\bibitem[Ma83]{Ma83}
+Michael Masi, {\bf Boethian Number Theory: A Translation of the
+  {\it De Institutione Arithmetica} (with Introduction and Notes)},
+(Studies in Classical Antiquity, 6.) Amsterdam, 1983. 
+  
+\bibitem[Mo01]{Mo01}
+Ann Moyer,
+{\bf The Philosophers' Game: Rithmomachia in Medieval and Renaissance Europe},
+University of Michigan Press, 2001.
+
+\bibitem[Ne98]{Ne98}
+M. Necek, {\it Rithmomachia: The Lost Mathematical Treasure of the Dark Ages},
+honors thesis, 1998.
+
+\bibitem[Ni00]{Ni00} Nichomachus,
+{\bf Introduction to Arithmetic}, Greece, circa 100 CE.
+\newline
+(translated in \cite{Ma83})
+
+\bibitem[PG22]{PG22}
+I. Papadaki, A. Gagatsis,
+{\it Rythmomachia: A pedagogical arithmetic game},
+Mediterranean Journal for Research in Mathematics
+Education, 19 (2022) 82--94.
+
+\bibitem[Pl00]{Pl00} Plutarch, {\bf Moralia, V}, Greece, circa 100 CE.
+\newline
+\url{https://penelope.uchicago.edu/Thayer/E/Roman/Texts/Plutarch/Moralia/Isis_and_Osiris*/B.html}.  
+  
+\bibitem[Ri46]{Ri46} J.F.C. Richards,
+{\it Boissi\`ere's Pythagorean game,} 
+Scripta Mathematica 12(1946)177-217.
+
+\bibitem[SE11]{SE11} 
+D. E. Smith and C. C. Eaton, {\it Rithmomachia, The Great Medieval Number Game},
+American Mathematical Monthly 18 (1911) 79-80.
+
+
+\end{thebibliography}
+
+%\vskip .2in
+%\begin{center}
+%    \adjustimage{max size={1.0\linewidth}{0.9\paperheight}}{rithmomachia-initial-state_matplotlib4}
+%\end{center}
+
+
+\printindex
+
+\newpage
+
+\begin{sidewaysfigure}
+ \includegraphics[height=11.5cm,width=20.5cm]{rithmomachia-initial-state_matplotlib4}
+ \caption{The rithmomachia board.}
+%\label{swim}
+\end{sidewaysfigure}
+
+
+
+\end{document}
