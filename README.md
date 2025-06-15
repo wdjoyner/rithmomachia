@@ -37,9 +37,13 @@ Classes:
 
 * Piece
    Each of these subclasses have get_potential_moves and valid_moves methods:
+
 ** Circle(Piece)
+
 ** Triangle(Piece)
+
 ** Square(Piece)
+
 ** Pyramid(Piece)  (this also has a lose_subpiece method)
 
 * Player
@@ -58,7 +62,7 @@ Classes:
   GameSetupDialog(tk.Toplevel), for displaying and communicating 
   with the user.
 
-To work with this file: Save this file as 
+To work with this file: Save the Python rithmo.py file as 
  
 rithmo.py 
 
