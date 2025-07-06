@@ -522,7 +522,6 @@ def board_plot(game_state, pyramid=True):
 
     EXAMPLES:
         sage: GS = board_initial_matrix()
-         <8x16 matrix game state omitted>
         sage: is_valid_move(GS, (6, 0), (3, 0), "white")
         Valid move of a white square.
         True
@@ -540,6 +539,59 @@ def board_plot(game_state, pyramid=True):
         Launched png viewer for Graphics object consisting of 152 graphics primitives
 
     """
+    lowercase_alphabet = string.ascii_lowercase
+    GS = copy(game_state)
+    PR, (c,C,p,P,t,T,s,S) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    if pyramid:
+        # --- Draw Board Grid and Labels ---
+        plot_verlist = [line([(i + 0.5, -0.5), (i + 0.5, 7.5)], color="black", axes=False) for i in range(-1,16)]
+        plot_xaxislist = [text(str(lowercase_alphabet[i]), (i + 0.5, -1), color="black", axes=False) for i in range(16)]
+        plot_horlist = [line([(-0.5, j+ 0.5), (15.5, j + 0.5)], color="black", axes=False) for j in range(-1,8)]
+        plot_yaxislist = [text(str(8-j), (-1, j+0.5), color="black", axes=False) for j in range(8)]
+        ver_lines  = sum(plot_verlist) + sum(plot_xaxislist)
+        hor_lines  = sum(plot_horlist) + sum(plot_yaxislist)
+        
+        # --- Get Piece Data ---
+        # FIX: Removed verbose=True argument from calls
+        pos_w = positions_w(GS)
+        pos_b = positions_b(GS)
+
+        # --- Format Piece Data for Plotting ---
+        white_circles =   [["C", item[1].degree(), (item[0][1], 7-item[0][0])] for item in pos_w if C in item[1].variables() and not P in item[1].variables()]
+        white_triangles = [["T", item[1].degree(), (item[0][1], 7-item[0][0])] for item in pos_w if T in item[1].variables() and not P in item[1].variables()]
+        white_squares =   [["S", item[1].degree(), (item[0][1], 7-item[0][0])] for item in pos_w if S in item[1].variables() and not P in item[1].variables()]
+        white_pyramid =   [["P", item[1].degree(P), (item[0][1], 7-item[0][0])] for item in pos_w if P in item[1].variables()]
+
+        black_circles =   [["c", item[1].degree(), (item[0][1], 7-item[0][0])] for item in pos_b if c in item[1].variables() and not p in item[1].variables()]
+        black_triangles = [["t", item[1].degree(), (item[0][1], 7-item[0][0])] for item in pos_b if t in item[1].variables() and not p in item[1].variables()]
+        black_squares =   [["s", item[1].degree(), (item[0][1], 7-item[0][0])] for item in pos_b if s in item[1].variables() and not p in item[1].variables()]
+        black_pyramid =   [["p", item[1].degree(p), (item[0][1], 7-item[0][0])] for item in pos_b if p in item[1].variables()]
+
+        # --- Generate Piece Graphics ---
+        white_plots = sum([circle_w(pc[2], str(pc[1])) for pc in white_circles]) + \
+                      sum([triangle_w(pc[2], str(pc[1])) for pc in white_triangles]) + \
+                      sum([square_w(pc[2], str(pc[1])) for pc in white_squares])
+        
+        black_plots = sum([circle_b(pc[2], str(pc[1])) for pc in black_circles]) + \
+                      sum([triangle_b(pc[2], str(pc[1])) for pc in black_triangles]) + \
+                      sum([square_b(pc[2], str(pc[1])) for pc in black_squares])
+
+        if white_pyramid:
+            wp_data = white_pyramid[0]
+            white_plots += pyramid_w_simple(wp_data[2], str(wp_data[1]))
+            
+        if black_pyramid:
+            bp_data = black_pyramid[0]
+            black_plots += pyramid_b_simple(bp_data[2], str(bp_data[1]))
+
+        final_plot = white_plots + black_plots + ver_lines + hor_lines
+        return final_plot 
+    else:
+        # Fallback to the older board_plot2 if pyramid is False
+        return board_plot2(GS, vertical=False)
+
+""" old code begin
     lowercase_alphabet = string.ascii_lowercase
     GS = copy(game_state)
     c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
@@ -590,6 +642,7 @@ def board_plot(game_state, pyramid=True):
         return final_plot 
     else:
         return board_plot(GS, vertical=False)
+old code end """ 
 
 
 def display_board_matplotlib(game_state_sage_matrix, dpi=300, highlight_pieces=None):
@@ -1661,30 +1714,30 @@ def positions_w(game_state, verbose = False):
     If GS is a game state matrix then this function returns
     all values and matrix coordinates of white pieces.
     
-    QUESTION: Should the pyramid be broken down first?
+    The verbose option has no effect (on purpose, to be consistent with earlier code...).
 
     EXAMPLES:
         sage: GS = board_initial_matrix()
         sage: positions_w(GS)
-        [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), 
-         (2, 3), (3, 1), (3, 2), (3, 3), (4, 1), (4, 2), (4, 3), (5, 1),
-         (5, 2), (5, 3), (6, 0), (6, 1), (6, 2), (7, 0), (7, 1), (7, 2)]
-        sage: positions_w(GS, verbose = True)
          [[(0, 0), S^289], [(0, 1), S^153], [(0, 2), T^81], [(1, 0), S^169], 
           [(1, 1), P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S], [(1, 2), T^72], [(2, 1), T^49], 
-          [(2, 2), C^64], [(2, 3), C^8], [(3, 1), T^42], [(3, 2), C^36], [(3, 3), C^6], [(4, 1), T^20], 
-          [(4, 2), C^16], [(4, 3), C^4], [(5, 1), T^25], [(5, 2), C^4], [(5, 3), C^2], [(6, 0), S^81], [(6, 1), S^45], 
-          [(6, 2), T^6], [(7, 0), S^25], [(7, 1), S^15], [(7, 2), T^9]]
+          [(2, 2), C^64], [(2, 3), C^8], [(3, 1), T^42], [(3, 2), C^36], 
+          [(3, 3), C^6], [(4, 1), T^20], [(4, 2), C^16], [(4, 3), C^4], 
+          [(5, 1), T^25], [(5, 2), C^4], [(5, 3), C^2], [(6, 0), S^81], 
+          [(6, 1), S^45], [(6, 2), T^6], [(7, 0), S^25], [(7, 1), S^15], [(7, 2), T^9]]
         sage: GSp = board_initial_matrix(pyramid_decomposition = True)
         sage: positions_w(GSp, verbose=True)
-       
+         [[(0, 0), S^289], [(0, 1), S^153], [(0, 2), T^81], [(1, 0), S^169],
+          [(1, 1), P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S], [(1, 2), T^72], [(2, 1), T^49],
+          [(2, 2), C^64], [(2, 3), C^8], [(3, 1), T^42], [(3, 2), C^36],
+          [(3, 3), C^6], [(4, 1), T^20], [(4, 2), C^16], [(4, 3), C^4],
+          [(5, 1), T^25], [(5, 2), C^4], [(5, 3), C^2], [(6, 0), S^81],
+          [(6, 1), S^45], [(6, 2), T^6], [(7, 0), S^25], [(7, 1), S^15], [(7, 2), T^9]]
 
     """
     GS = copy(game_state)
-    c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
-    PR = ZZ[c,C,p,P,t,T,s,S]
-    M = Mat(PR, 8, 16)
-    A = M(GS)
+    PR, (_,C,_,P,_,T,_,S) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    A = Mat(PR, 8, 16)(GS)
     pos = []
     for i in range(8):
         for j in range(16):
@@ -1693,39 +1746,32 @@ def positions_w(game_state, verbose = False):
                 continue
             vars_g = g.variables()
             if (C in vars_g) or (T in vars_g) or (S in vars_g) or (P in vars_g):
-                if verbose:
                     pos.append([(i, j), g])
-                else:
-                    pos.append((i, j))
     return pos
 
 
-
-def positions_b(game_state, verbose = False):
+def positions_b(game_state, verbose=False):
     """
     If GS is a game state matrix then this function returns
     all values and matrix coordinates of black pieces.
-    
-    QUESTION: Should the pyramid be broken down first?
+
+    The verbose option has no effect (on purpose, to be consistent with earlier code...).
 
     EXAMPLES:
         sage: GS = board_initial_matrix()
         sage: pos_b = positions_b(GS); len(pos_b)
         24
         sage: positions_b(GS, verbose = True)
-        [(t^16, 0, 13), (s^28, 0, 14), (s^49, 0, 15), (t^12, 1, 13),
-         (s^66, 1, 14), (s^121, 1, 15), (c^3, 2, 12), (c^9, 2, 13),
-         (t^36, 2, 14), (c^5, 3, 12), (c^25, 3, 13), (t^30, 3, 14),
-         (c^7, 4, 12), (c^49, 4, 13), (t^56, 4, 14), (c^9, 5, 12),
-         (c^81, 5, 13), (t^64, 5, 14), (t^90, 6, 13), (s^120, 6, 14),
-         (s^225, 6, 15), (t^100, 7, 13), (s^190 + p, 7, 14), (s^361, 7, 15)]
-
+         [[(0, 13), t^16], [(0, 14), s^28], [(0, 15), s^49], [(1, 13), t^12],
+          [(1, 14), s^66], [(1, 15), s^121], [(2, 12), c^3], [(2, 13), c^9],
+          [(2, 14), t^36], [(3, 12), c^5], [(3, 13), c^25], [(3, 14), t^30],
+          [(4, 12), c^7], [(4, 13), c^49], [(4, 14), t^56], [(5, 12), c^9],
+          [(5, 13), c^81], [(5, 14), t^64], [(6, 13), t^90], [(6, 14), s^120],
+          [(6, 15), s^225], [(7, 13), t^100], [(7, 14), s^190 + p], [(7, 15), s^361]]
     """
     GS = copy(game_state)
-    c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
-    PR = ZZ[c,C,p,P,t,T,s,S]
-    M = Mat(PR, 8, 16)
-    A = M(GS)
+    PR, (c,_,p,_,t,_,s,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    A = Mat(PR, 8, 16)(GS)
     pos = []
     for i in range(8):
         for j in range(16):
@@ -1734,20 +1780,17 @@ def positions_b(game_state, verbose = False):
                 continue
             vars_g = g.variables()
             if (c in vars_g) or (t in vars_g) or (s in vars_g) or (p in vars_g):
-                if verbose:
                     pos.append([(i, j), g])
-                else:
-                    pos.append((i, j))
     return pos
 
 
-############################################
+########################################################################################
 ## The default is MOVES_CIRCLE_DIAGONAL = False.
 ## If MOVES_CIRCLE_DIAGONAL = True:
 ## rename moves_circle_white and moves_circle_black as
 ## moves_circle_white2 and moves_circle_black2, and then
 ## With this name change, the circle moves are diagonal
-###########################################
+#######################################################################################
 
 def moves_circle_white(game_state, verbose = False):
     """
@@ -1766,26 +1809,118 @@ def moves_circle_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    cpw = circle_positions_white(GS, verbose = False)
-    cpw0 = circle_positions_white(GS, verbose = True)
+    PR, (_,C,_,_,_,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the White Circle(s)
+    cpw_coords = [item[0] for item in positions_w(GS) if C in item[1].variables()]
+
+    # Define the possible move patterns for a circle (orthogonal)
+    circle_move_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+    mvs = []
+    for start_pos in cpw_coords:
+        for inc in circle_move_increments:
+            dest = (start_pos[0] + inc[0], start_pos[1] + inc[1])
+            
+            if in_bounds(dest):
+                # A circle only needs to check if the destination is empty.
+                if dest not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
+    return mvs
+
+
+def moves_circle_black(game_state, verbose = False):
+    """
+    Given the game state matrix, GS, this function returns all 
+    coordinates for which black has a legal circle move.
+
+    CIRCLE_MOVE_ORTHOGONAL = True
+
+    EXAMPLES:
+        sage: GS = board_initial_matrix()
+        sage: moves_circle_black(GS, verbose = True)
+         [(c^3, (2, 12), (2, 11)), (c^3, (2, 12), (1, 12)),
+          (c^5, (3, 12), (3, 11)), (c^7, (4, 12), (4, 11)),
+          (c^9, (5, 12), (5, 11)), (c^9, (5, 12), (6, 12))]
+        
+    """
+    GS = copy(game_state)
+    PR, (c,_,_,_,_,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the Black Circle(s)
+    cpb_coords = [item[0] for item in positions_b(GS) if c in item[1].variables()]
+    
+    # Define the possible move patterns for a circle (orthogonal)
+    circle_move_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+    mvs = []
+    for start_pos in cpb_coords:
+        for inc in circle_move_increments:
+            dest = (start_pos[0] + inc[0], start_pos[1] + inc[1])
+            
+            if in_bounds(dest):
+                # A circle only needs to check if the destination is empty.
+                if dest not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
+    return mvs
+
+
+
+def moves_circle_black2(game_state, verbose = False):
+    """
+    Given the game state matrix, GS, this function returns all 
+    coordinates for which black has a legal circle move.
+
+    MOVES_CIRCLE_DIAGONAL = True
+
+    EXAMPLES:
+        sage: GS = board_initial_matrix()
+        sage: moves_circle_black2(GS, verbose = True)
+        [(c^3, (2, 12), (1, 11)), (c^3, (2, 12), (3, 11)),
+         (c^9, (2, 13), (1, 12)), (c^5, (3, 12), (2, 11)),
+         (c^5, (3, 12), (4, 11)), (c^7, (4, 12), (3, 11)),
+         (c^7, (4, 12), (5, 11)), (c^9, (5, 12), (4, 11)),
+         (c^9, (5, 12), (6, 11)), (c^81, (5, 13), (6, 12))]
+
+    """
+    GS = copy(game_state)
+    cpb = circle_positions_black(GS, verbose = False)
+    cpb0 = circle_positions_black(GS, verbose = True)
     pos_w = positions_w(GS)
     pos_b = positions_b(GS)
     pos = pos_w + pos_b
     #print(pos)
-    circle_move_increments = [[1, 0], [-1, 0], [0, 1], [0, -1]]  ## MOVES_CIRCLE_ORTHOGONAL = True
+    circle_move_increments = [[1, 1], [-1, 1], [1, -1], [-1, -1]]  ## MOVES_CIRCLE_DIAGONAL = True
     mvs = []
-    for x in cpw:
+    for x in cpb:
         #print(x, x[0], x[1])
         x_new = [(x[0]+a[0], x[1]+a[1]) for a in circle_move_increments]
         for x0 in x_new:
-            #print(c, c0, c in pos, c0 in pos)
+            #print(x, x0, x in pos, x0 in pos)
             if not(x0 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
                 mvs = mvs + [(x, x0)]
             if not(x0 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                ii = cpw.index(x)
-                mvs = mvs + [(cpw0[ii][0], x, x0)]
+                ii = cpb.index(x)
+                mvs = mvs + [(cpb0[ii][0], x, x0)]
     return mvs
-
 
 def moves_circle_white2(game_state, verbose = False):
     """
@@ -1826,78 +1961,7 @@ def moves_circle_white2(game_state, verbose = False):
                 mvs = mvs + [(cpw0[ii][0], x, x0)]
     return mvs
 
-def moves_circle_black(game_state, verbose = False):
-    """
-    Given the game state matrix, GS, this function returns all 
-    coordinates for which black has a legal circle move.
 
-    CIRCLE_MOVE_ORTHOGONAL = True
-
-    EXAMPLES:
-        sage: GS = board_initial_matrix()
-        sage: moves_circle_black(GS, verbose = True)
-         [(c^3, (2, 12), (1, 12)), (c^9, (5, 12), (6, 12))]
-        
-
-    """
-    GS = copy(game_state)
-    cpb = circle_positions_black(GS, verbose = False)
-    cpb0 = circle_positions_black(GS, verbose = True)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
-    circle_move_increments = [[1, 0], [-1, 0], [0, 1], [0, -1]]  ## MOVES_CIRCLE_ORTHOGONAL = True
-    mvs = []
-    for x in cpb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in circle_move_increments]
-        for x0 in x_new:
-            #print(x, x0, x in pos, x0 in pos)
-            if not(x0 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                ii = cpb.index(x)
-                mvs = mvs + [(cpb0[ii][0], x, x0)]
-    return mvs
-    
-def moves_circle_black2(game_state, verbose = False):
-    """
-    Given the game state matrix, GS, this function returns all 
-    coordinates for which black has a legal circle move.
-
-    MOVES_CIRCLE_DIAGONAL = True
-
-    EXAMPLES:
-        sage: GS = board_initial_matrix()
-        sage: moves_circle_black2(GS, verbose = True)
-        [(c^3, (2, 12), (1, 11)), (c^3, (2, 12), (3, 11)),
-         (c^9, (2, 13), (1, 12)), (c^5, (3, 12), (2, 11)),
-         (c^5, (3, 12), (4, 11)), (c^7, (4, 12), (3, 11)),
-         (c^7, (4, 12), (5, 11)), (c^9, (5, 12), (4, 11)),
-         (c^9, (5, 12), (6, 11)), (c^81, (5, 13), (6, 12))]
-
-    """
-    GS = copy(game_state)
-    cpb = circle_positions_black(GS, verbose = False)
-    cpb0 = circle_positions_black(GS, verbose = True)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
-    circle_move_increments = [[1, 1], [-1, 1], [1, -1], [-1, -1]]  ## MOVES_CIRCLE_DIAGONAL = True
-    mvs = []
-    for x in cpb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in circle_move_increments]
-        for x0 in x_new:
-            #print(x, x0, x in pos, x0 in pos)
-            if not(x0 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                ii = cpb.index(x)
-                mvs = mvs + [(cpb0[ii][0], x, x0)]
-    return mvs
 
 def moves_triangle_white(game_state, verbose = False):
     """
@@ -1913,33 +1977,44 @@ def moves_triangle_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    tpw  = triangle_positions_white(GS, verbose = False)
-    tpw0 = triangle_positions_white(GS, verbose = True)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,_,_,_,_,T,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the White Triangle(s)
+    tpw_coords = [item[0] for item in positions_w(GS) if T in item[1].variables()]
+
+    # Define the possible move patterns for a triangle
+    triangle_move_increments = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    path_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     mvs = []
-    for x in tpw:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+2, x[1]), (x[0]-2, x[1]), (x[0], x[1]-2), (x[0], x[1]+2)]
-        x_no = [(x[0]+1, x[1]), (x[0]-1, x[1]), (x[0], x[1]-1), (x[0], x[1]+1)] ## can't jump over a piece using a triangle
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no[ii]
-            #print(x, x0, x in pos, x0 in pos)
-            if not(x0 in pos) and not(x1 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and not(x1 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                jj = tpw.index(x)
-                mvs = mvs + [(tpw0[jj][0], x, x0)]
+    for start_pos in tpw_coords:
+        for i in range(len(triangle_move_increments)):
+            dest = (start_pos[0] + triangle_move_increments[i][0], start_pos[1] + triangle_move_increments[i][1])
+            
+            if in_bounds(dest):
+                # Check the intermediate square
+                hop1 = (start_pos[0] + path_increments[i][0], start_pos[1] + path_increments[i][1])
+
+                if dest not in pos_coords and hop1 not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
     return mvs
+
     
 def moves_triangle_black(game_state, verbose = False):
     """
     Given the game state matrix, GS, this function returns all 
     coordinates for which Black has a legal triangle move.
     These pieces always move orthogonally.
+
 
     EXAMPLES:
         sage: GS = board_initial_matrix()
@@ -1950,33 +2025,44 @@ def moves_triangle_black(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    tpb  = triangle_positions_black(GS, verbose = False)
-    tpb0 = triangle_positions_black(GS, verbose = True)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,_,_,_,t,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the Black Triangle(s)
+    tpb_coords = [item[0] for item in positions_b(GS) if t in item[1].variables()]
+
+    # Define the possible move patterns for a triangle
+    triangle_move_increments = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    path_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     mvs = []
-    for x in tpb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+2, x[1]), (x[0]-2, x[1]), (x[0], x[1]-2), (x[0], x[1]+2)]
-        x_no = [(x[0]+1, x[1]), (x[0]-1, x[1]), (x[0], x[1]-1), (x[0], x[1]+1)] ## can't jump over a piece using a triangle
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no[ii]
-            #print(x, x0, x in pos, x0 in pos)
-            if not(x0 in pos) and not(x1 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and not(x1 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                jj = tpb.index(x)
-                mvs = mvs + [(tpb0[jj][0], x, x0)]
+    for start_pos in tpb_coords:
+        for i in range(len(triangle_move_increments)):
+            dest = (start_pos[0] + triangle_move_increments[i][0], start_pos[1] + triangle_move_increments[i][1])
+            
+            if in_bounds(dest):
+                # Check the intermediate square
+                hop1 = (start_pos[0] + path_increments[i][0], start_pos[1] + path_increments[i][1])
+
+                if dest not in pos_coords and hop1 not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
     return mvs
+
     
 def moves_square_white(game_state, verbose = False):
     """
     Given the game state matrix, GS, this function returns all 
     coordinates for which White has a legal square move.
     These pieces always move orthogonally.
+
 
     EXAMPLES:
         sage: GS = board_initial_matrix()
@@ -1985,30 +2071,39 @@ def moves_square_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    spw  = square_positions_white(GS, verbose = False)
-    spw0 = square_positions_white(GS, verbose = True)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,_,_,P,_,_,_,S) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the White Square(s), excluding the pyramid
+    spw_coords = [item[0] for item in positions_w(GS) if S in item[1].variables() and not P in item[1].variables()]
+
+    # Define the possible move patterns for a square
+    square_move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
     mvs = []
-    for x in spw:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+3, x[1]), (x[0]-3, x[1]), (x[0], x[1]-3), (x[0], x[1]+3)]
-        x_no1 = [(x[0]+1, x[1]), (x[0]-1, x[1]), (x[0], x[1]-1), (x[0], x[1]+1)] ## can't jump over a piece using a square
-        x_no2 = [(x[0]+2, x[1]), (x[0]-2, x[1]), (x[0], x[1]-2), (x[0], x[1]+2)] ## can't jump over a piece using a square
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            #print(x, x0, x in pos, x0 in pos)
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                jj = spw.index(x)
-                mvs = mvs + [(spw0[jj][0], x, x0)]
+    for start_pos in spw_coords:
+        for i in range(len(square_move_increments)):
+            dest = (start_pos[0] + square_move_increments[i][0], start_pos[1] + square_move_increments[i][1])
+            
+            if in_bounds(dest):
+                # Check the two intermediate squares
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+
+                if dest not in pos_coords and hop1 not in pos_coords and hop2 not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
     return mvs
+
     
 def moves_square_black(game_state, verbose = False):
     """
@@ -2016,36 +2111,45 @@ def moves_square_black(game_state, verbose = False):
     coordinates for which Black has a legal square move.
     These pieces always move orthogonally.
 
+
     EXAMPLES:
         sage: GS = board_initial_matrix()
         sage: moves_square_black(GS, verbose = True)
-        [(s^121, (1, 15), (4, 15)), (s^225, (6, 15), (3, 15))]
+         [(s^121, (1, 15), (4, 15)), (s^225, (6, 15), (3, 15))]
 
     """
     GS = copy(game_state)
-    spb  = square_positions_black(GS, verbose = False)
-    spb0 = square_positions_black(GS, verbose = True)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,_,p,_,_,_,s,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the Black Square(s)
+    spb_coords = [item[0] for item in positions_b(GS) if s in item[1].variables() and not p in item[1].variables()]
+
+    # Define the possible move patterns for a square
+    square_move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
     mvs = []
-    for x in spb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+3, x[1]), (x[0]-3, x[1]), (x[0], x[1]-3), (x[0], x[1]+3)]
-        x_no1 = [(x[0]+1, x[1]), (x[0]-1, x[1]), (x[0], x[1]-1), (x[0], x[1]+1)] ## can't jump over a piece using a square
-        x_no2 = [(x[0]+2, x[1]), (x[0]-2, x[1]), (x[0], x[1]-2), (x[0], x[1]+2)] ## can't jump over a piece using a square
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            #print(x, x0, x in pos, x0 in pos)
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and not(verbose) and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and verbose and not(x0[0]<0) and not(x0[0]>7) and not(x0[1]<0) and not(x0[1]>15):
-                jj = spb.index(x)
-                mvs = mvs + [(spb0[jj][0], x, x0)]
+    for start_pos in spb_coords:
+        for i in range(len(square_move_increments)):
+            dest = (start_pos[0] + square_move_increments[i][0], start_pos[1] + square_move_increments[i][1])
+            
+            if in_bounds(dest):
+                # Check the two intermediate squares
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+
+                if dest not in pos_coords and hop1 not in pos_coords and hop2 not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
     return mvs
 
 
@@ -2063,42 +2167,46 @@ def moves_pyramid_black(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    ppb  = pyramid_positions_black(GS, verbose = False)
-    ppb0 = pyramid_positions_black(GS, verbose = True)
-    i = ppb[0][0]
-    j = ppb[0][1]
-    g = GS[i,j]
-    #print(g)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    vars = g.variables()
-    #print(vars)
-    square_move_increments = [[3, 0], [-3, 0], [0, 3], [0, -3]]  
-    square_move_subincrements1 = [[1, 0], [-1, 0], [0, 1], [0, -1]]  
-    square_move_subincrements2 = [[2, 0], [-2, 0], [0, 2], [0, -2]]  
+    PR, (_,_,p,_,_,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the Black Pyramid(s)
+    ppb_coords = [item[0] for item in positions_b(GS) if p in item[1].variables()]
+
+    # Define the possible move patterns for a square/pyramid
+    square_move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
     mvs = []
-    for x in ppb:
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in square_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements1 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no2 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements2 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and not(verbose):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and verbose:
-                jj = ppb.index(x)
-                mvs = mvs + [(ppb0[jj][0], x, x0)]
+    for start_pos in ppb_coords:
+        for i in range(len(square_move_increments)):
+            dest = (start_pos[0] + square_move_increments[i][0], start_pos[1] + square_move_increments[i][1])
+            
+            if in_bounds(dest):
+                # Check the two intermediate squares
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+
+                if dest not in pos_coords and hop1 not in pos_coords and hop2 not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
     return mvs
+
 
 
 def moves_pyramid_white(game_state, verbose = False):
     """
     Given the game state matrix, this function returns all 
     coordinates for which White has a legal pyramid move.
+    This version correctly checks for blocking pieces.
 
     PYRAMID_DECOMPOSITION_SQUARES_ONLY = True
 
@@ -2109,35 +2217,36 @@ def moves_pyramid_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    ppw  = pyramid_positions_white(GS, verbose = False)
-    ppw0 = pyramid_positions_white(GS, verbose = True)
-    i = ppw[0][0]
-    j = ppw[0][1]
-    g = GS[i,j]
-    #print(g)
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    vars = g.variables()
-    #print(vars)
-    square_move_increments = [[3, 0], [-3, 0], [0, 3], [0, -3]]  
-    square_move_subincrements1 = [[1, 0], [-1, 0], [0, 1], [0, -1]]  
-    square_move_subincrements2 = [[2, 0], [-2, 0], [0, 2], [0, -2]]  
+    
+    # Get detailed data for all pieces and extract just the coordinates for blocker checking.
+    pos_data = positions_w(GS) + positions_b(GS)
+    pos_coords = {item[0] for item in pos_data} # Use a set for faster lookups
+
+    # Get just the coordinates of the White Pyramid(s)
+    ppw_coords = [item[0] for item in positions_w(GS) if P in item[1].variables()]
+
+    # Define the possible move patterns for a square/pyramid
+    square_move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
     mvs = []
-    for x in ppw:
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in square_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements1 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no2 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements2 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and not(verbose):
-                mvs = mvs + [(x, x0)]
-            if not(x0 in pos) and not(x1 in pos) and not(x2 in pos) and verbose:
-                jj = ppw.index(x)
-                mvs = mvs + [(ppw0[jj][0], x, x0)]
+    for start_pos in ppw_coords:
+        for i in range(len(square_move_increments)):
+            dest = (start_pos[0] + square_move_increments[i][0], start_pos[1] + square_move_increments[i][1])
+            
+            if in_bounds(dest):
+                # Check the two intermediate squares
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+
+                if dest not in pos_coords and hop1 not in pos_coords and hop2 not in pos_coords:
+                    if verbose:
+                        attacker_poly = next((item[1] for item in pos_data if item[0] == start_pos), None)
+                        if attacker_poly:
+                            mvs.append((attacker_poly, start_pos, dest))
+                    else:
+                        mvs.append((start_pos, dest))
     return mvs
     
 def moves_pyramid_black2(game_state, verbose = False):
@@ -3049,37 +3158,29 @@ def captures_circle_white(game_state, verbose = False):
         
     """
     GS = copy(game_state)
-    cpw = circle_positions_white(GS, verbose = False)
-    cpw0 = circle_positions_white(GS, verbose = True)                     ## don't need piece symbolically, only value(s)
-    cpw00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in cpw]    ## <--- use instead
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,C,_,P,_,T,_,S) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    white_pos_data = positions_w(GS)
+    black_occupied_coords = {item[0] for item in positions_b(GS)}
+    
+    attacker_coords = [item[0] for item in white_pos_data if C in item[1].variables()]
+    circle_move_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    
     cps = []
-    circle_move_increments = [[1, 0], [-1, 0], [0, 1], [0, -1]]  ## MOVES_CIRCLE_ORTHOGONAL = True
-    for x in cpw:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in circle_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        for x0 in x_new:
-            in_bds = in_bounds(x0)  ## a Boolean value
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #cps = cps + []
-            #print(x, x0, x in pos, x0 in pos, value_of_piece(GS, x[0], x[1]), value_of_piece(GS, x0[0], x0[1]))
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_b) and values_match and not(verbose) and in_bds: 
-                ii = cpw.index(x)
-                x1 = (x[0], x[1], cpw00[ii][2])
-                x01 = (x0[0], x0[1], cpw00[ii][2])
-                cps = cps + [(x1, x01)]                                                    
-            if (x0 in pos_b) and values_match and verbose and in_bds:  
-                ii = cpw.index(x)
-                x1 = (x[0], x[1], cpw00[ii][2])
-                x01 = (x0[0], x0[1], cpw00[ii][2])
-                cps = cps + [(x1, x01, cpw0[ii][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]    
-            continue                         
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for inc in circle_move_increments:
+            dest = (start_pos[0] + inc[0], start_pos[1] + inc[1])
+            if dest in black_occupied_coords:
+                victim_values = value_of_piece(GS, dest[0], dest[1])
+                if not set(attacker_values).isdisjoint(set(victim_values)):
+                    if verbose:
+                        cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                    else:
+                        cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
+
+
     
 def captures_circle_black(game_state, verbose = False):
     """
@@ -3098,39 +3199,32 @@ def captures_circle_black(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    cpb  = circle_positions_black(GS, verbose = False)
-    cpb0 = circle_positions_black(GS, verbose = True)                   ## don't need piece symbolically, only value(s)
-    cpb00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in cpb]    ## <--- use instead
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (c,_,_,_,_,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # Get detailed data and create coordinate sets for fast lookups
+    white_occupied_coords = {item[0] for item in positions_w(GS)}
+    
+    # Get coordinates of potential attackers
+    attacker_coords = [item[0] for item in positions_b(GS) if c in item[1].variables()]
+    
+    # Define move patterns
+    circle_move_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    
     cps = []
-    circle_move_increments = [[1, 0], [-1, 0], [0, 1], [0, -1]]  ## MOVES_CIRCLE_ORTHOGONAL = True
-    for x in cpb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in circle_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        for x0 in x_new:
-            in_bds = in_bounds(x0)  ## a Boolean value
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #cps = cps + []
-            #print(x, x0, x in pos, x0 in pos, value_of_piece(GS, x[0], x[1]), value_of_piece(GS, x0[0], x0[1]))
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_w) and values_match and not(verbose) and in_bds: 
-                ii = cpb.index(x)
-                x1 = (x[0], x[1], cpb00[ii][2])
-                x01 = (x0[0], x0[1], cpb00[ii][2])
-                cps = cps + [(x1, x01)]                                           
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_w) and values_match and verbose and in_bds:  
-                ii = cpb.index(x)
-                x1 = (x[0], x[1], cpb00[ii][2])
-                x01 = (x0[0], x0[1], cpb00[ii][2])
-                cps = cps + [(x1, x01, cpb0[ii][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #ii = cpb.index(x)
-                #cps = cps + [(cpb0[ii][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for inc in circle_move_increments:
+            dest = (start_pos[0] + inc[0], start_pos[1] + inc[1])
+            
+            if dest in white_occupied_coords:
+                # Destination has an enemy, check if values match for a capture
+                victim_values = value_of_piece(GS, dest[0], dest[1])
+                if not set(attacker_values).isdisjoint(set(victim_values)):
+                    # Capture is valid
+                    if verbose:
+                        cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                    else:
+                        cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
     
 
@@ -3163,46 +3257,31 @@ def captures_triangle_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    tpw  = triangle_positions_white(GS, verbose = False)
-    tpw0 = triangle_positions_white(GS, verbose = True)     ## don't need piece symbolically, only value(s)
-    tpw00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in tpw]    ## <--- use instead
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,C,_,P,_,T,_,S) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    all_occupied_coords = {item[0] for item in positions_w(GS) + positions_b(GS)}
+    black_occupied_coords = {item[0] for item in positions_b(GS)}
+    
+    attacker_coords = [item[0] for item in positions_w(GS) if T in item[1].variables()]
+    move_increments = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    path_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     cps = []
-    PS1 = [(1,0),(-1,0),(0,1),(0,-1)]
-    PS2 = [(2,0),(-2,0),(0,2),(0,-2)]
-    for x in tpw:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in PS2 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 =[(x[0]+a[0], x[1]+a[1]) for a in PS1 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            in_bds = in_bounds(x0)
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #cps = cps + []
-            #print(x, x0, x in pos, x0 in pos, value_of_piece(GS, x[0], x[1]), value_of_piece(GS, x0[0], x0[1]), in_bds)
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_b) and not(x1 in pos) and values_match and not(verbose) and in_bds:
-                ii = tpw.index(x)
-                x1 = (x[0], x[1], tpw00[ii][2])
-                x01 = (x0[0], x0[1], tpw00[ii][2])
-                cps = cps + [(x1, x01)]                                           
-                #print("0000")
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_b) and not(x1 in pos) and values_match and verbose and in_bds:
-                ii = tpw.index(x)
-                x1 = (x[0], x[1], tpw00[ii][2])
-                x01 = (x0[0], x0[1], tpw00[ii][2])
-                cps = cps + [(x1, x01, tpw0[ii][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #print("0001")
-                #ii = tpw.index(x)
-                #cps = cps + [(tpw0[ii][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for i in range(len(move_increments)):
+            dest = (start_pos[0] + move_increments[i][0], start_pos[1] + move_increments[i][1])
+            hop1 = (start_pos[0] + path_increments[i][0], start_pos[1] + path_increments[i][1])
+            if dest in black_occupied_coords and hop1 not in all_occupied_coords:
+                victim_values = value_of_piece(GS, dest[0], dest[1])
+                if not set(attacker_values).isdisjoint(set(victim_values)):
+                    if verbose:
+                        cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                    else:
+                        cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
+
+
     
 def captures_triangle_black(game_state, verbose = False):
     """
@@ -3234,48 +3313,42 @@ def captures_triangle_black(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    tpb  = triangle_positions_black(GS, verbose = False)
-    tpb0 = triangle_positions_black(GS, verbose = True)     ## don't need piece symbolically, only value(s)
-    tpb00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in tpb]    ## <--- use instead
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,_,_,_,t,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    # Get detailed data and create coordinate sets for fast lookups
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+    all_occupied_coords = {item[0] for item in white_pos_data + black_pos_data}
+    white_occupied_coords = {item[0] for item in white_pos_data}
+
+    # Get coordinates of potential attackers (black triangles)
+    attacker_coords = [item[0] for item in black_pos_data if t in item[1].variables()]
+
+    # Define move patterns
+    move_increments = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    path_increments = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     cps = []
-    PS1 = [(1,0),(-1,0),(0,1),(0,-1)]
-    PS2 = [(2,0),(-2,0),(0,2),(0,-2)]
-    for x in tpb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in PS2 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in PS1 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        for x0 in x_new:
-            ii = x_new.index(x0)    ## that is, x0 = x_new[ii]
-            x1 = x_no1[ii]
-            in_bds = in_bounds(x0)
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #cps = cps + []
-            #print(x, x0, x in pos, x0 in pos, value_of_piece(GS, x[0], x[1]), value_of_piece(GS, x0[0], x0[1]), in_bds)
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_w) and not(x1 in pos) and values_match and not(verbose) and in_bds:
-                jj = tpb.index(x)
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01)]                                           
-                #print("0000")
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_w) and not(x1 in pos) and values_match and verbose and in_bds:
-                #print(x, x0, x0 in pos, x1, not(x1 in pos), vpc_x, vpc_x0)
-                jj = tpb.index(x)
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01, tpb0[jj][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #print("0001")
-                #ii = tpb.index(x)
-                #cps = cps + [(tpb0[ii][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for i in range(len(move_increments)):
+            dest = (start_pos[0] + move_increments[i][0], start_pos[1] + move_increments[i][1])
+            
+            if dest in white_occupied_coords:
+                # Check if the path is clear
+                hop1 = (start_pos[0] + path_increments[i][0], start_pos[1] + path_increments[i][1])
+                if hop1 not in all_occupied_coords:
+                    # Path is clear, now check values
+                    victim_values = value_of_piece(GS, dest[0], dest[1])
+                    if not set(attacker_values).isdisjoint(set(victim_values)):
+                        # Capture is valid
+                        if verbose:
+                            cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                        else:
+                            cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
-    
+
+
     
 def captures_square_white(game_state, verbose = False):
     """
@@ -3306,50 +3379,33 @@ def captures_square_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    spw  = square_positions_white(GS, verbose = False)
-    spw0 = square_positions_white(GS, verbose = True)   ## don't need piece symbolically, only value(s)
-    spw00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in spw]    ## <--- use instead
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
+    PR, (_,C,_,P,_,T,_,S) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    all_occupied_coords = {item[0] for item in positions_w(GS) + positions_b(GS)}
+    black_occupied_coords = {item[0] for item in positions_b(GS)}
+
+    attacker_coords = [item[0] for item in positions_w(GS) if S in item[1].variables() and not P in item[1].variables()]
+    move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
     cps = []
-    PS3 = [(3,0),(-3,0),(0,-3),(0,3)]
-    PS2 = [(2,0),(-2,0),(0,-2),(0,2)]
-    PS1 = [(1,0),(-1,0),(0,-1),(0,1)]
-    for x in spw:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in PS3 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in PS1 if in_bounds([x[0]+a[0], x[1]+a[1]])]   ## can't jump over a piece using a square
-        x_no2 = [(x[0]+a[0], x[1]+a[1]) for a in PS2 if in_bounds([x[0]+a[0], x[1]+a[1]])] ## can't jump over a piece using a square
-        for x0 in x_new:
-            ii = x_new.index(x0)              ## that is, x0 = x_new[ii]
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            in_bds = in_bounds(x0) and in_bounds(x1) and in_bounds(x2)
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #cps = cps + []
-            #print(x, x0, x in pos, x0 in pos, value_of_piece(GS, x[0], x[1]), value_of_piece(GS, x0[0], x0[1]), in_bds)
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_b) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and not(verbose):
-                jj = spw.index(x)             ## that is, x = spw[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01)]                                           
-                #print("0000", x0, (x0 in pos_b), x1, not(x1 in pos), x2, not(x2 in pos))
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_b) and values_match and verbose and in_bds and not(x1 in pos) and not(x2 in pos):
-                jj = spw.index(x)
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01, spw0[jj][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #print("0001")
-                #print("0001", x0, (x0 in pos_b), x1, not(x1 in pos), x2, not(x2 in pos))
-                #ii = spw.index(x)
-                #cps = cps + [(spw0[ii][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for i in range(len(move_increments)):
+            dest = (start_pos[0] + move_increments[i][0], start_pos[1] + move_increments[i][1])
+            hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+            hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+            if dest in black_occupied_coords and hop1 not in all_occupied_coords and hop2 not in all_occupied_coords:
+                victim_values = value_of_piece(GS, dest[0], dest[1])
+                if not set(attacker_values).isdisjoint(set(victim_values)):
+                    if verbose:
+                        cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                    else:
+                        cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
+
+
 
 def captures_square_black(game_state, verbose = False):
     """
@@ -3381,51 +3437,44 @@ def captures_square_black(game_state, verbose = False):
 	
     """
     GS = copy(game_state)
-    spb  = square_positions_black(GS, verbose = False)
-    spb0 = square_positions_black(GS, verbose = True) ## don't need piece symbolically, only value(s)
-    spb00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in spb]    ## <--- use instead
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    #print(pos)
-    square_move_increments = [[3, 0], [-3, 0], [0, 3], [0, -3]]  
-    square_move_subincrements1 = [[1, 0], [-1, 0], [0, 1], [0, -1]]  
-    square_move_subincrements2 = [[2, 0], [-2, 0], [0, 2], [0, -2]]  
+    PR, (_,_,p,_,_,_,s,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    # Get detailed data and create coordinate sets for fast lookups
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+    all_occupied_coords = {item[0] for item in white_pos_data + black_pos_data}
+    white_occupied_coords = {item[0] for item in white_pos_data}
+
+    # Get coordinates of potential attackers (black squares, not pyramids)
+    attacker_coords = [item[0] for item in black_pos_data if s in item[1].variables() and not p in item[1].variables()]
+
+    # Define move patterns
+    move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
     cps = []
-    PS = [(3,0),(-3,0),(0,-3),(0,3)]
-    for x in spb:
-        #print(x, x[0], x[1])
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in square_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements1 if in_bounds([x[0]+a[0], x[1]+a[1]])] ## can't jump over a piece 
-        x_no2 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements2 if in_bounds([x[0]+a[0], x[1]+a[1]])] ## can't jump over a piece 
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)     ## that is, x0 = x_new[ii]
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            in_bds = in_bounds(x0) and in_bounds(x1) and in_bounds(x2)
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #cps = cps + []
-            #print(x, x0, x in pos, x0 in pos, value_of_piece(GS, x[0], x[1]), value_of_piece(GS, x0[0], x0[1]), in_bds)
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_w) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and not(verbose):
-                jj = spb.index(x)             ## that is, x = spb[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01)]                                           
-                #print("0000")
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_w) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and verbose:
-                jj = spb.index(x)           ## that is, x = spb[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01, spb0[jj][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #print("0001")
-                #jj = spb.index(x)
-                #cps = cps + [(spb0[jj][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for i in range(len(move_increments)):
+            dest = (start_pos[0] + move_increments[i][0], start_pos[1] + move_increments[i][1])
+            
+            if dest in white_occupied_coords:
+                # Check if the path is clear
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+                if hop1 not in all_occupied_coords and hop2 not in all_occupied_coords:
+                    # Path is clear, now check values
+                    victim_values = value_of_piece(GS, dest[0], dest[1])
+                    if not set(attacker_values).isdisjoint(set(victim_values)):
+                        # Capture is valid
+                        if verbose:
+                            cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                        else:
+                            cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
+
+
 
 def captures_pyramid_black(game_state, verbose = False):
     """
@@ -3441,65 +3490,46 @@ def captures_pyramid_black(game_state, verbose = False):
         sage: GS = board_initial_matrix()
         sage: captures_pyramid_black(GS, verbose = True)
         []
-       sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-       sage: GS = copy(GSp)
-       sage: GS[3,5] = p^190 + s^64 + s^49 + s^36 + s^25 + s^16
-       sage: GS[3,3] = 0
-       sage: GS[7,14] = 0
-       sage: captures_pyramid_black(GS, verbose = True)
-       [((3, 5, [64, 49, 36, 25, 16]), (3, 2, 36), (3, 5))]
-       sage: 
 
     """
     GS = copy(game_state)
-    ppb  = pyramid_positions_black(GS, verbose = False)
-    ppb0 = pyramid_positions_black(GS, verbose = True)          ## don't need piece symbolically, only value(s)
-    ppb00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in ppb]    ## <--- use instead
-    #print(ppb,ppb0)
-    i = ppb[0][0]
-    j = ppb[0][1]
-    g = GS[i,j]
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    vars = g.variables()
-    #print(vars)
-    square_move_increments = [[3, 0], [-3, 0], [0, 3], [0, -3]]  
-    square_move_subincrements1 = [[1, 0], [-1, 0], [0, 1], [0, -1]]  
-    square_move_subincrements2 = [[2, 0], [-2, 0], [0, 2], [0, -2]]  
+    PR, (_,_,p,_,_,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    # Get detailed data and create coordinate sets for fast lookups
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+    all_occupied_coords = {item[0] for item in white_pos_data + black_pos_data}
+    white_occupied_coords = {item[0] for item in white_pos_data}
+
+    # Get coordinates of potential attackers (Black Pyramid)
+    attacker_coords = [item[0] for item in black_pos_data if p in item[1].variables()]
+    
+    # Define move patterns (a pyramid moves like a square)
+    move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    
     cps = []
-    for x in ppb:
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in square_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements1 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no2 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements2 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            in_bds = in_bounds(x0) and in_bounds(x1) and in_bounds(x2)
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #print(x0, value_of_piece(GS, x0[0], x0[1]), x, g,(x0 in pos_w),not(x1 in pos), not(x2 in pos))
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_w) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and not(verbose):
-                jj = ppb.index(x)             ## that is, x = ppb[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01)]                                           
-                #print("0000")
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_w) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and (verbose):
-                jj = ppb.index(x)           ## that is, x = ppb[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01, ppb0[jj][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #print("0000")
-                #cps = cps + [(x, x0)]
-                #jj = ppb.index(x)
-                #cps = cps + [(ppb0[jj][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for i in range(len(move_increments)):
+            dest = (start_pos[0] + move_increments[i][0], start_pos[1] + move_increments[i][1])
+            
+            if dest in white_occupied_coords:
+                # Check if the path is clear
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+                if hop1 not in all_occupied_coords and hop2 not in all_occupied_coords:
+                    # Path is clear, now check values
+                    victim_values = value_of_piece(GS, dest[0], dest[1])
+                    if not set(attacker_values).isdisjoint(set(victim_values)):
+                        # Capture is valid
+                        if verbose:
+                            cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                        else:
+                            cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
+
 
 
 def captures_pyramid_white(game_state, verbose = False):
@@ -3519,53 +3549,43 @@ def captures_pyramid_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    ppw  = pyramid_positions_white(GS, verbose = False)
-    ppw0 = pyramid_positions_white(GS, verbose = True)         ## don't need piece symbolically, only value(s)
-    ppw00 = [(x[0], x[1], value_of_piece(GS, x[0], x[1])) for x in ppw]    ## <--- use instead
-    #print(ppw,ppw0)
-    i = ppw[0][0]
-    j = ppw[0][1]
-    g = GS[i,j]
-    pos_w = positions_w(GS)
-    pos_b = positions_b(GS)
-    pos = pos_w + pos_b
-    vars = g.variables()
-    square_move_increments = [[3, 0], [-3, 0], [0, 3], [0, -3]]  
-    square_move_subincrements1 = [[1, 0], [-1, 0], [0, 1], [0, -1]]  
-    square_move_subincrements2 = [[2, 0], [-2, 0], [0, 2], [0, -2]]  
+    PR, (_,_,_,P,_,_,_,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    # Get detailed data and create coordinate sets for fast lookups
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+    all_occupied_coords = {item[0] for item in white_pos_data + black_pos_data}
+    black_occupied_coords = {item[0] for item in black_pos_data}
+
+    # Get coordinates of potential attackers (White Pyramid)
+    attacker_coords = [item[0] for item in white_pos_data if P in item[1].variables()]
+    
+    # Define move patterns (a pyramid moves like a square)
+    move_increments = [(0, 3), (0, -3), (3, 0), (-3, 0)]
+    path_increments1 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    path_increments2 = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    
     cps = []
-    for x in ppw:
-        x_new = [(x[0]+a[0], x[1]+a[1]) for a in square_move_increments if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no1 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements1 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no2 = [(x[0]+a[0], x[1]+a[1]) for a in square_move_subincrements2 if in_bounds([x[0]+a[0], x[1]+a[1]])]
-        x_no = x_no1 + x_no2
-        for x0 in x_new:
-            ii = x_new.index(x0)
-            x1 = x_no1[ii]
-            x2 = x_no2[ii]
-            in_bds = in_bounds(x0) and in_bounds(x1) and in_bounds(x2)
-            vpc_x = value_of_piece(GS, x[0], x[1])
-            vpc_x0 = value_of_piece(GS, x0[0], x0[1])
-            #print(x0, value_of_piece(GS, x0[0], x0[1]), x,(x0 in pos_w),not(x1 in pos), not(x2 in pos))
-            values_match = any(v in vpc_x0 for v in vpc_x) or any(v in vpc_x for v in vpc_x0)
-            if (x0 in pos_b) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and not(verbose):
-                jj = ppw.index(x)             ## that is, x = ppw[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01)]                                           
-                #print("0000")
-                #cps = cps + [(x, x0)]
-            if (x0 in pos_b) and values_match and in_bds and not(x1 in pos) and not(x2 in pos) and (verbose):
-                jj = ppw.index(x)           ## that is, x = ppw[jj]
-                x1 = (x[0], x[1], vpc_x)
-                x01 = (x0[0], x0[1], vpc_x0)
-                cps = cps + [(x1, x01, ppw0[jj][0], GS[x[0], x[1]], GS[x0[0], x0[1]])]  
-                #print("0000")
-                #cps = cps + [(x, x0)]
-                #jj = ppw.index(x)
-                #cps = cps + [(ppw0[jj][0], x, x0)]
-            continue
+    for start_pos in attacker_coords:
+        attacker_values = value_of_piece(GS, start_pos[0], start_pos[1])
+        for i in range(len(move_increments)):
+            dest = (start_pos[0] + move_increments[i][0], start_pos[1] + move_increments[i][1])
+            
+            if dest in black_occupied_coords:
+                # Check if the path is clear
+                hop1 = (start_pos[0] + path_increments1[i][0], start_pos[1] + path_increments1[i][1])
+                hop2 = (start_pos[0] + path_increments2[i][0], start_pos[1] + path_increments2[i][1])
+                if hop1 not in all_occupied_coords and hop2 not in all_occupied_coords:
+                    # Path is clear, now check values
+                    victim_values = value_of_piece(GS, dest[0], dest[1])
+                    if not set(attacker_values).isdisjoint(set(victim_values)):
+                        # Capture is valid
+                        if verbose:
+                            cps.append(((start_pos, attacker_values, GS[start_pos]), (dest, victim_values, GS[dest])))
+                        else:
+                            cps.append(((start_pos, attacker_values), (dest, victim_values)))
     return cps
+
     
     
 def valid_captures_by_numbering_white(game_state, verbose = False):
@@ -3751,59 +3771,60 @@ def valid_captures_by_addition_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    posw = positions_w(GS)
-    posb = positions_b(GS)
-    board = [[i,j] for i in range(8) for j in range(16)]
-    #print("00", posw)
-    mvsw = []
-    mvsw0 = []
-    pairs_land_on_same_pos = []
-    common_mvs = []
-    for pc1 in posw:
-        lo1 = lands_on( GS, pc1, verbose = False)
-        if len(lo1)>0:                                                               ## combined cases ...
-            #print("0.3", pc1, lo1, len(lo1), value_of_piece( GS, pc1[0], pc1[1]))
-            mvsw0 = mvsw0 + [tuple(lo1[0][1])]
-            mvsw = mvsw + lo1
-    ## find all pairs of pieces P1, P2 where lo1[P1) intersects lo1[P2]
-    #print("1", len(mvsw), "\n", mvsw)
-    for X in mvsw:
-        for Y in mvsw:
-            loX = X[1]
-            loY = Y[1]
-            #print("0.9", X, loX, Y, loY)
-            #ce = common_elements(loX, loY)
-            if (loX==loY) and not(X[0] == Y[0]):
-                #print("0", X, loX, Y, loY)
-                valX = value_of_piece( GS, X[0][0], X[0][1])
-                valY = value_of_piece( GS, Y[0][0], Y[0][1])
-                XxY = loX
-                valXxY = value_of_piece( GS, XxY[0], XxY[1])
-                if (tuple(XxY) in posb):
-                    pairs_land_on_same_pos = pairs_land_on_same_pos + [(X[0], Y[0], tuple(XxY), [valX, valY, valXxY])]
-    #for x in pairs_land_on_same_pos:         # format of output is wrong
-    #    if x[3][0]+x[3][1]==x[3][2]:
-    #        #print(x[3][0]+x[3][1]==x[3][2], x[3])
-    #        common_mvs = common_mvs + [x]
-    #    if verbose:
-    #        print("The piece ", GS[x[0][0],x[0][1]], " at ", x[0], " and the piece ",  GS[x[1][0],x[1][1]], " at ", x[1], " capture by addition the piece ",  GS[x[2][0],x[2][1]], " at ", x[2])
-    #return common_mvs                        # use this snippet suggested by gemini instead:
-    for x in pairs_land_on_same_pos:
-        # x is like: ((r1, c1), (r2, c2), (r3, c3), [v1, v2, v3])
-        pos1, pos2, pos3 = x[0], x[1], x[2]
-        val1, val2, val3 = x[3][0], x[3][1], x[3][2]
-        # Check the addition condition
-        if val1[0] + val2[0] == val3[0]:                               ##################### what about if pc1, pc2, or pc3 is a pyramid ???????????
-            # Create the desired output format: [(pos1, val1), (pos2, val2), (pos3, val3)]
-            if verbose:
-                formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]]), (pos3, val3, GS[pos3[0], pos3[1]])]
-            else:
-                formatted_result = [(pos1, val1), (pos2, val2), (pos3, val3)]
-            common_mvs.append(formatted_result) # Append the newly formatted list
-            if verbose:
-                # Keep or adjust the verbose print as needed
-                print(f"The piece {GS[pos1[0],pos1[1]]} at {pos1} and the piece {GS[pos2[0],pos2[1]]} at {pos2} capture by addition the piece {GS[pos3[0],pos3[1]]} at {pos3}")
-    return common_mvs
+    cps = []
+
+    # Get detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_coords = {item[0] for item in positions_b(GS)}
+
+    # 1. Collect all possible moves for every white piece
+    all_white_moves = []
+    for piece_data in white_pos_data:
+        start_pos = piece_data[0] # Extract coordinate tuple
+        # lands_on returns a list of (start_pos, dest_pos) tuples
+        possible_moves = lands_on(GS, start_pos, verbose=False)
+        all_white_moves.extend(possible_moves)
+
+    # 2. Check every pair of moves to find common landing spots on enemy pieces
+    for move1, move2 in itertools.combinations(all_white_moves, int(2)):
+        start1, dest1 = move1
+        start2, dest2 = move2
+
+        # Check if two different pieces can land on the same enemy square
+        if start1 != start2 and dest1 == dest2 and dest1 in black_pos_coords:
+            landing_spot = dest1
+            
+            val1_list = value_of_piece(GS, start1[0], start1[1])
+            val2_list = value_of_piece(GS, start2[0], start2[1])
+            victim_val_list = value_of_piece(GS, landing_spot[0], landing_spot[1])
+
+            # Ensure all values are valid before checking the sum rule
+            if val1_list and val2_list and victim_val_list and val1_list[0] and val2_list[0] and victim_val_list[0]:
+                val1 = val1_list[0]
+                val2 = val2_list[0]
+                victim_val = victim_val_list[0]
+                
+                if val1 + val2 == victim_val:
+                    # Capture is valid. Format the record.
+                    if verbose:
+                        record = [
+                            (start1, val1_list, GS[start1]), 
+                            (start2, val2_list, GS[start2]), 
+                            (landing_spot, victim_val_list, GS[landing_spot])
+                        ]
+                        print(f"Capture Found: {GS[start1]} at {start1} and {GS[start2]} at {start2} can capture {GS[landing_spot]} by Addition.")
+                    else:
+                        record = [
+                            (start1, val1_list), 
+                            (start2, val2_list), 
+                            (landing_spot, victim_val_list)
+                        ]
+                    # Append if not already found (to avoid duplicates from different move orders)
+                    if record not in cps:
+                        cps.append(record)
+                        
+    return cps
+
 
 def valid_captures_by_addition_black(game_state, verbose = False):
     r""" 
@@ -3840,59 +3861,59 @@ def valid_captures_by_addition_black(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    posw = positions_w(GS)
-    posb = positions_b(GS)
-    board = [[i,j] for i in range(8) for j in range(16)]
-    #print("00", posw)
-    mvsb = []
-    mvsb0 = []
-    pairs_land_on_same_pos = []
-    common_mvs = []
-    for pc1 in posb:
-        lo1 = lands_on( GS, pc1, verbose = False)
-        if len(lo1)>0:
-            #print("0.3", pc1, lo1, len(lo1), value_of_piece( GS, pc1[0], pc1[1]))
-            mvsb0 = mvsb0 + [tuple(lo1[0][1])]
-            mvsb = mvsb + lo1
-    ## find all pairs of pieces P1, P2 where lo1[P1) intersects lo1[P2]
-    #print("1", len(mvsb), "\n", mvsw)
-    for X in mvsb:
-        for Y in mvsb:
-            loX = X[1]
-            loY = Y[1]
-            #print("0.9", X, loX, Y, loY)
-            #ce = common_elements(loX, loY)
-            if (loX==loY) and not(X[0] == Y[0]):
-                #print("0", X, loX, Y, loY)
-                valX = value_of_piece( GS, X[0][0], X[0][1])
-                valY = value_of_piece( GS, Y[0][0], Y[0][1])
-                XxY = loX
-                valXxY = value_of_piece( GS, XxY[0], XxY[1])
-                if (tuple(XxY) in posw):
-                    pairs_land_on_same_pos = pairs_land_on_same_pos + [(X[0], Y[0], tuple(XxY), [valX, valY, valXxY])]
-    #for x in pairs_land_on_same_pos:
-    #    if x[3][0]+x[3][1]==x[3][2]:
-    #        #print(x[3][0]+x[3][1]==x[3][2], x[3])
-    #        common_mvs = common_mvs + [x]
-    #    if verbose:
-    #        print("The piece ", GS[x[0][0],x[0][1]], " at ", x[0], " and the piece ",  GS[x[1][0],x[1][1]], " at ", x[1], " capture by addition the piece ",  GS[x[2][0],x[2][1]], " at ", x[2])
-    #return common_mvs      # use this snippet suggested by gemini instead:
-    for x in pairs_land_on_same_pos:
-        # x is like: ((r1, c1), (r2, c2), (r3, c3), [v1, v2, v3])
-        pos1, pos2, pos3 = x[0], x[1], x[2]
-        val1, val2, val3 = x[3][0], x[3][1], x[3][2]
-        # Check the addition condition
-        if val1[0] + val2[0] == val3[0]:                         ####### what about if pc1, pc2, or pc3 is a pyramid ???????????
-            # Create the desired output format: [(pos1, val1), (pos2, val2), (pos3, val3)]
-            if verbose:
-                formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]]), (pos3, val3, GS[pos3[0], pos3[1]])]
-            else:
-                formatted_result = [(pos1, val1), (pos2, val2), (pos3, val3)]
-            common_mvs.append(formatted_result) # Append the newly formatted list
-            if verbose:
-                # Keep or adjust the verbose print as needed
-                print(f"The piece {GS[pos1[0],pos1[1]]} at {pos1} and the piece {GS[pos2[0],pos2[1]]} at {pos2} capture by addition the piece {GS[pos3[0],pos3[1]]} at {pos3}")
-    return common_mvs
+    cps = []
+
+    # Get detailed data for all pieces
+    black_pos_data = positions_b(GS)
+    white_pos_coords = {item[0] for item in positions_w(GS)}
+
+    # 1. Collect all possible moves for every black piece
+    all_black_moves = []
+    for piece_data in black_pos_data:
+        start_pos = piece_data[0] # Extract coordinate tuple
+        # lands_on returns a list of (start_pos, dest_pos) tuples
+        possible_moves = lands_on(GS, start_pos, verbose=False)
+        all_black_moves.extend(possible_moves)
+
+    # 2. Check every pair of moves to find common landing spots on enemy pieces
+    for move1, move2 in itertools.combinations(all_black_moves, int(2)):
+        start1, dest1 = move1
+        start2, dest2 = move2
+
+        # Check if two different pieces can land on the same enemy square
+        if start1 != start2 and dest1 == dest2 and dest1 in white_pos_coords:
+            landing_spot = dest1
+            
+            val1_list = value_of_piece(GS, start1[0], start1[1])
+            val2_list = value_of_piece(GS, start2[0], start2[1])
+            victim_val_list = value_of_piece(GS, landing_spot[0], landing_spot[1])
+
+            # Ensure all values are valid before checking the sum rule
+            if val1_list and val2_list and victim_val_list and val1_list[0] and val2_list[0] and victim_val_list[0]:
+                val1 = val1_list[0]
+                val2 = val2_list[0]
+                victim_val = victim_val_list[0]
+                
+                if val1 + val2 == victim_val:
+                    # Capture is valid. Format the record.
+                    if verbose:
+                        record = [
+                            (start1, val1_list, GS[start1]), 
+                            (start2, val2_list, GS[start2]), 
+                            (landing_spot, victim_val_list, GS[landing_spot])
+                        ]
+                        print(f"Capture Found: {GS[start1]} at {start1} and {GS[start2]} at {start2} can capture {GS[landing_spot]} by Addition.")
+                    else:
+                        record = [
+                            (start1, val1_list), 
+                            (start2, val2_list), 
+                            (landing_spot, victim_val_list)
+                        ]
+                    # Append if not already found (to avoid duplicates from different move orders)
+                    if record not in cps:
+                        cps.append(record)
+                        
+    return cps
 
 
 def valid_captures_by_subtraction_white(game_state, verbose = False):
@@ -3921,64 +3942,60 @@ def valid_captures_by_subtraction_white(game_state, verbose = False):
          [[((1, 11), 12), ((0, 12), 6), ((1, 13), 6)]]
 
     """
-    GS = game_state
-    posw = positions_w(GS)
-    posb = positions_b(GS)
-    board = [[i,j] for i in range(8) for j in range(16)]
-    #print("00", posw)
-    mvsw = []
-    mvsw0 = []
-    pairs_land_on_same_pos = []
-    common_mvs = []
-    for pc1 in posw:
-        lo1 = lands_on( GS, pc1, verbose = False)
-        if len(lo1)==1:
-            #print("0.3", pc1, lo1, len(lo1), value_of_piece( GS, pc1[0], pc1[1]))
-            mvsw0 = mvsw0 + [tuple(lo1[0][1])]
-            mvsw = mvsw + lo1
-        if len(lo1)>1:
-            #print("0.6", pc1, lo1, len(lo1), value_of_piece( GS, pc1[0], pc1[1]))
-            mvsw0 = mvsw0 + [tuple(lo1[0][1])]
-            mvsw = mvsw + lo1
-    ## find all pairs of pieces P1, P2 where lo1[P1) intersects lo1[P2]
-    #print("1", len(mvsw), "\n", mvsw)
-    for X in mvsw:
-        for Y in mvsw:
-            loX = X[1]
-            loY = Y[1]
-            #print("0.9", X, loX, Y, loY)
-            #ce = common_elements(loX, loY)
-            if (loX==loY) and not(X[0] == Y[0]):
-                #print("0", X, loX, Y, loY)
-                valX = value_of_piece( GS, X[0][0], X[0][1])
-                valY = value_of_piece( GS, Y[0][0], Y[0][1])
-                XxY = loX
-                valXxY = value_of_piece( GS, XxY[0], XxY[1])
-                if (tuple(XxY) in posb):
-                    pairs_land_on_same_pos = pairs_land_on_same_pos + [(X[0], Y[0], tuple(XxY), [valX, valY, valXxY])]
-    #for x in pairs_land_on_same_pos:
-    #    if (x[3][0]-x[3][1]==x[3][2]):
-    #        #print(x[3][0]+x[3][1]==x[3][2], x[3])
-    #        common_mvs = common_mvs + [x]
-    #    if (x[3][0]-x[3][1]==x[3][2]) and verbose:
-    #        print("The piece ", GS[x[0][0],x[0][1]], " at ", x[0], " and the piece ",  GS[x[1][0],x[1][1]], " at ", x[1], " capture by subtraction the piece ",  GS[x[2][0],x[2][1]], " at ", x[2])
-    #return common_mvs    # use this snippet suggested by gemini instead:
-    for x in pairs_land_on_same_pos:
-        # x is like: ((r1, c1), (r2, c2), (r3, c3), [v1, v2, v3])
-        pos1, pos2, pos3 = x[0], x[1], x[2]
-        val1, val2, val3 = x[3][0], x[3][1], x[3][2]
-        # Check the addition condition
-        if val1[0] - val2[0] == val3[0]:                        ####### what about if pc1, pc2, or pc3 is a pyramid ???????????
-            # Create the desired output format: [(pos1, val1), (pos2, val2), (pos3, val3)]
-            if verbose:
-                formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]]), (pos3, val3, GS[pos3[0], pos3[1]])]
-            else:
-                formatted_result = [(pos1, val1), (pos2, val2), (pos3, val3)]
-            common_mvs.append(formatted_result) # Append the newly formatted list
-            if verbose:
-                # Keep or adjust the verbose print as needed
-                print(f"The piece {GS[pos1[0],pos1[1]]} at {pos1} and the piece {GS[pos2[0],pos2[1]]} at {pos2} capture by subtraction the piece {GS[pos3[0],pos3[1]]} at {pos3}")
-    return common_mvs
+    GS = copy(game_state)
+    cps = []
+
+    # Get detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_coords = {item[0] for item in positions_b(GS)}
+
+    # 1. Collect all possible moves for every white piece
+    all_white_moves = []
+    for piece_data in white_pos_data:
+        start_pos = piece_data[0] # Extract coordinate tuple
+        possible_moves = lands_on(GS, start_pos, verbose=False)
+        all_white_moves.extend(possible_moves)
+
+    # 2. Check every pair of moves to find common landing spots on enemy pieces
+    # Note: permutations are used instead of combinations to check both v1-v2 and v2-v1
+    for move1, move2 in itertools.permutations(all_white_moves, int(2)):
+        start1, dest1 = move1
+        start2, dest2 = move2
+
+        # Check if two different pieces can land on the same enemy square
+        if start1 != start2 and dest1 == dest2 and dest1 in black_pos_coords:
+            landing_spot = dest1
+            
+            val1_list = value_of_piece(GS, start1[0], start1[1])
+            val2_list = value_of_piece(GS, start2[0], start2[1])
+            victim_val_list = value_of_piece(GS, landing_spot[0], landing_spot[1])
+
+            # Ensure all values are valid before checking the subtraction rule
+            if val1_list and val2_list and victim_val_list and val1_list[0] and val2_list[0] and victim_val_list[0]:
+                val1 = val1_list[0]
+                val2 = val2_list[0]
+                victim_val = victim_val_list[0]
+                
+                if val1 - val2 == victim_val:
+                    # Capture is valid. Format the record.
+                    if verbose:
+                        record = [
+                            (start1, val1_list, GS[start1]), 
+                            (start2, val2_list, GS[start2]), 
+                            (landing_spot, victim_val_list, GS[landing_spot])
+                        ]
+                        print(f"Capture Found: {GS[start1]} at {start1} and {GS[start2]} at {start2} can capture {GS[landing_spot]} by Subtraction.")
+                    else:
+                        record = [
+                            (start1, val1_list), 
+                            (start2, val2_list), 
+                            (landing_spot, victim_val_list)
+                        ]
+                    # Append if not already found
+                    if record not in cps:
+                        cps.append(record)
+                        
+    return cps
 
 
 def valid_captures_by_subtraction_black(game_state, verbose = False):
@@ -4009,64 +4026,60 @@ def valid_captures_by_subtraction_black(game_state, verbose = False):
          [[((1, 13), [12], t^12), ((2, 11), [3], c^3), ((1, 11), [9], T^9)]]
 
     """
-    GS = game_state
-    posw = positions_w(GS)
-    posb = positions_b(GS)
-    board = [[i,j] for i in range(8) for j in range(16)]
-    #print("00", posw)
-    mvsb = []
-    mvsb0 = []
-    pairs_land_on_same_pos = []
-    common_mvs = []
-    for pc1 in posb:
-        lo1 = lands_on( GS, pc1, verbose = False)
-        if len(lo1)==1:
-            #print("0.3", pc1, lo1, len(lo1), value_of_piece( GS, pc1[0], pc1[1]))
-            mvsb0 = mvsb0 + [tuple(lo1[0][1])]
-            mvsb = mvsb + lo1
-        if len(lo1)>1:
-            #print("0.6", pc1, lo1, len(lo1), value_of_piece( GS, pc1[0], pc1[1]))
-            mvsb0 = mvsb0 + [tuple(lo1[0][1])]
-            mvsb = mvsb + lo1
-    ## find all pairs of pieces P1, P2 where lo1[P1) intersects lo1[P2]
-    #print("1", len(mvsw), "\n", mvsw)
-    for X in mvsb:
-        for Y in mvsb:
-            loX = X[1]
-            loY = Y[1]
-            #print("0.9", X, loX, Y, loY)
-            #ce = common_elements(loX, loY)
-            if (loX==loY) and not(X[0] == Y[0]):
-                #print("0", X, loX, Y, loY)
-                valX = value_of_piece( GS, X[0][0], X[0][1])
-                valY = value_of_piece( GS, Y[0][0], Y[0][1])
-                XxY = loX
-                valXxY = value_of_piece( GS, XxY[0], XxY[1])
-                if (tuple(XxY) in posw):
-                    pairs_land_on_same_pos = pairs_land_on_same_pos + [(X[0], Y[0], tuple(XxY), [valX, valY, valXxY])]
-    #for x in pairs_land_on_same_pos:
-    #    if (x[3][0]-x[3][1]==x[3][2]):
-    #        #print(x[3][0]+x[3][1]==x[3][2], x[3])
-    #        common_mvs = common_mvs + [x]
-    #    if (x[3][0]-x[3][1]==x[3][2]) and verbose:
-    #        print("The piece ", GS[x[0][0],x[0][1]], " at ", x[0], " and the piece ",  GS[x[1][0],x[1][1]], " at ", x[1], " capture by subtraction the piece ",  GS[x[2][0],x[2][1]], " at ", x[2])
-    #return common_mvs # use this snippet suggested by gemini instead:
-    for x in pairs_land_on_same_pos:
-        # x is like: ((r1, c1), (r2, c2), (r3, c3), [v1, v2, v3])
-        pos1, pos2, pos3 = x[0], x[1], x[2]
-        val1, val2, val3 = x[3][0], x[3][1], x[3][2]
-        # Check the addition condition
-        if val1[0] - val2[0] == val3[0]:                        ####### what about if pc1, pc2, or pc3 is a pyramid ???????????
-            # Create the desired output format: [(pos1, val1), (pos2, val2), (pos3, val3)]
-            if verbose:
-                formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]]), (pos3, val3, GS[pos3[0], pos3[1]])]
-            else:
-                formatted_result = [(pos1, val1), (pos2, val2), (pos3, val3)]
-            common_mvs.append(formatted_result) # Append the newly formatted list
-            if verbose:
-                # Keep or adjust the verbose print as needed
-                print(f"The piece {GS[pos1[0],pos1[1]]} at {pos1} and the piece {GS[pos2[0],pos2[1]]} at {pos2} capture by subtraction the piece {GS[pos3[0],pos3[1]]} at {pos3}")
-    return common_mvs
+    GS = copy(game_state)
+    cps = []
+
+    # Get detailed data for all pieces
+    black_pos_data = positions_b(GS)
+    white_pos_coords = {item[0] for item in positions_w(GS)}
+
+    # 1. Collect all possible moves for every black piece
+    all_black_moves = []
+    for piece_data in black_pos_data:
+        start_pos = piece_data[0] # Extract coordinate tuple
+        possible_moves = lands_on(GS, start_pos, verbose=False)
+        all_black_moves.extend(possible_moves)
+
+    # 2. Check every pair of moves to find common landing spots on enemy pieces
+    # Note: permutations are used instead of combinations to check both v1-v2 and v2-v1
+    for move1, move2 in itertools.permutations(all_black_moves, int(2)):
+        start1, dest1 = move1
+        start2, dest2 = move2
+
+        # Check if two different pieces can land on the same enemy square
+        if start1 != start2 and dest1 == dest2 and dest1 in white_pos_coords:
+            landing_spot = dest1
+            
+            val1_list = value_of_piece(GS, start1[0], start1[1])
+            val2_list = value_of_piece(GS, start2[0], start2[1])
+            victim_val_list = value_of_piece(GS, landing_spot[0], landing_spot[1])
+
+            # Ensure all values are valid before checking the subtraction rule
+            if val1_list and val2_list and victim_val_list and val1_list[0] and val2_list[0] and victim_val_list[0]:
+                val1 = val1_list[0]
+                val2 = val2_list[0]
+                victim_val = victim_val_list[0]
+                
+                if val1 - val2 == victim_val:
+                    # Capture is valid. Format the record.
+                    if verbose:
+                        record = [
+                            (start1, val1_list, GS[start1]), 
+                            (start2, val2_list, GS[start2]), 
+                            (landing_spot, victim_val_list, GS[landing_spot])
+                        ]
+                        print(f"Capture Found: {GS[start1]} at {start1} and {GS[start2]} at {start2} can capture {GS[landing_spot]} by Subtraction.")
+                    else:
+                        record = [
+                            (start1, val1_list), 
+                            (start2, val2_list), 
+                            (landing_spot, victim_val_list)
+                        ]
+                    # Append if not already found
+                    if record not in cps:
+                        cps.append(record)
+                        
+    return cps
 
 
 def valid_captures_by_multiplication_white(game_state, verbose = False):  ####### gemini's suggested changes
@@ -4102,76 +4115,51 @@ def valid_captures_by_multiplication_white(game_state, verbose = False):  ######
 
     """
     GS = copy(game_state)
-    # Get coordinates first to avoid redundant calls to value_of_piece inside loops
-    posw_coords = positions_w(GS, verbose=False)
-    posb_coords = positions_b(GS, verbose=False)
-    cps = [] # List to store valid captures
-    for x_coords in posw_coords:
-        # Ensure coordinates are Sage Integers if necessary for GS indexing
-        pc1_coords = (ZZ(x_coords[0]), ZZ(x_coords[1]))
-        # Get the list of values for the white piece (attacker)
-        valw_list = value_of_piece(GS, pc1_coords[0], pc1_coords[1])
-        # Skip if the value list is empty or represents an empty square ([0])
-        if not valw_list or valw_list == [0]:
+    cps = []
+
+    # Get the detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+
+    # Iterate through all white pieces as potential attackers
+    for attacker_data in white_pos_data:
+        attacker_coords = attacker_data[0]
+        attacker_poly = attacker_data[1]
+        attacker_values = value_of_piece(GS, attacker_coords[0], attacker_coords[1])
+
+        if not attacker_values or attacker_values == [0]:
             continue
-        for y_coords in posb_coords:
-            # Ensure coordinates are Sage Integers
-            pc2_coords = (ZZ(y_coords[0]), ZZ(y_coords[1]))
-            # Get the list of values for the black piece (target)
-            valb_list = value_of_piece(GS, pc2_coords[0], pc2_coords[1])
-            # Skip if the value list is empty or represents an empty square ([0])
-            if not valb_list or valb_list == [0]:
+
+        # Iterate through all black pieces as potential victims
+        for victim_data in black_pos_data:
+            victim_coords = victim_data[0]
+            victim_poly = victim_data[1]
+            
+            # Check for a clear line of sight and get distance
+            dist_spaces = pieces_in_a_line(GS, attacker_coords, victim_coords)
+            
+            # Capture requires a distance of at least 1 empty space
+            if dist_spaces < 1:
                 continue
-            # Calculate the distance (number of spaces between)
-            # pieces_in_a_line returns number of board units apart (dist)
-            # returns -1 if not in a line or obstructed
-            dist_units = pieces_in_a_line(GS, pc1_coords, pc2_coords)
-            # Check if pieces are in a line and separated by at least one space
-            if dist_units <= 1:
+
+            victim_values = value_of_piece(GS, victim_coords[0], victim_coords[1])
+            if not victim_values or victim_values == [0]:
                 continue
-            # The required distance multiplier is the number of empty spaces
-            dist_spaces = dist_units ##  - 1  
-            # Iterate through all value combinations for pc1 and pc2
-            for v1 in valw_list:
-                # Ensure v1 is a numeric type (handle potential non-numeric markers like P/p)
-                if not isinstance(v1, (int, Integer)):
-                     continue
-                for v2 in valb_list:
-                    # Ensure v2 is a numeric type
-                    if not isinstance(v2, (int, Integer)):
-                        continue
-                    # Check the capture rule: value(pc1_component) * dist_spaces == value(pc2_component)
-                    # Use try-except for safety, though v1 should be non-zero if code reaches here
-                    try:
-                        if v1 != 0 and v1 * dist_spaces == v2:
-                            # Capture occurs!
-                            pos1 = pc1_coords # White piece position
-                            val1 = v1         # White component value involved
-                            pos2 = pc2_coords # Black piece position
-                            val2 = v2         # Black component value involved
-                            # Format as [(pos1, val1), (pos2, val2)]
+            
+            # Check all value combinations for the capture rule
+            for v_attacker in attacker_values:
+                if not isinstance(v_attacker, (int, Integer)): continue
+                for v_victim in victim_values:
+                    if not isinstance(v_victim, (int, Integer)): continue
+                    
+                    if v_attacker > 0 and v_attacker * dist_spaces == v_victim:
+                        # Found a valid capture
+                        capture_record = ((attacker_coords, v_attacker), (victim_coords, v_victim))
+                        if capture_record not in cps:
+                            cps.append(capture_record)
                             if verbose:
-                                formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]])]
-                            else:
-                                formatted_result = [(pos1, val1), (pos2, val2)]
-                            # Avoid adding duplicate captures if multiple components could technically work
-                            # (Rules might specify only one counts, e.g., the largest value?)
-                            # For now, we add if the specific combination hasn't been added.
-                            if formatted_result not in cps:
-                                cps.append(formatted_result)
-                                if verbose:
-                                    # Fetch symbolic representation for printing
-                                    pc1_symbol = GS[pos1[0], pos1[1]]
-                                    pc2_symbol = GS[pos2[0], pos2[1]]
-                                    print(f"The piece component {pc1_symbol} (value {val1}) at {pos1} captures by multiplication the piece component {pc2_symbol} (value {val2}) at {pos2} at separation {dist_spaces}")
-                            # Depending on rules, you might 'break' here if only one capture per pair is allowed.
-                    except TypeError:
-                        # Handle potential errors if v1 or v2 weren't numeric despite checks
-                        if verbose:
-                             print(f"Skipping comparison due to non-numeric types: v1={v1}, v2={v2}")
-                        continue
+                                print(f"Capture Found: {attacker_poly} (value {v_attacker}) at {attacker_coords} captures {victim_poly} (value {v_victim}) at {victim_coords} by Multiplication (separation {dist_spaces}).")
     return cps
-    
 
 
 def valid_captures_by_multiplication_black(game_state, verbose = False):  ####### gemini's suggested changes
@@ -4210,74 +4198,50 @@ def valid_captures_by_multiplication_black(game_state, verbose = False):  ######
  
     """
     GS = copy(game_state)
-    # Get coordinates first to avoid redundant calls to value_of_piece inside loops
-    posw_coords = positions_w(GS, verbose=False)
-    posb_coords = positions_b(GS, verbose=False)
-    cps = [] # List to store valid captures
-    for x_coords in posb_coords:
-        # Ensure coordinates are Sage Integers if necessary for GS indexing
-        pc1_coords = (ZZ(x_coords[0]), ZZ(x_coords[1]))
-        # Get the list of values for the black piece (attacker)
-        valb_list = value_of_piece(GS, pc1_coords[0], pc1_coords[1])
-        # Skip if the value list is empty or represents an empty square ([0])
-        if not valb_list or valb_list == [0]:
+    cps = []
+
+    # Get the detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+
+    # Iterate through all black pieces as potential attackers
+    for attacker_data in black_pos_data:
+        attacker_coords = attacker_data[0]
+        attacker_poly = attacker_data[1]
+        attacker_values = value_of_piece(GS, attacker_coords[0], attacker_coords[1])
+
+        if not attacker_values or attacker_values == [0]:
             continue
-        for y_coords in posw_coords:
-            # Ensure coordinates are Sage Integers
-            pc2_coords = (ZZ(y_coords[0]), ZZ(y_coords[1]))
-            # Get the list of values for the white piece (target)
-            valw_list = value_of_piece(GS, pc2_coords[0], pc2_coords[1])
-            # Skip if the value list is empty or represents an empty square ([0])
-            if not valw_list or valw_list == [0]:
+
+        # Iterate through all white pieces as potential victims
+        for victim_data in white_pos_data:
+            victim_coords = victim_data[0]
+            victim_poly = victim_data[1]
+            
+            # Check for a clear line of sight and get distance
+            dist_spaces = pieces_in_a_line(GS, attacker_coords, victim_coords)
+            
+            # Capture requires a distance of at least 1 empty space
+            if dist_spaces < 1:
                 continue
-            # Calculate the distance (number of spaces between)
-            # pieces_in_a_line returns number of board units apart (dist+1)
-            # returns -1 if not in a line or obstructed
-            dist_units = pieces_in_a_line(GS, pc1_coords, pc2_coords)
-            # Check if pieces are in a line and separated by at least one space
-            if dist_units <= 1:
+
+            victim_values = value_of_piece(GS, victim_coords[0], victim_coords[1])
+            if not victim_values or victim_values == [0]:
                 continue
-            # The required distance multiplier is the number of empty spaces
-            dist_spaces = dist_units ## - 1
-            # Iterate through all value combinations for pc1 and pc2
-            for v1 in valb_list:
-                # Ensure v1 is a numeric type (handle potential non-numeric markers like P/p)
-                if not isinstance(v1, (int, Integer)):
-                     continue
-                for v2 in valw_list:
-                    # Ensure v2 is a numeric type
-                    if not isinstance(v2, (int, Integer)):
-                        continue
-                    # Check the capture rule: value(pc1_component) * dist_spaces == value(pc2_component)
-                    # Use try-except for safety, though v1 should be non-zero if code reaches here
-                    try:
-                        if v1 != 0 and v1 * dist_spaces == v2:
-                            # Capture occurs!
-                            pos1 = pc1_coords # Black piece position
-                            val1 = v1         # Black component value involved
-                            pos2 = pc2_coords # white piece position
-                            val2 = v2         # white component value involved
-                            # Format as [(pos1, val1), (pos2, val2)]
+            
+            # Check all value combinations for the capture rule
+            for v_attacker in attacker_values:
+                if not isinstance(v_attacker, (int, Integer)): continue
+                for v_victim in victim_values:
+                    if not isinstance(v_victim, (int, Integer)): continue
+                    
+                    if v_attacker > 0 and v_attacker * dist_spaces == v_victim:
+                        # Found a valid capture
+                        capture_record = ((attacker_coords, v_attacker), (victim_coords, v_victim))
+                        if capture_record not in cps:
+                            cps.append(capture_record)
                             if verbose:
-                                formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]])]
-                            else:
-                                formatted_result = [(pos1, val1), (pos2, val2)]
-                            # Avoid adding duplicate captures if multiple components could technically work
-                            # (Rules might specify only one counts, e.g., the largest value?)
-                            # For now, we add if the specific combination hasn't been added.
-                            if formatted_result not in cps:
-                                cps.append(formatted_result)
-                                if verbose:
-                                    # Fetch symbolic representation for printing
-                                    pc1_symbol = GS[pos1[0], pos1[1]]
-                                    pc2_symbol = GS[pos2[0], pos2[1]]
-                                    print(f"The piece component {pc1_symbol} (value {val1}) at {pos1} captures by multiplication the piece component {pc2_symbol} (value {val2}) at {pos2} at separation {dist_spaces}")
-                            # Depending on rules, you might 'break' here if only one capture per pair is allowed.
-                    except TypeError:
-                        # Handle potential errors if v1 or v2 weren't numeric despite checks
-                        if verbose:
-                             print(f"Skipping comparison due to non-numeric types: v1={v1}, v2={v2}")
-                        continue
+                                print(f"Capture Found: {attacker_poly} (value {v_attacker}) at {attacker_coords} captures {victim_poly} (value {v_victim}) at {victim_coords} by Multiplication (separation {dist_spaces}).")
     return cps
 
 
@@ -4317,61 +4281,52 @@ def valid_captures_by_division_white(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    # Get coordinates first
-    posw_coords = positions_w(GS, verbose=False)
-    posb_coords = positions_b(GS, verbose=False)
-    cps = [] # List to store valid captures
-    for x_coords in posw_coords:
-        # Ensure coordinates are Sage Integers if necessary
-        pc1_coords = (ZZ(x_coords[0]), ZZ(x_coords[1]))
-        # Get the list of values for the white piece (attacker)
-        valw_list = value_of_piece(GS, pc1_coords[0], pc1_coords[1])
-        if not valw_list or valw_list == [0]: continue # Skip empty squares
-        for y_coords in posb_coords:
-            # Ensure coordinates are Sage Integers
-            pc2_coords = (ZZ(y_coords[0]), ZZ(y_coords[1]))
-            # Get the list of values for the black piece (target)
-            valb_list = value_of_piece(GS, pc2_coords[0], pc2_coords[1])
-            if not valb_list or valb_list == [0]: continue # Skip empty squares
-            # Calculate distance (number of spaces between)
-            dist_units = pieces_in_a_line(GS, pc1_coords, pc2_coords)
-            # Check if pieces are in a line and separated by at least one space
-            if dist_units <= 1:
+    cps = []
+
+    # Get the detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+
+    # Iterate through all white pieces as potential attackers
+    for attacker_data in white_pos_data:
+        attacker_coords = attacker_data[0]
+        attacker_poly = attacker_data[1]
+        attacker_values = value_of_piece(GS, attacker_coords[0], attacker_coords[1])
+
+        if not attacker_values or attacker_values == [0]:
+            continue
+
+        # Iterate through all black pieces as potential victims
+        for victim_data in black_pos_data:
+            victim_coords = victim_data[0]
+            victim_poly = victim_data[1]
+            
+            # Check for a clear line of sight and get distance
+            dist_spaces = pieces_in_a_line(GS, attacker_coords, victim_coords)
+            
+            # Capture requires a distance of at least 1 empty space
+            if dist_spaces < 1:
                 continue
-            dist_spaces = dist_units ## - 1
-            # Iterate through all value combinations
-            for v1 in valw_list: # White attacker value component
-                if not isinstance(v1, (int, Integer)): continue # Skip non-numeric markers
-                for v2 in valb_list: # Black target value component
-                    if not isinstance(v2, (int, Integer)): continue # Skip non-numeric markers
-                    # Check the capture rule: value(pc1)/value(pc2) == dist_spaces
-                    # Requires v2 != 0 and v2 must divide v1
-                    try:
-                        if v2 != 0 and v1 % v2 == 0:
-                            quotient = ZZ(v1 / v2) # Use ZZ for Sage integer division
-                            if quotient == dist_spaces:
-                                # Capture occurs!
-                                pos1 = pc1_coords # White piece position
-                                val1 = v1         # White component value involved
-                                pos2 = pc2_coords # Black piece position
-                                val2 = v2         # Black component value involved
-                                # Format as [(pos1, val1), (pos2, val2)]
+
+            victim_values = value_of_piece(GS, victim_coords[0], victim_coords[1])
+            if not victim_values or victim_values == [0]:
+                continue
+            
+            # Check all value combinations for the capture rule
+            for v_attacker in attacker_values:
+                if not isinstance(v_attacker, (int, Integer)): continue
+                for v_victim in victim_values:
+                    if not isinstance(v_victim, (int, Integer)): continue
+                    
+                    # Check the division rule, ensuring no division by zero
+                    if v_victim > 0 and v_attacker % v_victim == 0:
+                        if v_attacker / v_victim == dist_spaces:
+                            # Found a valid capture
+                            capture_record = ((attacker_coords, v_attacker), (victim_coords, v_victim))
+                            if capture_record not in cps:
+                                cps.append(capture_record)
                                 if verbose:
-                                    formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]])]
-                                else:
-                                    formatted_result = [(pos1, val1), (pos2, val2)]
-                                # Avoid duplicates
-                                if formatted_result not in cps:
-                                    cps.append(formatted_result)
-                                    if verbose:
-                                        pc1_symbol = GS[pos1[0], pos1[1]]
-                                        pc2_symbol = GS[pos2[0], pos2[1]]
-                                        print(f"The piece component {pc1_symbol} (value {val1}) at {pos1} captures by division the piece component {pc2_symbol} (value {val2}) at {pos2} at separation {dist_spaces}")
-                                # Maybe break inner loops if only one capture allowed per pair?
-                    except Exception as e: # Catch potential division errors or type issues
-                        if verbose:
-                            print(f"Error during division check for v1={v1}, v2={v2}: {e}")
-                        continue
+                                    print(f"Capture Found: {attacker_poly} (value {v_attacker}) at {attacker_coords} captures {victim_poly} (value {v_victim}) at {victim_coords} by Division (separation {dist_spaces}).")
     return cps
 
 	
@@ -4403,61 +4358,52 @@ def valid_captures_by_division_black(game_state, verbose = False):
 
     """
     GS = copy(game_state)
-    # Get coordinates first
-    posw_coords = positions_w(GS, verbose=False)
-    posb_coords = positions_b(GS, verbose=False)
-    cps = [] # List to store valid captures
-    for x_coords in posb_coords:
-        # Ensure coordinates are Sage Integers if necessary
-        pc1_coords = (ZZ(x_coords[0]), ZZ(x_coords[1]))
-        # Get the list of values for the black piece (attacker)
-        valb_list = value_of_piece(GS, pc1_coords[0], pc1_coords[1])
-        if not valb_list or valb_list == [0]: continue # Skip empty squares
-        for y_coords in posw_coords:
-            # Ensure coordinates are Sage Integers
-            pc2_coords = (ZZ(y_coords[0]), ZZ(y_coords[1]))
-            # Get the list of values for the white piece (target)
-            valw_list = value_of_piece(GS, pc2_coords[0], pc2_coords[1])
-            if not valw_list or valw_list == [0]: continue # Skip empty squares
-            # Calculate distance (number of spaces between)
-            dist_units = pieces_in_a_line(GS, pc1_coords, pc2_coords)
-            # Check if pieces are in a line and separated by at least one space
-            if dist_units <= 1:
+    cps = []
+
+    # Get the detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+
+    # Iterate through all black pieces as potential attackers
+    for attacker_data in black_pos_data:
+        attacker_coords = attacker_data[0]
+        attacker_poly = attacker_data[1]
+        attacker_values = value_of_piece(GS, attacker_coords[0], attacker_coords[1])
+
+        if not attacker_values or attacker_values == [0]:
+            continue
+
+        # Iterate through all white pieces as potential victims
+        for victim_data in white_pos_data:
+            victim_coords = victim_data[0]
+            victim_poly = victim_data[1]
+            
+            # Check for a clear line of sight and get distance
+            dist_spaces = pieces_in_a_line(GS, attacker_coords, victim_coords)
+            
+            # Capture requires a distance of at least 1 empty space
+            if dist_spaces < 1:
                 continue
-            dist_spaces = dist_units ## - 1
-            # Iterate through all value combinations
-            for v1 in valb_list: # Black attacker value component
-                if not isinstance(v1, (int, Integer)): continue # Skip non-numeric markers
-                for v2 in valw_list: # White target value component
-                    if not isinstance(v2, (int, Integer)): continue # Skip non-numeric markers
-                    # Check the capture rule: value(pc1)/value(pc2) == dist_spaces
-                    # Requires v2 != 0 and v2 must divide v1
-                    try:
-                        if v2 != 0 and v1 % v2 == 0:
-                            quotient = ZZ(v1 / v2) # Use ZZ for Sage integer division
-                            if quotient == dist_spaces:
-                                # Capture occurs!
-                                pos1 = pc1_coords # black piece position
-                                val1 = v1         # black component value involved
-                                pos2 = pc2_coords # white piece position
-                                val2 = v2         # white component value involved
-                                # Format as [(pos1, val1), (pos2, val2)]
+
+            victim_values = value_of_piece(GS, victim_coords[0], victim_coords[1])
+            if not victim_values or victim_values == [0]:
+                continue
+            
+            # Check all value combinations for the capture rule
+            for v_attacker in attacker_values:
+                if not isinstance(v_attacker, (int, Integer)): continue
+                for v_victim in victim_values:
+                    if not isinstance(v_victim, (int, Integer)): continue
+                    
+                    # Check the division rule, ensuring no division by zero
+                    if v_victim > 0 and v_attacker % v_victim == 0:
+                        if v_attacker / v_victim == dist_spaces:
+                            # Found a valid capture
+                            capture_record = ((attacker_coords, v_attacker), (victim_coords, v_victim))
+                            if capture_record not in cps:
+                                cps.append(capture_record)
                                 if verbose:
-                                    formatted_result = [(pos1, val1, GS[pos1[0], pos1[1]]), (pos2, val2, GS[pos2[0], pos2[1]])]
-                                else:
-                                    formatted_result = [(pos1, val1), (pos2, val2)]
-                                # Avoid duplicates
-                                if formatted_result not in cps:
-                                    cps.append(formatted_result)
-                                    if verbose:
-                                        pc1_symbol = GS[pos1[0], pos1[1]]
-                                        pc2_symbol = GS[pos2[0], pos2[1]]
-                                        print(f"The piece component {pc1_symbol} (value {val1}) at {pos1} captures by division the piece component {pc2_symbol} (value {val2}) at {pos2} at separation {dist_spaces}")
-                                # Maybe break inner loops if only one capture allowed per pair?
-                    except Exception as e: # Catch potential division errors or type issues
-                        if verbose:
-                            print(f"Error during division check for v1={v1}, v2={v2}: {e}")
-                        continue
+                                    print(f"Capture Found: {attacker_poly} (value {v_attacker}) at {attacker_coords} captures {victim_poly} (value {v_victim}) at {victim_coords} by Division (separation {dist_spaces}).")
     return cps
 
 
@@ -4494,44 +4440,48 @@ def valid_captures_by_siege_white(game_state, verbose = False): ## this is gemin
          [((2, 2), 3)]
 
     """
-    GS = copy(game_state) # Keep alias for brevity if preferred
+    GS = copy(game_state)
     captured_by_siege = []
-    # Get positions efficiently
-    # Use sets for faster lookups (O(1) average)
-    black_positions_values = {}
-    for r_int, c_int in positions_b(GS):
-         # Ensure coordinates are standard Python integers if needed
-         r, c = int(r_int), int(c_int)
-         val = value_of_piece(GS, r, c)
-         black_positions_values[(r, c)] = val
-    white_pos_set = set()
-    for r_int, c_int in positions_w(GS):
-        white_pos_set.add( (int(r_int), int(c_int)) )
+
+    # Get detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+
+    # Create data structures for efficient lookups
+    white_pos_set = {item[0] for item in white_pos_data}
+
     # Define orthogonal directions
-    shifts = [(0, 1), (0, -1), (1, 0), (-1, 0)] # Right, Left, Down, Up
+    shifts = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     # Check each black piece for siege
-    for (r, c), value in black_positions_values.items():
-        is_surrounded = True # Assume surrounded until proven otherwise
+    for piece_data in black_pos_data:
+        pos, poly = piece_data[0], piece_data[1]
+        r, c = pos
+        is_surrounded = True  # Assume surrounded until proven otherwise
+        
         for dr, dc in shifts:
             adj_r, adj_c = r + dr, c + dc
             adj_pos = (adj_r, adj_c)
-            # Check if the adjacent square is within bounds
+
+            # If the adjacent square is on the board, it must be occupied by a white piece
             if in_bounds(adj_pos):
-                # If it's in bounds, it must be occupied by white for siege to continue
                 if adj_pos not in white_pos_set:
                     is_surrounded = False
-                    break # No need to check other directions for this piece
-            # else: If adj_pos is out of bounds, it counts towards the siege
-        # If the loop completed without setting is_surrounded to False
+                    break  # This direction is open, so no siege
+            # If the adjacent square is off-board, it counts towards the siege
+        
+        # If the loop completed without finding an escape route, the piece is captured
         if is_surrounded:
+            value = value_of_piece(GS, r, c)
             if verbose:
-                captured_info = [((r, c), value, GS[r, c])]
+                # Use a format consistent with other verbose captures
+                captured_info = ((pos, value, poly),)
+                print(f"Capture Found: The piece {poly} at {pos} is captured by Siege.")
             else:
-                captured_info = ((r, c), value)
+                captured_info = (pos, value)
+            
             captured_by_siege.append(captured_info)
-            if verbose:
-                # Assuming GS[r, c] gives a printable representation of the piece
-                print(f"The piece {GS[r,c]} at {(r, c)} with value {value} is captured by siege.")
+            
     return captured_by_siege
 
 	
@@ -4578,44 +4528,48 @@ def valid_captures_by_siege_black(game_state, verbose = False):
         
 
     """
-    GS = copy(game_state) # Keep alias for brevity if preferred
+    GS = copy(game_state)
     captured_by_siege = []
-    # Get positions efficiently
-    # Use sets for faster lookups (O(1) average)
-    white_positions_values = {}
-    for r_int, c_int in positions_w(GS):
-         # Ensure coordinates are standard Python integers if needed
-         r, c = int(r_int), int(c_int)
-         val = value_of_piece(GS, r, c)
-         white_positions_values[(r, c)] = val
-    black_pos_set = set()
-    for r_int, c_int in positions_b(GS):
-        black_pos_set.add( (int(r_int), int(c_int)) )
+
+    # Get detailed data for all pieces
+    white_pos_data = positions_w(GS)
+    black_pos_data = positions_b(GS)
+
+    # Create a set of black piece coordinates for efficient lookups
+    black_pos_set = {item[0] for item in black_pos_data}
+
     # Define orthogonal directions
-    shifts = [(0, 1), (0, -1), (1, 0), (-1, 0)] # Right, Left, Down, Up
+    shifts = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     # Check each white piece for siege
-    for (r, c), value in white_positions_values.items():
-        is_surrounded = True # Assume surrounded until proven otherwise
+    for piece_data in white_pos_data:
+        pos, poly = piece_data[0], piece_data[1]
+        r, c = pos
+        is_surrounded = True  # Assume surrounded until proven otherwise
+        
         for dr, dc in shifts:
             adj_r, adj_c = r + dr, c + dc
             adj_pos = (adj_r, adj_c)
-            # Check if the adjacent square is within bounds
+
+            # If the adjacent square is on the board, it must be occupied by a black piece
             if in_bounds(adj_pos):
-                # If it's in bounds, it must be occupied by black for siege to continue
                 if adj_pos not in black_pos_set:
                     is_surrounded = False
-                    break # No need to check other directions for this piece
-            # else: If adj_pos is out of bounds, it counts towards the siege
-        # If the loop completed without setting is_surrounded to False
+                    break  # This direction is open, so no siege
+            # If the adjacent square is off-board, it counts towards the siege
+        
+        # If the loop completed without finding an escape route, the piece is captured
         if is_surrounded:
+            value = value_of_piece(GS, r, c)
             if verbose:
-                captured_info = [((r, c), value, GS[r, c])]
+                # Use a format consistent with other verbose captures
+                captured_info = ((pos, value, poly),)
+                print(f"Capture Found: The piece {poly} at {pos} is captured by Siege.")
             else:
-                captured_info = ((r, c), value)
+                captured_info = (pos, value)
+            
             captured_by_siege.append(captured_info)
-            if verbose:
-                # Assuming GS[r, c] gives a printable representation of the piece
-                print(f"The piece {GS[r,c]} at {(r, c)} with value {value} is captured by siege.")
+            
     return captured_by_siege
 
 
@@ -6074,49 +6028,38 @@ def is_arithmetical_pattern_white(game_state, verbose = False):
     """
     GS = copy(game_state)
     pattern_list = list_arithmetical_patterns_white()
-    posw = positions_w(GS)
-    posw_in_b = [[x, value_of_piece(GS, x[0], x[1])] for x in posw if x[1]>7]
-    vals_posw_in_b = [y[1] for y in posw_in_b]
-    num_vals = len(vals_posw_in_b)
-    if num_vals < 3:
+    
+    # Get detailed data for all white pieces
+    posw_data = positions_w(GS)
+    
+    # Filter for pieces in enemy territory (column index > 7)
+    posw_in_b = []
+    for piece_data in posw_data:
+        pos, poly = piece_data[0], piece_data[1]
+        if pos[1] > 7:
+            # Correctly pass coordinates to value_of_piece
+            value = value_of_piece(GS, pos[0], pos[1])
+            posw_in_b.append([pos, value, poly])
+
+    if len(posw_in_b) < 3:
         return False
-    ## instead of using pattern_list, use a triple for loop to
-    ## pick 3, check they are distinct, sort them
-    ## test the c-b = b-a condition
-    ## if valid, return True, else False
-    good_coords0 = []
-    z0 = []
-    for z in pattern_list:
-        for w1 in posw_in_b:
-            for w2 in posw_in_b:
-                for w3 in posw_in_b:
-                    if len(list(Set([w1,w2,w3]))) < 3:
-                        continue
-                    w11 = sum(w1[1]); w21 = sum(w2[1]); w31 = sum(w3[1])
-                    #print("000", (w1, w2, w3), z, Set(z) == Set([w1[1], w2[1], w3[1]]), good_coords0)
-                    #if (z[0] == w11) and (z[1] == w21) and (z[2] == w31):
-                    if Set(z) == Set([w11, w21, w31]):
-                        w = [w1, w2, w3]
-                        #w.sort
-                        #print("111", w, z0, good_coords0)
-                        if not(w1 in good_coords0) and not(w2 in good_coords0) and not(w3 in good_coords0):
-                            z0 = z0 + [z]
-                            good_coords0 = good_coords0 + w
-                            #print("222", w, z0, good_coords0)
-    #print(z, good_coords0,len(good_coords0)>=3)
-    if len(good_coords0)>=3:
-         #winning = is_in_a_line(good_coords0[0][0], good_coords0[1][0], good_coords0[2][0])   ##### ignore this condition
-         winning = True
-         if winning and not(verbose):
-             return True
-         elif winning:
-             #if (z[0] in vals_posw_in_b) and (z[1] in vals_posw_in_b) and (z[2] in vals_posw_in_b):
-             print("White has 3 pieces in enemy territory with values ", z0, " in arithmetic harmony.", good_coords0)
-             return True
-         #else:
-         #    if verbose:
-         #        print("White has 3 pieces in enemy territory with values ", z, " in non-linear arithmetic harmony.", good_coords0)
+
+    # Check all combinations of 3 pieces for a winning pattern
+    for p1_data, p2_data, p3_data in itertools.combinations(posw_in_b, 3):
+        # The value list might contain multiple values for pyramids
+        for v1 in p1_data[1]:
+            for v2 in p2_data[1]:
+                for v3 in p3_data[1]:
+                    current_values = tuple(sorted((v1, v2, v3)))
+                    if current_values in pattern_list:
+                        # Found a pattern. Now check if they are in a line.
+                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
+                        if is_in_a_line(pos1, pos2, pos3):
+                            if verbose:
+                                print(f"White has 3 pieces in enemy territory with values {current_values} in linear arithmetic harmony.")
+                            return True
     return False
+
 
 def is_arithmetical_pattern_black(game_state, in_a_line = False, verbose = False):
     r"""
@@ -6138,49 +6081,38 @@ def is_arithmetical_pattern_black(game_state, in_a_line = False, verbose = False
 
     """
     GS = copy(game_state)
-    pattern_list = list_arithmetical_patterns_black() # Get valid patterns
-    posb = positions_b(GS) # Get all black positions
-    # Get black pieces in enemy territory (col index < 8)
-    # Store as [(position_tuple, value_list), ...]
+    pattern_list = list_arithmetical_patterns_black()
+    
+    # Get detailed data for all black pieces
+    posb_data = positions_b(GS)
+    
+    # Filter for pieces in enemy territory (column index < 8)
     posb_in_w = []
-    for r, c in posb:
-        if c < 8: # Enemy territory for black
-            value = value_of_piece(GS, r, c)
-            # Ensure value is not [0] (empty square) and is a list
-            if isinstance(value, list) and value != [0]:
-                 posb_in_w.append( ((r, c), value) ) # Store position and value list
-    # Need at least 3 pieces
+    for piece_data in posb_data:
+        pos, poly = piece_data[0], piece_data[1]
+        if pos[1] < 8:
+            value = value_of_piece(GS, pos[0], pos[1])
+            posb_in_w.append([pos, value, poly])
+
     if len(posb_in_w) < 3:
         return False
-    # Iterate through all combinations of 3 distinct pieces in enemy territory
-    for w1, w2, w3 in itertools.combinations(posb_in_w, 3):
-        # Extract values - take the first element assuming single-value pieces
-        # Note: Assumes patterns don't directly involve pyramid components
-        val1 = w1[1][0] if w1[1] else None
-        val2 = w2[1][0] if w2[1] else None
-        val3 = w3[1][0] if w3[1] else None
-        # Skip if any piece somehow had an empty value list
-        if val1 is None or val2 is None or val3 is None:
-            continue
-        # Check if the values form any known arithmetical pattern
-        # Create sorted tuple of values to check against patterns
-        current_values_sorted = tuple(sorted([val1, val2, val3]))
-        if current_values_sorted in pattern_list:
-            # Found an arithmetical pattern! Now check linearity.
-            pos1 = w1[0]
-            pos2 = w2[0]
-            pos3 = w3[0]
-            if is_in_a_line(pos1, pos2, pos3):
-                # Found a winning pattern
-                if verbose:
-                    # Use the matched pattern tuple for printing clarity
-                    print(f"Black has 3 pieces in enemy territory with values {current_values_sorted} in arithmetic harmony. Pieces: {[w1, w2, w3]}")
-                return True
-            # else:
-            #    if verbose: # Optional: report non-linear patterns
-            #        print(f"Black has 3 pieces in enemy territory with values {current_values_sorted} in non-linear arithmetic harmony. Pieces: {[w1, w2, w3]}")
-    # If no combination satisfied both conditions
+
+    # Check all combinations of 3 pieces for a winning pattern
+    for p1_data, p2_data, p3_data in itertools.combinations(posb_in_w, 3):
+        # A single piece can have multiple values (pyramid). Check all value combinations.
+        for v1 in p1_data[1]:
+            for v2 in p2_data[1]:
+                for v3 in p3_data[1]:
+                    current_values = tuple(sorted((v1, v2, v3)))
+                    if current_values in pattern_list:
+                        # Found a pattern. Now check if they are in a line.
+                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
+                        if is_in_a_line(pos1, pos2, pos3):
+                            if verbose:
+                                print(f"Black has 3 pieces in enemy territory with values {current_values} in linear arithmetic harmony.")
+                            return True
     return False
+
     
 
 ################################### geometrical patterns
@@ -6276,51 +6208,37 @@ def is_geometrical_pattern_white(game_state, verbose = False):
          True
 
     """
-    GS = copy(game_state)                         
+    GS = copy(game_state)
     pattern_list = list_geometrical_patterns_white()
-    posw = positions_w(GS)
-    # Get white pieces in enemy territory (col index > 7)
-    # Store as [(position_tuple, value_list), ...]
+    
+    # Get detailed data for all white pieces
+    posw_data = positions_w(GS)
+    
+    # Filter for pieces in enemy territory (column index > 7)
     posw_in_b = []
-    for r, c in posw:
-        if c > 7:
-            value = value_of_piece(GS, r, c)
-            # Ensure value is not [0] (empty square) and is a list
-            if isinstance(value, list) and value != [0]:
-                 posw_in_b.append( ((r, c), value) ) # Store position and value list
-    # Need at least 3 pieces
+    for piece_data in posw_data:
+        pos, poly = piece_data[0], piece_data[1]
+        if pos[1] > 7:
+            value = value_of_piece(GS, pos[0], pos[1])
+            posw_in_b.append([pos, value, poly])
+
     if len(posw_in_b) < 3:
         return False
-    # Iterate through all combinations of 3 distinct pieces in enemy territory
-    for w1, w2, w3 in itertools.combinations(posw_in_b, 3):
-        # Extract values - take the first element assuming single-value pieces for patterns
-        # Note: This assumes patterns don't involve pyramid components directly
-        val1 = w1[1][0] if w1[1] else None
-        val2 = w2[1][0] if w2[1] else None
-        val3 = w3[1][0] if w3[1] else None
-        # Skip if any piece somehow had an empty value list
-        if val1 is None or val2 is None or val3 is None:
-            continue
-        # Check if the values form any known geometric pattern
-        # Create sorted tuple of values to check against patterns
-        current_values_sorted = tuple(sorted([val1, val2, val3]))
-        #print("0000  ", w1, w2, w3, "\n", val1, val2, val3, "\n", current_values_sorted)
-        if current_values_sorted in pattern_list:
-            # Found a geometric pattern! Now check linearity.
-            pos1 = w1[0]
-            pos2 = w2[0]
-            pos3 = w3[0]
-            #print("1111  ", w1, w2, w3, "\n", val1, val2, val3, "\n", pos1, pos2, pos3, is_in_a_line(pos1, pos2, pos3))
-            #if is_in_a_line(pos1, pos2, pos3):
-            # Found a winning pattern
-            if verbose:
-                # Use the matched pattern tuple for printing clarity
-                print(f"White has 3 pieces in enemy territory with values {current_values_sorted} in geometric harmony. Pieces: {[w1, w2, w3]}")
-            return True
-            # else:
-            #    if verbose: # Optional: report non-linear patterns
-            #        print(f"White has 3 pieces in enemy territory with values {current_values_sorted} in non-linear geometric harmony. Pieces: {[w1, w2, w3]}")
-    # If no combination satisfied both conditions
+
+    # Check all combinations of 3 pieces for a winning pattern
+    for p1_data, p2_data, p3_data in itertools.combinations(posw_in_b, 3):
+        # A single piece can have multiple values (pyramid). Check all value combinations.
+        for v1 in p1_data[1]:
+            for v2 in p2_data[1]:
+                for v3 in p3_data[1]:
+                    current_values = tuple(sorted((v1, v2, v3)))
+                    if current_values in pattern_list:
+                        # Found a pattern. Now check if they are in a line.
+                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
+                        if is_in_a_line(pos1, pos2, pos3):
+                            if verbose:
+                                print(f"White has 3 pieces in enemy territory with values {current_values} in linear geometric harmony.")
+                            return True
     return False
 
 
@@ -6344,53 +6262,39 @@ def is_geometrical_pattern_black(game_state, verbose = False):
          True
 
     """
-    import itertools
-    GS = copy(game_state)                         
+    GS = copy(game_state)
     pattern_list = list_geometrical_patterns_black()
-    posb = positions_b(GS)
-    # Get black pieces in enemy territory (col index <= 7)
-    # Store as [(position_tuple, value_list), ...]
-    posw_in_w = []
-    for r, c in posb:
-        if c <= 7:
-            value = value_of_piece(GS, r, c)
-            # Ensure value is not [0] (empty square) and is a list
-            if isinstance(value, list) and value != [0]:
-                 posw_in_w.append( ((r, c), value) ) # Store position and value list
-    # Need at least 3 pieces
-    if len(posw_in_w) < 3:
+    
+    # Get detailed data for all black pieces
+    posb_data = positions_b(GS)
+    
+    # Filter for pieces in enemy territory (column index < 8)
+    posb_in_w = []
+    for piece_data in posb_data:
+        pos, poly = piece_data[0], piece_data[1]
+        if pos[1] < 8:
+            value = value_of_piece(GS, pos[0], pos[1])
+            posb_in_w.append([pos, value, poly])
+
+    if len(posb_in_w) < 3:
         return False
-    # Iterate through all combinations of 3 distinct pieces in enemy territory
-    for w1, w2, w3 in itertools.combinations(posw_in_w, 3):
-        # Extract values - take the first element assuming single-value pieces for patterns
-        # Note: This assumes patterns don't involve pyramid components directly
-        val1 = w1[1][0] if w1[1] else None
-        val2 = w2[1][0] if w2[1] else None
-        val3 = w3[1][0] if w3[1] else None
-        # Skip if any piece somehow had an empty value list
-        if val1 is None or val2 is None or val3 is None:
-            continue
-        # Check if the values form any known geometric pattern
-        # Create sorted tuple of values to check against patterns
-        current_values_sorted = tuple(sorted([val1, val2, val3]))
-        #print("0000  ", w1, w2, w3, "\n", val1, val2, val3, "\n", current_values_sorted)
-        if current_values_sorted in pattern_list:
-            # Found a geometric pattern! Now check linearity.
-            pos1 = w1[0]
-            pos2 = w2[0]
-            pos3 = w3[0]
-            #print("1111  ", w1, w2, w3, "\n", val1, val2, val3, "\n", pos1, pos2, pos3, is_in_a_line(pos1, pos2, pos3))
-            #if is_in_a_line(pos1, pos2, pos3):
-            # Found a winning pattern
-            if verbose:
-                # Use the matched pattern tuple for printing clarity
-                print(f"Black has 3 pieces in enemy territory with values {current_values_sorted} in linear geometric harmony. Pieces: {[w1, w2, w3]}")
-            return True
-            # else:
-            #    if verbose: # Optional: report non-linear patterns
-            #        print(f"Black has 3 pieces in enemy territory with values {current_values_sorted} in non-linear geometric harmony. Pieces: {[w1, w2, w3]}")
-    # If no combination satisfied both conditions
+
+    # Check all combinations of 3 pieces for a winning pattern
+    for p1_data, p2_data, p3_data in itertools.combinations(posb_in_w, 3):
+        # A single piece can have multiple values (pyramid). Check all value combinations.
+        for v1 in p1_data[1]:
+            for v2 in p2_data[1]:
+                for v3 in p3_data[1]:
+                    current_values = tuple(sorted((v1, v2, v3)))
+                    if current_values in pattern_list:
+                        # Found a pattern. Now check if they are in a line.
+                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
+                        if is_in_a_line(pos1, pos2, pos3):
+                            if verbose:
+                                print(f"Black has 3 pieces in enemy territory with values {current_values} in linear geometric harmony.")
+                            return True
     return False
+
 
 
 ################################### musical patterns
@@ -6455,7 +6359,7 @@ def list_musical_patterns_black0():
         for v1 in valsb:
             for v2 in valsb:
                 if (v0<v1) and (v1<v2):
-                    if 1/v0-1/v1 == 1/v1-1/v2 and not((v0, v1, v2) in musical_patterns):
+                    if (v1*v2 - v0*v2 == v0*v2 - v0*v1) and not((v0, v1, v2) in musical_patterns):
                         musical_patterns = musical_patterns + [(v0, v1, v2)]
     musical_patterns.sort()
     return musical_patterns
@@ -6512,47 +6416,37 @@ def is_musical_pattern_white(game_state, verbose = False):
     """
     GS = copy(game_state)
     pattern_list = list_musical_patterns_white()
-    posw = positions_w(GS)
-    posw_in_b = [[x, value_of_piece(GS, x[0], x[1])] for x in posw if x[1]>7]
-    vals_posw_in_b = [y[1] for y in posw_in_b]
-    num_vals = len(vals_posw_in_b)
-    if num_vals < 3:
+    
+    # Get detailed data for all white pieces
+    posw_data = positions_w(GS)
+    
+    # Filter for pieces in enemy territory (column index > 7)
+    posw_in_b = []
+    for piece_data in posw_data:
+        pos, poly = piece_data[0], piece_data[1]
+        if pos[1] > 7:
+            value = value_of_piece(GS, pos[0], pos[1])
+            posw_in_b.append([pos, value, poly])
+
+    if len(posw_in_b) < 3:
         return False
-    ## instead of using pattern_list, use a triple for loop to
-    ## pick 3, check they are distinct, sort them
-    ## test the 1/a-1/b = 1/b-1/c condition
-    ## if valid, return True, else False
-    good_coords0 = []
-    z0 = []
-    for z in pattern_list:
-        for w1 in posw_in_b:
-            for w2 in posw_in_b:
-                for w3 in posw_in_b:
-                    if len(list(Set([w1,w2,w3]))) < 3:
-                        continue
-                    w11 = sum(w1[1]); w21 = sum(w2[1]); w31 = sum(w3[1])
-                    #print("000", (w1, w2, w3), z, Set(z) == Set([w1[1], w2[1], w3[1]]), good_coords0)
-                    #if (z[0] == w11) and (z[1] == w21) and (z[2] == w31):
-                    if Set(z) == Set([w11, w21, w31]):
-                        w = [w1, w2, w3]
-                        w.sort
-                        if not(w1 in good_coords0) and not(w2 in good_coords0) and not(w3 in good_coords0):
-                            z0 = z0 + [z]
-                            good_coords0 = good_coords0 + w
-    #print(z, good_coords0,len(good_coords0)>=3)
-    if len(good_coords0)>=3:
-         #winning = is_in_a_line(good_coords0[0][0], good_coords0[1][0], good_coords0[2][0])
-         winning = True
-         if winning and not(verbose):
-             return True
-         elif winning:
-             #if (z[0] in vals_posw_in_b) and (z[1] in vals_posw_in_b) and (z[2] in vals_posw_in_b):
-             print("White has 3 pieces in enemy territory with values ", z0, " in musical harmony.", good_coords0)
-             return True
-         #else:
-         #    if verbose:
-         #        print("White has 3 pieces in enemy territory with values ", z, " in non-linear musical harmony.", good_coords0)
+
+    # Check all combinations of 3 pieces for a winning pattern
+    for p1_data, p2_data, p3_data in itertools.combinations(posw_in_b, 3):
+        # A single piece can have multiple values (pyramid). Check all value combinations.
+        for v1 in p1_data[1]:
+            for v2 in p2_data[1]:
+                for v3 in p3_data[1]:
+                    current_values = tuple(sorted((v1, v2, v3)))
+                    if current_values in pattern_list:
+                        # Found a pattern. Now check if they are in a line.
+                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
+                        if is_in_a_line(pos1, pos2, pos3):
+                            if verbose:
+                                print(f"White has 3 pieces in enemy territory with values {current_values} in linear musical harmony.")
+                            return True
     return False
+
 
 def is_harmonic_pattern_white(game_state, verbose = False):
     return is_musical_pattern_white(game_state, verbose)
@@ -7168,6 +7062,7 @@ def get_algebraic_move_string(game_state, start_pos, end_pos):
     alg_end = coordinate_to_algebraic(end_pos[0], end_pos[1])
     return f"{piece_char}{formatted_val}{alg_start}{alg_end}"
 
+
 def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
     r"""
     returns the number of blank spaces they are separated by if
@@ -7182,103 +7077,42 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
 
     """
     GS = copy(game_state)
-    x1 = pc1[0]
-    y1 = pc1[1]
-    x2 = pc2[0]
-    y2 = pc2[1]
-    if (x1==x2) and (y1==y2):
-        return 0
-    if (x1==x2) and (y1>y2):
-        d = y1-y2
-        if d==1:
-            return 0
-        if d>1:
-            for i in range(1, d):     ### does this go to d-1??
-               x = x2    ## = x1
-               y = y2+i
-               if sum(value_of_piece(GS, x, y))>0:
-                   return -1
-            return d.abs()-1                  ### should this be d-1??
-    if (x1==x2) and (y1<y2):
-        d = y2-y1
-        if d==1:
-            return 0
-        if d>1:
-            for i in range(1, d):
-               x = x1    ## = x2
-               y = y1+i
-               if value_of_piece(GS, x, y)[0]>0:
-                   return -1
-            return d.abs()-1
-    if (x1>x2) and (y1==y2):
-        d = x1-x2
-        if d==1:
-            return 0
-        if d>1:
-            for i in range(1, d):
-               x = x2+i
-               y = y2   ## = y1
-               if value_of_piece(GS, x, y)[0] > 0:
-                   return -1
-            return d.abs()-1
-    if (x1<x2) and (y1==y2):
-        d = x2-x1
-        if d==1:
-            return 0
-        if d>1:
-            for i in range(1, d):
-               x = x1+i
-               y = y1   ## = y2
-               if value_of_piece(GS, x, y)[0] > 0:
-                   return -1
-            return d.abs()-1
-    if (diagonal_lines):
-        if (x2 > x1) and ((y2-y1)/(x2-x1) == 1):
-            d = x2-x1
-            if d==1:
-                return 0
-            if d>1:
-                for i in range(1, d):
-                   x = x1+i
-                   y = y1+i
-                   if value_of_piece(GS, x, y)[0] > 0:
-                       return -1
-                return d.abs()
-        if (x2 < x1) and ((y2-y1)/(x2-x1) == 1):
-            d = x1-x2
-            if d==1:
-                return 0
-            if d>1:
-                for i in range(1, d):
-                   x = x1-i
-                   y = y1-i
-                   if value_of_piece(GS, x, y)[0] > 0:
-                       return -1
-                return d.abs()-1
-        if (x2 > x1) and ((y2-y1)/(x2-x1) == -1):
-            d = x2-x1
-            #print(d, x1, x2, y1, y2)
-            if d==1:
-                return 0
-            if d>1:
-                for i in range(1, d):
-                   x = x1+i
-                   y = y1-i
-                   if value_of_piece(GS, x, y)[0] > 0:
-                       return -1
-                return d.abs()-1
-        if (x2 < x1) and ((y2-y1)/(x2-x1) == -1):
-            d = x1-x2
-            if d==1:
-                return 0
-            if d>1:
-                for i in range(1, d):
-                   x = x1-i
-                   y = y1+i
-                   if value_of_piece(GS, x, y)[0] > 0:
-                       return -1
-                return d.abs()-1
+    x1, y1 = pc1
+    x2, y2 = pc2
+
+    if (x1 == x2) and (y1 != y2): # Horizontal path
+        d = y2 - y1
+        if abs(d) <= 1: return 0
+        for i in range(1, abs(d)):
+            y = y1 + (i * (1 if d > 0 else -1))
+            if sum(value_of_piece(GS, x1, y)) > 0:
+                return -1
+        return abs(d) - 1
+
+    if (y1 == y2) and (x1 != x2): # Vertical path
+        d = x2 - x1
+        if abs(d) <= 1: return 0
+        for i in range(1, abs(d)):
+            x = x1 + (i * (1 if d > 0 else -1))
+            if sum(value_of_piece(GS, x, y1)) > 0:
+                return -1
+        return abs(d) - 1
+
+    if diagonal_lines:
+        dx = x2 - x1
+        dy = y2 - y1
+        if abs(dx) == abs(dy) and abs(dx) > 1:
+            step_x = 1 if dx > 0 else -1
+            step_y = 1 if dy > 0 else -1
+            for i in range(1, abs(dx)):
+                x = x1 + i * step_x
+                y = y1 + i * step_y
+                if sum(value_of_piece(GS, x, y)) > 0:
+                    return -1
+            return abs(dx) - 1
+
     return -1
+
 
 def draw_big_square(piece_value = "361", piece_color = "black", verbose = False):
     """
@@ -7896,33 +7730,36 @@ def center_of_gravity(game_state, piece_color = "Odd", by_rank = False):
 
     """
     gs = copy(game_state)
+    positions_data = []
+
     if (piece_color in ["black", "Black", "odd", "Odd"]):
-        if by_rank == False:
-            positions = positions_b(gs)
-        else:
-            positions = [xx for xx in positions_b(gs) if xx[1]<10]
-        nn = len(positions)
-        if nn==0:
-            positions = positions_b(gs)
-            nn = len(positions)
-        x0 = sum([vv[0] for vv in positions])
-        y0 = sum([vv[1] for vv in positions])
-        return (x0/nn, y0/nn)
+        positions_data = positions_b(gs)
+        if by_rank:
+            # Filter for pieces in or near enemy territory (columns 0-9)
+            positions_data = [data for data in positions_data if data[0][1] < 10]
     elif (piece_color in ["even", "Even", "white", "White"]):
-        if by_rank == False:
-            positions = positions_w(gs)
-        else:
-            positions = [xx for xx in positions_w(gs) if xx[1]>5]
-        nn = len(positions)
-        if nn==0:
-            positions = positions_w(gs)
-            nn = len(positions)
-        x0 = sum([vv[0] for vv in positions])
-        y0 = sum([vv[1] for vv in positions])
-        return (x0/nn, y0/nn)
+        positions_data = positions_w(gs)
+        if by_rank:
+            # Filter for pieces in or near enemy territory (columns 6-15)
+            positions_data = [data for data in positions_data if data[0][1] > 5]
     else:
         print("You must select a piece color, such as 'Even' or 'Odd'. Try again.")
         return (-1, -1)
+
+    # Extract just the coordinate tuples from the detailed data
+    positions = [data[0] for data in positions_data]
+    
+    nn = len(positions)
+    if nn == 0:
+        # Avoid division by zero if no pieces match the criteria
+        return (-1, -1)
+
+    # Correctly sum the x and y coordinates from the tuples
+    x0 = sum(pos[0] for pos in positions)
+    y0 = sum(pos[1] for pos in positions)
+    
+    return (x0/nn, y0/nn)
+
 
 def coordinating_progression_count_odd(v):
     """
