@@ -21,18 +21,62 @@ On (2): We follow de Boissitre's treatement here for the pyramid pieces
 Notation for captures:
 * captures (except for siege) = [list/tuples of triples of friendly pieces attacking an enemy piece, 
   triple for enemy captured piece]
-* each triple in this list has the form (pc_x, pc_y, val_pc), where 
-  pc_x   -- the x-coordinate of the coordinate position of the piece on the game board (0 <= pc_x <= 7), 
-  pc_y   -- the y-coordinate of the coordinate position of the piece on the game board (0 <= pc_y <= 15), 
-  val_pc -- the value of the piece
-* the first (friendlies) list is empty for siege, a singleton for captures by numbering, otherwise, 
-  they could be lists of length 2.
+* each triple in this list has the form [(pc_x, pc_y), val_pc, poly_pc], where 
+  pc_x    -- the x-coordinate of the coordinate position of the piece on the game board (0 <= pc_x <= 7), 
+  pc_y    -- the y-coordinate of the coordinate position of the piece on the game board (0 <= pc_y <= 15), 
+  val_pc  -- the value of the piece
+  poly_pc -- the polynomial rep of the piece (including the pyramid)
+* two examples: 
+                 (loc_pc, val_pc, poly_pc) = ((3, 3), 6, C^6)
+                 (loc_pc, val_pc, poly_pc) = ((1, 1), 91, P+S^1+S^4+S^9+S^(16)+S^{25)+S^(36))
+* One option:
+   ** the first (friendlies) list is empty for siege, a singleton for captures by numbering, otherwise, 
+      they could be lists of length 2.
+   ** the first list could be the data for any (friendly) attacking piece involved in the capture,
+      for example, it could be the attacking piece that was moved last.
 * See c1, c2, c3, c4, c5, c6 in take_all_captures_black (below) for details on the format of 
   the capture notation.
+  
+ANOTHER NOTATION for captures:
+ * The pieces can be dictionaries:
+    piece = {"color": "even"/"odd",
+             "shape": "circle"/"triangle","square"/"pyramid",
+             "value": v,
+	     "algebraic": "C^2"/"c^3"/.../"P+<subpieces>",
+	     "position": (x,y)}
+    Of course, a piece can also be represented as a 5-list, where each component is represented as above.
+ * The capture dictionary is similar:  
+    capture = {"friendly_piece": piece1, ######## this is the capturing/attacking piece (or one of them)
+               "enemy_piece": piece2, ######## this is the captured/attacked piece (one per capture)
+	       "capture_type": "number"/"sum"/"difference"/"product"/"divisor"/"siege",
+	       "pre_move_capture":True/False,
+	       "post_move_capture":True/False}
+    where the dictionary structure for piece1, piece2 are as described above (but of opposite "color,"
+    of course).
+
+YET Another Notation for captures:
+* a capture is a quintuple/5-element list of the form 
+
+                          [(pc_x, pc_y), val_pc, poly_pc, type, pre_or_post], 
+
+  where 
+
+  pc_x         -- the x-coordinate of the coordinate position of the piece on the game board (0 <= pc_x <= 7), 
+  pc_y         -- the y-coordinate of the coordinate position of the piece on the game board (0 <= pc_y <= 15), 
+  val_pc       -- the value of the piece
+  poly_pc      -- the polynomial rep of the piece (including the pyramid)
+  type         -- the (string representing the) type of capture, so one of 
+                  "number"/"sum"/"difference"/"product"/"divisor"/"siege"
+                  (if more precision is needed, they can be combined, such as 
+                   "number/product" is reasonable in some cases)
+  pre_or_post  -- the (string representing the) time of capture, 
+                  = "pre" if the capture was performed before the move, 
+                  = "post" if the capture was performed after the move (default).
+
+
 
 Current programs:
 
-* initialize_global_variables()    ### instead, use captured_pieces_black and captured_pieces_white
 
 ****** plotting
 * triangle_b(pt, s)
@@ -45,6 +89,8 @@ Current programs:
 * board_plot(game_state, pyramid=True)      ## best in general
 * board_plot2(game_state, vertical=False)   ## original, older code
 * display_board_matplotlib(game_state_sage_matrix)
+* capture_list_to_animation(game_state, capture_list) ## not the best name, as it doesn't produce an animation
+* turn_to_animation(game_state, precapture_list, move, postcapture_list, color="even", turn_number=1, frame_counter=0)
 
 ****** game states
 * board_initial_matrix(pyramid_decomposition = False)
@@ -64,6 +110,7 @@ Current programs:
 * pyramid_positions_white(GS, verbose = False)
 * positions_b(GS)
 * positions_w(GS)
+* value_of_piece(GS, i, j)
 * piece_values_list_white()
 * piece_values_list_black()
 * piece_values_matrix_white()
@@ -96,7 +143,7 @@ Current programs:
 * play_a_game(game_state, my_color, verbose = False)   
 * play_human_vs_computer_round(gs_before_human_action, history_list, human_action_algebraic, verbose = False)
 * blacks_turn(game_state, method_best = Tru)                                           ## changes game state
-* whites_turn(game_state, method_best = True)                        ## changes game state
+* whites_turn(game_state, method_best = True)                                      ## changes game state
 * good_move_white(game_state, verbose = False)
 * good_move_black(game_state, verbose = False)
 * make_good_move_black(game_state, verbose = False)
@@ -119,7 +166,7 @@ Current programs:
 * valid_captures_by_subtraction_white(game_state, verbose = False)
 * valid_captures_by_subtraction_black(game_state, verbose = False)
 * valid_captures_by_multiplication_white(game_state, verbose = False) ## gemini's improved version
-* valid_captures_by_mutliplication_black(game_state, verbose = False)
+* valid_captures_by_multiplication_black(game_state, verbose = False)
 * valid_captures_by_division_white(game_state, verbose = False)
 * valid_captures_by_division_black(game_state, verbose = False)
 * valid_captures_by_siege_white(game_state, verbose = False)
@@ -142,9 +189,15 @@ Current programs:
 * is_body_common_victory_white(game_state, N0 = 4)  
 * is_goods_common_victory_black(game_state, N1 = 100)       
 * is_goods_common_victory_white(game_state, N1 = 100)                
+* list_arithmetical_patterns_white0()                           ### initializes, for faster play
+* list_geometrical_patterns_white0()                           ### initializes, for faster play
+* list_musical_patterns_white0()                                ### initializes, for faster play
 * list_arithmetical_patterns_white()
 * list_geometrical_patterns_white()
 * list_musical_patterns_white()
+* list_arithmetical_patterns_black0()                        ### initializes, for faster play
+* list_geometrical_patterns_black0()                        ### initializes, for faster play
+* list_musical_patterns_black0()                            ### initializes, for faster play
 * list_arithmetical_patterns_black()
 * list_geometrical_patterns_black()
 * list_musical_patterns_black()
@@ -161,7 +214,6 @@ Current programs:
 
 +++++ utilities
 * in_bounds(x)
-* value_of_piece(GS, i, j)
 * select_from_a_list_random(L, n)
 * common_elements(list1, list2)  ## not needed?
 * is_in_a_line(pc0, pc1, pc2)
@@ -173,6 +225,7 @@ Current programs:
 * algebraic_to_coordinate(alg_coord)
 * coordinate_to_algebraic(x, y)
 * get_algebraic_move_string(game_state, start_pos, end_pos)
+* get_piece_details_from_poly(poly_piece, default_color_w='green', default_color_b='red')
 * game_state_to_piece_list(game_state)
 * pieces_in_a_line(game_state, pc1, pc2)
 * draw_big_square(piece_value = "49", piece_color = "black")
@@ -193,29 +246,33 @@ Current programs:
 ** white_squares_plot_line(plot_scale = 1.5, grid_scale = 3, edge_clr = "red", fnt_sz = 50)
 * move_capture_lists_to_latex_table(even_moves, even_captures, odd_moves, odd_captures)
 * center_of_gravity(game_state, piece_color = "Odd", by_rank = False)
-* coordinating_progression_count_odd(v)
-* coordinating_progression_count_even(v)
+* coordinating_progression_count(v, color="white")
+** coordinating_progression_count_odd(v)
+** coordinating_progression_count_even(v)
 * even_piece_values()
 * odd_piece_values()
-* coordinating_progression_pair_count_even(v1, v2)
-* coordinating_progression_pair_count_odd(v1, v2)
-
-
-
+* coordinating_progression_pair_count(v1, v2, color="white")
+** coordinating_progression_pair_count_even(v1, v2)
+** coordinating_progression_pair_count_odd(v1, v2)
+* captures_as_dict(game_state, verbose = False)
+* reformat_capture_for_animation(capture_data, gs)    ## helper function for turn_to_animation, animate_full_game
+* format_capture_for_log(capture_data, gs)            ## helper function for animate_full_game
 
 REFERENCES:
  [Ri46] J.F.C. Richards, Boissiere’s Pythagorean game, Scripta Mathematica 12(1946)177-217.
 
-last modified by wdj on 2025-06-07
+last modified by wdj on 2025-07-06
 """
 
+from collections import Counter
 import itertools
 import string
 import random 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
-
+#from sage.all import var, ZZ, Integer
+import numpy as np
+import sys
 
 ############### unused global constants #############
 CIRCLE_MOVE_DIAGONAL = False
@@ -223,6 +280,11 @@ CIRCLE_MOVE_ORTHOGONAL = True
 PYRAMID_DECOMPOSITION_SQUARES_ONLY = True
 #####################################################
 
+if sys.platform=="darwin":
+    SAGE_DIR = "/Users/davidjoyner/sagefiles/"        ###############   on a mac
+else:
+    SAGE_DIR = "/home/wdjoyner/sagefiles/"             ###############  on linux
+    
 numpy_pi = 3.14159265358979          #######  replaces the call to numpy.pi
 
 ######################## plots ######################
@@ -529,155 +591,250 @@ def board_plot(game_state, pyramid=True):
     else:
         return board_plot(GS, vertical=False)
 
-def display_board_matplotlib(game_state_sage_matrix):
+
+def display_board_matplotlib(game_state_sage_matrix, dpi=300, highlight_pieces=None):
     """
     Displays the Rithmomachia board using Matplotlib, based on a SageMath game state matrix.
+
+    :param game_state_sage_matrix: The SageMath matrix representing the game state.
+    :param dpi: The resolution in dots per inch for the output image.
+    :param highlight_pieces: A list of up to 3 piece coordinates (e.g., ['a1', 'h8', 'c2'])
+                             to be highlighted with a dotted circle.
+
+    EXAMPLES:
+         sage: initial_game_state = board_initial_matrix(pyramid_decomposition=True)  # 1. Get the initial game state
+         sage: pieces_to_circle = ['a1', 'a8', 'p1']                                  # 2. Define pieces to highlight (optional), 
+                                                                                      #    coords in algebraic notation (e.g., 'a1', 'h8').
+                                                                                      # 3. Display the board with a DPI of 300 and highlighted pieces
+         # The function will now save the board as a PNG file and also display it.
+         sage: display_board_matplotlib(game_state_sage_matrix = initial_game_state, dpi=300, highlight_pieces=pieces_to_circle)
+
     """
-    # SageMath specific variables if needed for parsing game_state_sage_matrix
-    # This might be needed if value_of_piece or positions_w/b expect them to be defined.
-    #c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var = var("c,C,p,P,t,T,s,S")
-    c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var = var("c,C,p,P,t,T,s,S")
-    PR = ZZ[c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var]
-    
+    # *** FIX: Define the ring and its generators simultaneously ***
+    # This ensures P_var and p_var are the correct type for comparisons and methods.
+    PR, (c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
     rows, cols = 8, 16
-    fig, ax = plt.subplots(figsize=(16, 8)) # Or (cols, rows) for different aspect
-    font_size = 10              ########  change to 8 if needed
-    
-    # --- 1. Draw Grid and Labels (adapted from rithmomachia_board_graphic.py) ---
-    """       ################################# commented out
-    for x in range(cols + 1): # Grid lines
-        ax.plot([x, x], [0, rows], color='black', linewidth=0.7)
-    for y in range(rows + 1):
-        ax.plot([0, cols], [y, y], color='black', linewidth=0.7)
-    for x_label in range(cols): # Column labels (a-p)
-        ax.text(x_label + 0.5, rows + 0.3, chr(97 + x_label), 
-                ha='center', va='center', fontsize=font_size, color='dimgray')
-    for y_label_idx in range(rows): # Row labels (1-8, with row 0 being 8 or 1 visually)
-        # Assuming game_state_sage_matrix[0,:] is the top visual row (label '8' or '1')
-        # And matplotlib y=0 is bottom.
-        # If row 0 in matrix is row "1" visually:
-        # y_display_label = str(y_label_idx + 1)
-        # y_mpl_pos_for_label = (rows - 1 - y_label_idx) + 0.5
-        # If row 0 in matrix is row "8" visually (like in board_plot from procedural file [cite: 1388]):
-        y_display_label = str(8 - y_label_idx)
-        y_mpl_pos_for_label = y_label_idx + 0.5 # Matplotlib y for row 7, 6, ..0 (top to bottom)
-        ax.text(-0.4, y_mpl_pos_for_label, y_display_label, 
-                ha='center', va='center', fontsize=font_size, color='dimgray')
-    """     ################################# commented out
-    # Draw grid
+    fig, ax = plt.subplots(figsize=(16, 8))
+    font_size = 10
+
+    # --- 1. Draw Grid and Labels ---
     for x in range(cols):
         for y in range(rows):
             ax.add_patch(patches.Rectangle((x, rows - y - 1), 1, 1, fill=False, edgecolor='black'))
-    # Axis labels
     for x in range(cols):
         ax.text(x + 0.5, rows + 0.2, chr(97 + x), ha='center', va='center', fontsize=10, color='purple')
     for y in range(rows):
         ax.text(-0.5, rows - y - 0.5, str(y + 1), ha='center', va='center', fontsize=10, color='purple')
-    # Axis labels 2
     for x in range(cols):
-        ax.text(x + 0.5, rows - 8.2, str(x), ha='center', va='center', fontsize=10, color='blue')
+        ax.text(x + 0.5, -0.8, str(x), ha='center', va='center', fontsize=10, color='blue')
     for y in range(rows):
-        ax.text(-0.5+17, rows - y - 0.5, str(y), ha='center', va='center', fontsize=10, color='blue')
+        ax.text(cols + 0.5, rows - y - 0.5, str(y), ha='center', va='center', fontsize=10, color='blue')
 
-    # --- 2. Extract and Prepare Piece Data from Sage Game State ---
-    pieces_to_draw = [] # Will be a list of (x_mpl, y_mpl_row_origin, color, shape_mpl, value_str)
+    # --- 2. Extract and Prepare Piece Data ---
+    pieces_to_draw = []
+    all_positions = positions_w(game_state_sage_matrix, verbose=True) + positions_b(game_state_sage_matrix, verbose=True)
 
-    # White pieces
-    white_positions = positions_w(game_state_sage_matrix, verbose=True) # List of [((r,c), poly_piece)] [cite: 1389]
-    for item in white_positions:
-        pos_tuple, poly_piece = item[0], item[1]
+    for item in all_positions:
+        pos_tuple, poly_piece_raw = item[0], item[1]
+        poly_piece = PR(poly_piece_raw)
         r_sage, c_sage = pos_tuple[0], pos_tuple[1]
-        
         shape_mpl, color_mpl = get_piece_details_from_poly(poly_piece, 'green', 'red')
-        val_list = value_of_piece(game_state_sage_matrix, r_sage, c_sage) # 
-        # Sum values if it's a list from a pyramid, otherwise take the degree for simple pieces.
-        # This matches how get_algebraic_move_string calculates display_val 
-        display_val_num = sum(v for v in val_list if isinstance(v, (int, Integer))) if val_list else 0
-        value_str = str(display_val_num)
         
-        if shape_mpl != "unknown":
-            # matplotlib y=0 is bottom. If sage matrix r_sage=0 is top:
-            y_mpl_row_origin = rows - 1 - r_sage 
-            pieces_to_draw.append((c_sage, y_mpl_row_origin, color_mpl, shape_mpl, value_str))
+        display_val_num = 0
+        if P_var in poly_piece.variables():
+            display_val_num = poly_piece.degree(P_var)
+        elif p_var in poly_piece.variables():
+            display_val_num = poly_piece.degree(p_var)
+        else:
+            val_list = value_of_piece(game_state_sage_matrix, r_sage, c_sage)
+            display_val_num = sum(v for v in val_list if isinstance(v, (int, Integer)))
 
-    # Black pieces
-    black_positions = positions_b(game_state_sage_matrix, verbose=True) # [cite: 1389]
-    for item in black_positions:
-        pos_tuple, poly_piece = item[0], item[1]
-        r_sage, c_sage = pos_tuple[0], pos_tuple[1]
-
-        shape_mpl, color_mpl = get_piece_details_from_poly(poly_piece, 'green', 'red')
-        val_list = value_of_piece(game_state_sage_matrix, r_sage, c_sage) # [cite: 2267]
-        display_val_num = sum(v for v in val_list if isinstance(v, (int, Integer))) if val_list else 0
         value_str = str(display_val_num)
-
         if shape_mpl != "unknown":
             y_mpl_row_origin = rows - 1 - r_sage
             pieces_to_draw.append((c_sage, y_mpl_row_origin, color_mpl, shape_mpl, value_str))
 
-    # --- 3. Draw Pieces (adapted from rithmomachia_board_graphic.py) ---
+    # --- 3. Draw Pieces ---
     for x_col, y_row_mpl, color, shape, value in pieces_to_draw:
-        # x_col is the direct column index for matplotlib x-axis (0-15)
-        # y_row_mpl is the matplotlib y-coordinate for the bottom of the cell (0-7)
         x_center = x_col + 0.5
         y_center = y_row_mpl + 0.5
-        
         patch_to_add = None
+
         if shape == 'circle':
-            patch_to_add = patches.Circle((x_center, y_center), 0.4, 
-                                     facecolor=color, edgecolor='black', linewidth=0.5)
+            patch_to_add = patches.Circle((x_center, y_center), 0.4, facecolor=color, edgecolor='black', linewidth=0.5)
         elif shape == 'square':
-            patch_to_add = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, 
-                                        facecolor=color, edgecolor='black', linewidth=0.5)
+            patch_to_add = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, facecolor=color, edgecolor='black', linewidth=0.5)
         elif shape == 'triangle':
-            # Point up: orientation=numpy_pi/3
-            patch_to_add = patches.RegularPolygon((x_center, y_center-0.1), numVertices=3, 
-                                             radius=0.45, orientation=2*numpy_pi/3, 
-                                             facecolor=color, edgecolor='black', linewidth=0.5)
-        elif shape == 'diamond' and color == "purple": # For pyramids
-            big_square = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, facecolor="red", edgecolor='black', linewidth=0.5)
+            patch_to_add = patches.RegularPolygon((x_center, y_center - 0.1), numVertices=3, radius=0.45, orientation=2 * numpy_pi / 3, facecolor=color, edgecolor='black', linewidth=0.5)
+        elif shape == 'diamond':
+            base_color = "green" if color == "lime" else "red"
+            big_square = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, facecolor=base_color, edgecolor='black', linewidth=0.5)
             little_square = patches.RegularPolygon((x_center, y_center), numVertices=4, radius=0.45, orientation=numpy_pi/4, facecolor=color, edgecolor='black', linewidth=0.5)
             ax.add_patch(big_square)
             ax.add_patch(little_square)
-        elif shape == 'diamond' and color == "lime": # For pyramids
-            big_square = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, facecolor="green", edgecolor='black', linewidth=0.5)
-            little_square = patches.RegularPolygon((x_center, y_center), numVertices=4, radius=0.45, orientation=numpy_pi/4, facecolor=color, edgecolor='black', linewidth=0.5)
-            ax.add_patch(big_square)
-            ax.add_patch(little_square)
-        #print("000",x_col, y_row_mpl, color, shape, value)
+
         if patch_to_add:
             ax.add_patch(patch_to_add)
-        if shape == "diamond" and color == "purple":
-            f = PR(game_state_sage_matrix[7-y_row_mpl, x_col])
-            if (s_var in f.variables()):
-                val_piece = [v[6] for v in f.exponents() if not(v[6]==0)]
-                #print("111a",x_col, y_row_mpl, color, shape, value, val_piece, game_state_sage_matrix[7 - y_row_mpl, x_col])
-            ax.text(x_center, y_center + 0.2, str(val_piece[:2]), ha='center', va='center', color='white', fontsize=6, weight='bold')
-            ax.text(x_center, y_center + 0.05, str(val_piece[2:]), ha='center', va='center', color='white', fontsize=6, weight='bold')
-        if shape == "diamond" and color == "lime":
-            f = PR(game_state_sage_matrix[7-y_row_mpl, x_col])
-            if (S_var in f.variables()):
-                val_piece = [v[7] for v in f.exponents() if not(v[7]==0)]
-                #print("111b",x_col, y_row_mpl, color, shape, value, val_piece, game_state_sage_matrix[7 - y_row_mpl, x_col])
-            #print("222",x_col, y_row_mpl, color, shape, value, val_piece, (7-y_row_mpl, x_col), game_state_sage_matrix[7 - y_row_mpl, x_col])
-            ax.text(x_center, y_center + 0.2, str(val_piece[:2]), ha='center', va='center', color='black', fontsize=6, weight='bold')
-            ax.text(x_center, y_center + 0.05, str(val_piece[2:]), ha='center', va='center', color='black', fontsize=6, weight='bold')
-        
-        text_color = 'white' if color in ['red', 'purple', 'black', 'dimgray'] else 'black'
-        ax.text(x_center, y_center-0.1, value, ha='center', va='center', 
-                color=text_color, fontsize=font_size, weight='bold')
 
-    # --- 4. Adjust Display and Show ---
-    ax.set_xlim(-0.5, cols + 0.5) # Adjusted limits for labels
-    ax.set_ylim(-0.5, rows + 0.5)
+        text_color = 'black' if color in ['green', 'lime'] else 'white'
+
+        if shape == 'diamond':
+            ax.text(x_center, y_center, value, ha='center', va='center', color=text_color, fontsize=font_size, weight='bold')
+            all_vals = value_of_piece(game_state_sage_matrix, 7 - y_row_mpl, x_col)
+            main_val = int(value)
+            sub_values = [v for v in all_vals if v != main_val and v > 0]
+            if sub_values:
+                sub_values_str = ','.join(map(str, sorted(sub_values, reverse=True)))
+                ax.text(x_center, y_center + 0.25, sub_values_str, ha='center', va='center', color=text_color, fontsize=6, weight='bold')
+        else:
+            ax.text(x_center, y_center - 0.1, value, ha='center', va='center', color=text_color, fontsize=font_size, weight='bold')
+
+    # --- 4. & 5. Highlighting and Display ---
+    if highlight_pieces:
+        for piece_coord in highlight_pieces[:3]:
+            if len(piece_coord) >= 2:
+                col_char = piece_coord[0].lower()
+                row_str = piece_coord[1:]
+                if 'a' <= col_char <= 'p' and row_str.isdigit():
+                    x_col = ord(col_char) - ord('a')
+                    y_row = int(row_str) - 1
+                    y_row_mpl = rows - 1 - y_row
+                    x_center = x_col + 0.5
+                    y_center = y_row_mpl + 0.5
+                    highlight_circle = patches.Circle((x_center, y_center), 0.45, fill=False, edgecolor='lightblue', linestyle='solid', linewidth=5.5)
+                    ax.add_patch(highlight_circle)
+
+    ax.set_xlim(-1, cols + 1)
+    ax.set_ylim(-1, rows + 1)
     ax.set_aspect('equal', adjustable='box')
     ax.axis('off')
     fig.tight_layout()
-    #plt.show()
-    #fig, ax = plt.subplots()
+    plt.savefig(filename, dpi=dpi)
+    plt.close(fig)
+    print(f"Board image saved to {filename} with a DPI of {dpi}")
+
     return fig
 
 
+def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight_pieces=None, filename="rithmomachia_board.png"):
+    """
+    Displays the Rithmomachia board using Matplotlib and saves it to a specified file.
+    (This is a modified version of the original function to be more suitable for automation)
+    """
+    # --- SETUP: Define Polynomial Ring and variables correctly ---
+    PR, (c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+
+    rows, cols = 8, 16
+    fig, ax = plt.subplots(figsize=(16, 8))
+    font_size = 10
+
+    # --- 1. Draw Grid and Labels ---
+    for x in range(cols):
+        for y in range(rows):
+            ax.add_patch(patches.Rectangle((x, rows - y - 1), 1, 1, fill=False, edgecolor='black'))
+    for x in range(cols):
+        ax.text(x + 0.5, rows + 0.2, chr(97 + x), ha='center', va='center', fontsize=10, color='purple')
+    for y in range(rows):
+        ax.text(-0.5, rows - y - 0.5, str(y + 1), ha='center', va='center', fontsize=10, color='purple')
+    for x in range(cols):
+        ax.text(x + 0.5, -0.8, str(x), ha='center', va='center', fontsize=10, color='blue')
+    for y in range(rows):
+        ax.text(cols + 0.5, rows - y - 0.5, str(y), ha='center', va='center', fontsize=10, color='blue')
+
+    # --- 2. Extract and Prepare Piece Data with Correct Logic ---
+    pieces_to_draw = []
+    all_positions = positions_w(game_state_sage_matrix, verbose=True) + positions_b(game_state_sage_matrix, verbose=True)
+
+    for item in all_positions:
+        pos_tuple, poly_piece_raw = item[0], item[1]
+        poly_piece = PR(poly_piece_raw) # Ensure correct type
+        r_sage, c_sage = pos_tuple[0], pos_tuple[1]
+        shape_mpl, color_mpl = get_piece_details_from_poly(poly_piece, 'green', 'red')
+        
+        display_val_num = 0
+        # Correctly get the main value for pyramids
+        if P_var in poly_piece.variables():
+            display_val_num = poly_piece.degree(P_var)
+        elif p_var in poly_piece.variables():
+            display_val_num = poly_piece.degree(p_var)
+        else: # For regular pieces, sum is fine (as there's only one value)
+            val_list = value_of_piece(game_state_sage_matrix, r_sage, c_sage)
+            display_val_num = sum(v for v in val_list if isinstance(v, (int, Integer)))
+
+        value_str = str(display_val_num)
+        if shape_mpl != "unknown":
+            y_mpl_row_origin = rows - 1 - r_sage
+            pieces_to_draw.append((c_sage, y_mpl_row_origin, color_mpl, shape_mpl, value_str))
+
+    # --- 3. Draw Pieces with Enhanced Pyramid Text ---
+    for x_col, y_row_mpl, color, shape, value in pieces_to_draw:
+        x_center = x_col + 0.5
+        y_center = y_row_mpl + 0.5
+        patch_to_add = None
+
+        if shape == 'circle':
+            patch_to_add = patches.Circle((x_center, y_center), 0.4, facecolor=color, edgecolor='black', linewidth=0.5)
+        elif shape == 'square':
+            patch_to_add = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, facecolor=color, edgecolor='black', linewidth=0.5)
+        elif shape == 'triangle':
+            patch_to_add = patches.RegularPolygon((x_center, y_center - 0.1), numVertices=3, radius=0.45, orientation=2 * numpy_pi / 3, facecolor=color, edgecolor='black', linewidth=0.5)
+        elif shape == 'diamond':
+            base_color = "green" if color == "lime" else "red"
+            big_square = patches.Rectangle((x_col + 0.1, y_row_mpl + 0.1), 0.8, 0.8, facecolor=base_color, edgecolor='black', linewidth=0.5)
+            little_square = patches.RegularPolygon((x_center, y_center), numVertices=4, radius=0.45, orientation=numpy_pi/4, facecolor=color, edgecolor='black', linewidth=0.5)
+            ax.add_patch(big_square)
+            ax.add_patch(little_square)
+
+        if patch_to_add:
+            ax.add_patch(patch_to_add)
+
+        # New, corrected logic for drawing all text
+        text_color = 'black' if color in ['green', 'lime', 'white'] else 'white'
+
+        if shape == 'diamond':
+            # Draw the main value (e.g., 91)
+            ax.text(x_center, y_center, value, ha='center', va='center', color=text_color, fontsize=font_size, weight='bold')
+            
+            # Get and draw the sub-piece values
+            all_vals = value_of_piece(game_state_sage_matrix, 7 - y_row_mpl, x_col)
+            main_val = int(value)
+            sub_values = [v for v in all_vals if v != main_val and v > 0]
+            
+            if sub_values:
+                sub_values_str = ','.join(map(str, sorted(sub_values, reverse=True)))
+                # Draw sub-piece string above the main value in a tiny font
+                ax.text(x_center, y_center + 0.25, sub_values_str, ha='center', va='center', color=text_color, fontsize=6, weight='bold')
+        else:
+            # For regular pieces, draw text as before
+            ax.text(x_center, y_center, value, ha='center', va='center', color=text_color, fontsize=font_size, weight='bold')
+
+    # --- 4. & 5. Highlighting and Display ---
+    if highlight_pieces:
+        for piece_coord in highlight_pieces[:3]:
+            if len(piece_coord) >= 2:
+                col_char = piece_coord[0].lower()
+                row_str = piece_coord[1:]
+                if 'a' <= col_char <= 'p' and row_str.isdigit():
+                    x_col = ord(col_char) - ord('a')
+                    y_row = int(row_str) - 1
+                    y_row_mpl = rows - 1 - y_row
+                    x_center = x_col + 0.5
+                    y_center = y_row_mpl + 0.5
+                    highlight_circle = patches.Circle((x_center, y_center), 0.45, fill=False, edgecolor='lightblue', linestyle='solid', linewidth=5.5)
+                    ax.add_patch(highlight_circle)
+
+    ax.set_xlim(-1, cols + 1)
+    ax.set_ylim(-1, rows + 1)
+    ax.set_aspect('equal', adjustable='box')
+    ax.axis('off')
+    fig.tight_layout()
+    plt.savefig(filename, dpi=dpi)
+    plt.close(fig)
+    print(f"Board image saved to {filename} with a DPI of {dpi}")
+
+    return fig
+    
 
 #########################################################################################
 ######################## pieces ######################
@@ -834,6 +991,61 @@ def random_board_state(verbose=False):
             A[i,j] = p^d
     return A
 
+
+def value_of_piece(GS, i, j):
+    """
+    Returns the value(s) of the piece at (i,j) in the game state matrix.
+    If the position is empty, it returns [0].
+    If the piece is a pyramid, it returns a flat list of all its component values.
+
+    EXAMPLE:
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: value_of_piece(GS, 2, 3)
+         [8]
+        sage: value_of_piece(GSp, 1, 1)
+         [36, 25, 16, 9, 4, 1]
+
+    """
+    c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
+    PR = ZZ[c,C,p,P,t,T,s,S]
+    
+    poly_piece = GS[i, j]
+
+    if poly_piece == 0:
+        return [0]
+
+    # For non-pyramid pieces, the value is simply the degree.
+    if not (p in poly_piece.variables() or P in poly_piece.variables()):
+        return [poly_piece.degree()]
+        
+    # For pyramids, collect the value of every component.
+    else:
+        values = []
+        f = PR(poly_piece)
+        exponents = f.exponents()
+        
+        for exp_tuple in exponents:
+            # Indices: p=2, P=3, s=6, S=7
+            if exp_tuple[2] > 0: # Black pyramid main value
+                values.append(exp_tuple[2])
+            if exp_tuple[3] > 0: # White pyramid main value
+                values.append(exp_tuple[3])
+            if exp_tuple[6] > 0: # Black square sub-piece value
+                values.append(exp_tuple[6])
+            if exp_tuple[7] > 0: # White square sub-piece value
+                values.append(exp_tuple[7])
+        
+        # This handles the legacy format where the pyramid value was stored
+        # as a degree, in case the polynomial is just 'P' or 'p'.
+        if not values:
+            if p in poly_piece.variables():
+                values.append(poly_piece.degree(p))
+            elif P in poly_piece.variables():
+                values.append(poly_piece.degree(P))
+             
+        return sorted(list(set(values)))
+
+
 def captured_pieces_white(game_state, pyramid_decomposition=True): 
     """
     Returns the list of White's pieces that have been captured by Black,
@@ -851,46 +1063,52 @@ def captured_pieces_white(game_state, pyramid_decomposition=True):
     EXAMPLES:
         sage: GSp = board_initial_matrix(pyramid_decomposition=True)
         sage: GS = copy(GSp)
-        sage: captured_initially = captured_pieces_white(GS)
-        sage: len(captured_initially)
-         0
-        sage: GS = capture_piece(GS, (7,2)) # Capture T^9 initially at (7,2)
-        sage: captured_now = captured_pieces_white(GS)
-        sage: len(captured_now)
-         1
-        sage: captured_now
-         [((7, 2), T^9)]
-        sage: GS = move_piece(GS, (6, 0), (3, 0)) # Move S^15, shouldn't count as capture
-        sage: captured_after_move = captured_pieces_white(GS)
-        sage: len(captured_after_move) # Should still be 1
-         1
-        sage: captured_after_move
-         [((7, 2), T^9)] # Only T^9 is captured
+        sage: GS[1,1] = 0; GS[2,1] = 0; GS[3,1] = 0; GS[4,1] = 0
+        sage: captured_pieces_white(GS, pyramid_decomposition=True)
+         [P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S, T^49, T^42, T^20]
+
 
     """
-    ## NEW CODE suggested by gemini based on old buggy code
     GS = copy(game_state)
-    # Generate the initial board state with the same decomposition setting
-    initial_GS = board_initial_matrix(pyramid_decomposition=pyramid_decomposition) # Use passed flag
-    # Get list of piece symbols (not positions) for initial and current states
-    initial_pieces = [item[1] for item in positions_w(initial_GS, verbose=True)]
-    current_pieces = [item[1] for item in positions_w(GS, verbose=True)]
-    # Use collections.Counter for efficient counting
-    from collections import Counter
-    initial_counts = Counter(initial_pieces)
-    current_counts = Counter(current_pieces)
-    captured_pieces = []
-    # Iterate through the unique pieces present initially
-    for piece, initial_count in initial_counts.items():
-        current_count = current_counts.get(piece, 0) # Get count from current state, default to 0 if absent
-        num_captured = initial_count - current_count
-        # Add the piece to the results list for each one captured
-        if num_captured > 0:
-            captured_pieces.extend([piece] * num_captured)
-    # Optional: Sort the result if a specific order is desired, though not strictly necessary
-    # captured_pieces.sort(key=lambda poly: poly.degree()) # Example sort by value
-    return captured_pieces
+    initial_GS = board_initial_matrix(pyramid_decomposition=pyramid_decomposition)
+    captured_list = []
     
+    # 1. Compare regular (non-pyramid) pieces
+    initial_regular = [p[1] for p in positions_w(initial_GS, verbose=True) if not P in p[1].variables()]
+    current_regular = [p[1] for p in positions_w(GS, verbose=True) if not P in p[1].variables()]
+    
+    # Find which regular pieces are missing
+    initial_counts = Counter(initial_regular)
+    initial_counts.subtract(Counter(current_regular))
+    
+    for piece, count in initial_counts.items():
+        if count > 0:
+            captured_list.extend([piece] * count)
+
+    # 2. Compare pyramid sub-pieces
+    initial_pyramid_pos = pyramid_positions_white(initial_GS)
+    current_pyramid_pos = pyramid_positions_white(GS)
+
+    if initial_pyramid_pos and not current_pyramid_pos:
+        # The entire pyramid was captured
+        captured_list.append(PR("P^91"))
+    elif initial_pyramid_pos and current_pyramid_pos:
+        # Check for captured sub-pieces
+        initial_vals = value_of_piece(initial_GS, initial_pyramid_pos[0][0], initial_pyramid_pos[0][1])
+        current_vals = value_of_piece(GS, current_pyramid_pos[0][0], current_pyramid_pos[0][1])
+        
+        initial_val_counts = Counter(initial_vals)
+        initial_val_counts.subtract(Counter(current_vals))
+
+        for value, count in initial_val_counts.items():
+            if count > 0:
+                # Add a representation of the captured sub-piece (e.g., S^value)
+                captured_list.extend([S**value] * count)
+                
+    return captured_list
+
+
+
 def captured_pieces_black(game_state, pyramid_decomposition=True):
     """
     Computes the list of Black's pieces that have been captured by comparing
@@ -921,123 +1139,220 @@ def captured_pieces_black(game_state, pyramid_decomposition=True):
          [t^12, c^9, c^25, c^49]
 
     """
-    ## NEW CODE suggested by gemini based on old buggy code
     GS = copy(game_state)
-    # Generate the initial board state with the same decomposition setting
-    initial_GS = board_initial_matrix(pyramid_decomposition=pyramid_decomposition) # Use passed flag
-    # Get list of piece symbols (not positions) for initial and current states
-    initial_pieces = [item[1] for item in positions_b(initial_GS, verbose=True)]
-    current_pieces = [item[1] for item in positions_b(GS, verbose=True)]
-    # Use collections.Counter for efficient counting
-    from collections import Counter
-    initial_counts = Counter(initial_pieces)
-    current_counts = Counter(current_pieces)
-    captured_pieces = []
-    # Iterate through the unique pieces present initially
-    for piece, initial_count in initial_counts.items():
-        current_count = current_counts.get(piece, 0) # Get count from current state, default to 0 if absent
-        num_captured = initial_count - current_count
-        # Add the piece to the results list for each one captured
-        if num_captured > 0:
-            captured_pieces.extend([piece] * num_captured)
-    # Optional: Sort the result if a specific order is desired, though not strictly necessary
-    # captured_pieces.sort(key=lambda p: p.degree()) # Example sort by value
-    return captured_pieces
+    initial_GS = board_initial_matrix(pyramid_decomposition=pyramid_decomposition)
+    captured_list = []
+
+    # 1. Compare regular (non-pyramid) pieces
+    initial_regular = [p[1] for p in positions_b(initial_GS, verbose=True) if not p in p[1].variables()]
+    current_regular = [p[1] for p in positions_b(GS, verbose=True) if not p in p[1].variables()]
+    
+    initial_counts = Counter(initial_regular)
+    initial_counts.subtract(Counter(current_regular))
+    
+    for piece, count in initial_counts.items():
+        if count > 0:
+            captured_list.extend([piece] * count)
+
+    # 2. Compare pyramid sub-pieces
+    initial_pyramid_pos = pyramid_positions_black(initial_GS)
+    current_pyramid_pos = pyramid_positions_black(GS)
+
+    if initial_pyramid_pos and not current_pyramid_pos:
+        captured_list.append(PR("p^190"))
+    elif initial_pyramid_pos and current_pyramid_pos:
+        initial_vals = value_of_piece(initial_GS, initial_pyramid_pos[0][0], initial_pyramid_pos[0][1])
+        current_vals = value_of_piece(GS, current_pyramid_pos[0][0], current_pyramid_pos[0][1])
+
+        initial_val_counts = Counter(initial_vals)
+        initial_val_counts.subtract(Counter(current_vals))
+
+        for value, count in initial_val_counts.items():
+            if count > 0:
+                captured_list.extend([s**value] * count)
+                
+    return captured_list
 
 
-def capture_piece(game_state, capturing_pc_value, captured_pos, verbose=False):    ### cap_pos = captured_pos
-#def capture_piece(game_state, cap_pos, verbose=False):
+
+
+def capture_piece(game_state, attacker_pos, captured_pos, verbose=False):
     """
-    identify piece at cap_pos (piece, value, color) then 
-    (1) remove it from the game-board (ie, game_state), 
-    #(2) remove it from from active_pieces_white (if piece is White's)
-    #or active_pieces_black (if piece is Black's), 
-    #(3) add it to captured_pieces_white (if piece is White's) or
-    #captured_pieces_black (if piece is Black's)
+    Identifies a piece at a given position and removes it from the game board.
+    If the captured piece is a pyramid, it finds all possible ways the attacker
+    at attacker_pos captures it and removes all corresponding sub-pieces.
+
 
     ###### new code suggested by gemini was added
 
-    ######################### BUG if the captured piece is a subpiece/compoent of a pyramid
-    ######################### In this case, change the value(s) of the Pyramid but
-    ######################### do *NOT* remove.    FIX THIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     EXAMPLES:
         sage: GSp = board_initial_matrix(pyramid_decomposition = True)
         sage: GS = copy(GSp)
-        sage: GS = capture_piece(GS, [9], (7,2)) # Capture T^9 initially at (7,2)
-        sage: captured_pieces_black(GS, pyramid_decomposition=True)
-	 []
-        sage: captured_pieces_white(GS, pyramid_decomposition=True)
-         [T^9]
 
     """
     GS = copy(game_state)
-    i0 = captured_pos[0]
-    j0 = captured_pos[1]
-    #i0 = cap_pos[0]
-    #j0 = cap_pos[1]
-    if not(in_bounds((i0, j0))):
-        if verbose:
-            print("Coordinate out of bounds, so no capture.")
+    c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
+    PR = ZZ[c,C,p,P,t,T,s,S]
+    
+    i0, j0 = captured_pos
+
+    if not in_bounds((i0, j0)):
+        if verbose: print(f"Coordinate {captured_pos} out of bounds, no capture.")
         return GS
-    #print("000 capture_piece ", i0, j0)
-    cap_pos_tuple = tuple(captured_pos) # Use tuple for consistency if needed elsewhere
-    # Determine piece color *before* modifying lists based on initial GS state
-    pc = GS[i0, j0]
-    if pc == 0:
-        if verbose:
-            print("No piece, so no capture.")
+
+    victim_poly = PR(GS[i0, j0])
+    if victim_poly == 0:
+        if verbose: print(f"No piece at {captured_pos}, no capture.")
         return GS
-    vars_pc = pc.variables()
-    is_white = (C in vars_pc) or (T in vars_pc) or (S in vars_pc) or (P in vars_pc)
-    is_black = (c in vars_pc) or (t in vars_pc) or (s in vars_pc) or (p in vars_pc)
-    #     Find the item to add to captured list based on coordinate
-    captured_item = None
-    active_pieces_white = positions_w(GS, verbose=True) 
-    active_pieces_black = positions_b(GS, verbose=True) 
-    if is_white:
-        for item in active_pieces_white:
-            if item[0] == cap_pos_tuple:
-                captured_item = item
-                break
-    elif is_black:
-        for item in active_pieces_black:
-            if item[0] == cap_pos_tuple:
-                captured_item = item
-                break
-    if captured_item: # Only proceed if found
-        # Set board position to 0, but *ONLY* if the piece is not a pyramid
-        # In case of pyramid DO NOT remove but change the value(s) of the pyramid
-        ###################################### FIXING THIS!!!
-        if not(p in vars_pc) and not(P in vars_pc):
-            GS[i0, j0] = 0
-        elif (p in vars_pc) or (P in vars_pc):
-            cap_pc_values = capturing_pc_value     ######## this is a list, since the pyramid is multivalued
-            pc_values = value_of_piece(GS, i0, j0)
-            common_value = list(Set(cap_pc_values).intersection(Set(pc_values)))[0]
-            if p in vars_pc:
-                GS[i0,j0] = GS[i0,j0] - s^(common_value)
-            if P in vars_pc:
-                GS[i0,j0] = GS[i0,j0] - S^(common_value)
-        ############################### STILL FIXING THIS!!!
-        if is_white:
-            #captured_pieces_white.append(captured_item)
-            # Filter out the captured piece from active list by coordinate
-            #active_pieces_white = [item for item in active_pieces_white if item[0] != cap_pos_tuple]
-            if verbose:
-                 print(f"Captured piece at {cap_pos_tuple} is White: {captured_item[1]}") # Use captured_item[1] for piece info
-        elif is_black:
-            #captured_pieces_black.append(captured_item)
-             # Filter out the captured piece from active list by coordinate
-            #active_pieces_black = [item for item in active_pieces_black if item[0] != cap_pos_tuple]
-            if verbose:
-                print(f"Captured piece at {cap_pos_tuple} is Black: {captured_item[1]}") # Use captured_item[1] for piece info
-        else:
-            # This case should ideally not be reached if pc != 0 and is_white/is_black logic is correct
-            print(f"Warning: Could not determine color for piece {pc} at {cap_pos_tuple}")
+
+    vars_pc = victim_poly.variables()
+    
+    # If the captured piece is a regular piece, remove it completely.
+    if not (p in vars_pc or P in vars_pc):
+        if verbose: print(f"Removing piece {victim_poly} at {captured_pos}.")
+        GS[i0, j0] = 0
+        return GS
+
+    # --- Robust Logic for Pyramid Captures ---
     else:
-        print(f"Warning: Piece at {cap_pos_tuple} not found in active lists.")
-    return GS
+        # Find all captures between the specific attacker and victim
+        all_possible_captures = get_captures_by_piece(GS, attacker_pos, verbose=False)
+        relevant_captures = [cap for cap in all_possible_captures if cap and len(cap) > 1 and cap[1][0] == captured_pos]
+
+        if not relevant_captures:
+            if verbose: print(f"No valid capture method found from {attacker_pos} to {captured_pos}.")
+            return GS
+
+        # Collect the values of all sub-pieces being captured in this single action
+        values_to_remove = {cap[1][1] for cap in relevant_captures}
+
+        if verbose:
+            print(f"Attacker at {attacker_pos} is capturing sub-piece(s) with values {list(values_to_remove)} from pyramid at {captured_pos}.")
+
+        # 1. Start with a clean, correctly-typed version of the polynomial
+        temp_poly = PR(victim_poly)
+        
+        # 2. Get the initial main value ONCE before any modifications
+        initial_main_value = 0
+        if P in vars_pc:
+            #print("0000", temp_poly, type(temp_poly), "\n", victim_poly, type(victim_poly), "\n", values_to_remove)
+            initial_main_value = SR(temp_poly).degree(P)
+        elif p in vars_pc:
+            #print("0001", temp_poly, type(temp_poly), "\n", victim_poly, type(victim_poly), "\n", values_to_remove)
+            initial_main_value = SR(temp_poly).degree(p)
+
+        # 3. Modify the polynomial based on all calculations
+        total_value_removed = sum(values_to_remove)
+        new_main_value = initial_main_value - total_value_removed
+
+        # Remove sub-piece terms
+        for val in values_to_remove:
+            if P in vars_pc: temp_poly = temp_poly - S^val
+            elif p in vars_pc: temp_poly = temp_poly - s^val
+
+        # Remove old main value term
+        if initial_main_value > 0:
+            if P in vars_pc: temp_poly = temp_poly - P^initial_main_value
+            elif p in vars_pc: temp_poly = temp_poly - p^initial_main_value
+        
+        # Add new main value term, if it's still greater than zero
+        if new_main_value > 0:
+            if P in vars_pc: temp_poly = temp_poly + P^new_main_value
+            elif p in vars_pc: temp_poly = temp_poly + p^new_main_value
+        
+        # 4. Assign the final, correctly-typed polynomial back to the game state
+        GS[i0, j0] = PR(temp_poly)
+                
+        return GS
+
+
+def get_captures_by_piece(game_state, piece_coords, verbose=False):
+    """
+    Finds all possible captures originating from a single piece at a given coordinate.
+
+    This function checks for captures that can be executed by one piece alone:
+    - Capture by Numbering (Encounter)
+    - Capture by Multiplication
+    - Capture by Division
+
+    It does NOT check for captures requiring multiple friendly pieces, such as
+    Sum, Difference, or Siege.
+
+    This function helps implement chain captures, *except* for sum, difference, and siege.
+    Args:
+        game_state: The current board state matrix.
+        piece_coords: The (row, col) tuple of the piece to check.
+        verbose (bool): If True, prints details of any captures found.
+
+    Returns:
+        A list of all valid capture data initiated by the specified piece.
+
+    EXAMPLES:
+
+
+    """
+    GS = copy(game_state)
+    r_attacker, c_attacker = piece_coords
+    attacker_poly = GS[r_attacker, c_attacker]
+
+    if attacker_poly == 0:
+        return []
+
+    found_captures = []
+    attacker_values = value_of_piece(GS, r_attacker, c_attacker)
+    attacker_is_white = (P in attacker_poly.variables() or S in attacker_poly.variables() or T in attacker_poly.variables() or C in attacker_poly.variables())
+
+    # Determine the list of potential enemy pieces
+    enemy_positions_func = positions_b if attacker_is_white else positions_w
+
+    # --- 1. Check for Capture by Numbering ---
+    # Get all squares the attacker can land on
+    possible_landing_spots = [move[1] for move in lands_on(GS, piece_coords)]
+    for spot in possible_landing_spots:
+        r_victim, c_victim = spot
+        victim_poly = GS[r_victim, c_victim]
+        if victim_poly != 0:
+            victim_values = value_of_piece(GS, r_victim, c_victim)
+            # Check if any attacker value matches any victim value
+            if not set(attacker_values).isdisjoint(victim_values):
+                # Format is based on valid_captures_by_numbering_*
+                capture_record = [(piece_coords, attacker_values, attacker_poly), (spot, victim_values, victim_poly)]
+                found_captures.append(capture_record)
+                if verbose:
+                    print(f"Capture Found: {attacker_poly} at {piece_coords} can capture {victim_poly} at {spot} by Numbering.")
+
+    # --- 2. Check for Capture by Multiplication and Division ---
+    enemy_pieces = enemy_positions_func(GS, verbose=True)
+    for victim_data in enemy_pieces:
+        victim_coords, victim_poly = victim_data
+        r_victim, c_victim = victim_coords
+        
+        # Calculate distance (number of empty spaces)
+        dist_spaces = pieces_in_a_line(GS, piece_coords, victim_coords)
+        if dist_spaces < 1: # Requires at least one space between them
+            continue
+
+        victim_values = value_of_piece(GS, r_victim, c_victim)
+        # Check all value combinations
+        for v_attacker in attacker_values:
+            for v_victim in victim_values:
+                # Multiplication Check
+                if v_attacker * dist_spaces == v_victim:
+                    capture_record = [(piece_coords, v_attacker, attacker_poly), (victim_coords, v_victim, victim_poly)]
+                    found_captures.append(capture_record)
+                    if verbose:
+                        print(f"Capture Found: {attacker_poly} (value {v_attacker}) at {piece_coords} can capture {victim_poly} (value {v_victim}) at {victim_coords} by Multiplication (separation {dist_spaces}).")
+                
+                # Division Check
+                if v_attacker > 0 and v_victim > 0 and v_attacker % v_victim == 0:
+                    if v_attacker / v_victim == dist_spaces:
+                        capture_record = [(piece_coords, v_attacker, attacker_poly), (victim_coords, v_victim, victim_poly)]
+                        found_captures.append(capture_record)
+                        if verbose:
+                            print(f"Capture Found: {attacker_poly} (value {v_attacker}) at {piece_coords} can capture {victim_poly} (value {v_victim}) at {victim_coords} by Division (separation {dist_spaces}).")
+
+    return found_captures
 
 
 ##########################################################################################
@@ -1366,16 +1681,17 @@ def positions_w(game_state, verbose = False):
     for i in range(8):
         for j in range(16):
             g = PR(A[i,j])
-            vars = g.variables()
-            #print(g, P in vars, vars, i, j) ##  g.degree(P) = ??
-            #if len(vars)>0 and (P in vars):
-            #    print(g, vars, i, j,  g.degree(PR(P)))
-            if (C in vars) or (T in vars) or (S in vars) or (P in vars):
-                if verbose and not(g in pos):
-                    pos = pos + [[(i, j), g]]
-                if not(verbose) and not(g in pos):
-                    pos = pos + [(i, j)]
+            if g == 0:
+                continue
+            vars_g = g.variables()
+            if (C in vars_g) or (T in vars_g) or (S in vars_g) or (P in vars_g):
+                if verbose:
+                    pos.append([(i, j), g])
+                else:
+                    pos.append((i, j))
     return pos
+
+
 
 def positions_b(game_state, verbose = False):
     """
@@ -1406,14 +1722,16 @@ def positions_b(game_state, verbose = False):
     for i in range(8):
         for j in range(16):
             g = PR(A[i,j])
-            #print(g)
-            vars = g.variables()
-            if (c in vars) or (t in vars) or (s in vars) or (p in vars):
-                if verbose and not(g in pos):
-                    pos = pos + [[(i, j), g]]
-                if not(verbose) and not(g in pos):
-                    pos = pos + [(i, j)]
+            if g == 0:
+                continue
+            vars_g = g.variables()
+            if (c in vars_g) or (t in vars_g) or (s in vars_g) or (p in vars_g):
+                if verbose:
+                    pos.append([(i, j), g])
+                else:
+                    pos.append((i, j))
     return pos
+
 
 ############################################
 ## The default is MOVES_CIRCLE_DIAGONAL = False.
@@ -2094,6 +2412,7 @@ def move_piece(game_state, start_pos, end_pos, verbose = False):
     GS[a0, b0] = 0
     return GS
 
+    
 
 ############ a program that randomly generates a move (quickly),
 ############ displays the game board position and asks for the next move.
@@ -3265,17 +3584,17 @@ def valid_captures_by_numbering_white(game_state, verbose = False):
         sage: captures_circle_white(GS, verbose = False)
         [((2, 15, [36]), (2, 14, [36]))]
         sage: valid_captures_by_numbering_white(GS)
-        [((2, 15, [36]), (2, 14, [36]), (2, 15))]
+        [((2, 15, [36]), (2, 14, [36]), (2, 15), C^36, t^36)]
         sage: GSp = board_initial_matrix(pyramid_decomposition = True)
         sage: GS = copy(GSp)
         sage: GS[2, 15] = C^(36); GS[3, 2] = 0; GS[5, 15] = C^(64); GS[2, 2] = 0
         sage: valid_captures_by_numbering_white(GS)
-         [((2, 15, [36]), (2, 14, [36]), (2, 15)),
-          ((5, 15, [64]), (5, 14, [64]), (5, 15))]
+         [((2, 15, [36]), (2, 14, [36]), (2, 15), C^36, t^36),
+          ((5, 15, [64]), (5, 14, [64]), (5, 15), C^64, t^64)]
 
     """
     GS = copy(game_state)
-    L = captures_circle_white(GS, verbose = True) + captures_triangle_white(GS, verbose = True) + captures_square_white(GS, verbose = True)  + captures_pyramid_white(GS, verbose = True) 
+    L = captures_circle_white(GS, verbose = True) + captures_triangle_white(GS, verbose = True) + captures_square_white(GS, verbose = True) + captures_pyramid_white(GS, verbose = True) 
     return L
     
 def valid_captures_by_numbering_black(game_state, verbose = False):
@@ -3302,7 +3621,6 @@ def valid_captures_by_numbering_black(game_state, verbose = False):
     GS = copy(game_state)
     L = captures_circle_black(GS, verbose = True) + captures_triangle_black(GS, verbose = True) + captures_square_black(GS, verbose = True) + captures_pyramid_black(GS, verbose = True) 
     return L
-
 
 
 def lands_on(game_state, pc_pos, verbose=False):
@@ -3336,123 +3654,52 @@ def lands_on(game_state, pc_pos, verbose=False):
 
     """
     GS = copy(game_state)
-    i0 = pc_pos[0]
-    j0 = pc_pos[1]
-    c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
-    PR = ZZ[c,C,p,P,t,T,s,S]
-    M = Mat(PR, 8, 16)
+    i0, j0 = pc_pos
+
     pc = GS[i0, j0]
     if pc == 0:
-        print("No piece, so no moves.")
+        if verbose: print("No piece, so no moves.")
         return []
-    vars = pc.variables()
-    posw = positions_w(GS)
-    posb = positions_b(GS)
+
+    # Get a single, reliable list of all occupied squares
+    all_occupied_pos = positions_w(GS) + positions_b(GS)
     mvs = []
-    #print("000", pc, "\n", pc_pos, "\n", posw, "\n", posb)
-    if (pc_pos == []) or not(in_bounds(pc_pos)):
-        #print(pc_pos, " is not on the board.")
-        return []
-    if verbose:
-        print("Position/coordinate of ", pc, " is: ", pc_pos)
-    if (c in vars) or (C in vars):
-        #print("0", (c in vars), (C in vars))
-        E = [[1,0],[-1,0],[0,-1],[0,1]]
-        for k in range(4):
-            e = E[k]
-            mv = [i0+e[0],j0+e[1]]
-            #print("0000", pc_pos, pc, mv, GS[mv[0], mv[1]], in_bounds(mv), not((tuple(pc_pos),mv) in mvs))
-            if in_bounds(mv) and not((tuple(pc_pos),mv) in mvs):
-                mvs = mvs+[(tuple(pc_pos),mv)]
-    if (t in vars) or (T in vars):
-        #print("1", (t in vars), (T in vars))
-        E = [[[2,0],[1,0]], [[-2,0],[-1,0]], [[0,-2],[0,-1]], [[0,2],[0,1]]]
-        for k in range(4):
-            e = E[k][1]
-            f = E[k][0]
-            hop = tuple([i0+e[0],j0+e[1]])
-            mv = [i0+f[0],j0+f[1]]
-            if not(in_bounds(hop)):
-                continue
-            hop_pc = GS[hop[0], hop[1]]
-            if not(hop_pc == 0):
-                continue
-            #print("001", k, pc_pos, "original pc: ", pc, hop, "hop pc: ", hop_pc, in_bounds(hop), mv, "moved pc: ", GS[mv[0], mv[1]], in_bounds(mv), not((tuple(pc_pos),mv) in mvs))
-            if in_bounds(hop) and (in_bounds(mv)) and (not((tuple(pc_pos),mv) in mvs)) and (hop_pc == 0):
-                mvs = mvs+[(tuple(pc_pos),mv)]
-    if (s in vars) or (S in vars):
-        #print("2", (s in vars), (S in vars))
-        E = [[[3,0],[2,0],[1,0]], [[-3,0],[-2,0],[-1,0]], [[0,-3],[0,-2],[0,-1]], [[0,3],[0,2],[0,1]]]
-        for k in range(4):
-            e = E[k][2]
-            f = E[k][1]
-            g = E[k][0]
-            hop1 = tuple([i0+e[0],j0+e[1]])
-            if not(in_bounds(hop1)):
-                continue
-            hop1_pc = GS[hop1[0], hop1[1]]
-            if not(hop1_pc == 0):
-                continue
-            hop2 = tuple([i0+f[0],j0+f[1]])
-            if not(in_bounds(hop2)):
-                continue
-            hop2_pc = GS[hop2[0], hop2[1]]
-            if not(hop2_pc == 0):
-                continue
-            mv   = [i0+g[0],j0+g[1]]
-            #print("002", k, pc_pos, "original pc: ", pc, hop1, "hop1 pc: ", hop1_pc, in_bounds(hop1), mv, "moved pc: ", GS[mv[0], mv[1]], in_bounds(mv), not((tuple(pc_pos),mv) in mvs))
-            if in_bounds(hop1) and not(hop1 in posw+posb) and in_bounds(hop2) and not(hop2 in posw+posb) and not((tuple(pc_pos),mv) in mvs):
-                mvs = mvs + [(tuple(pc_pos),mv)]
-    if (p in vars) or (P in vars):
-        # uncomment the lines below if the version you play has circles and triangles in the pyramid
-	# in the curent version, the pyramid only has square subpieces, no circles or triangles.
-        #print("0", (p in vars), (P in vars))
-        #if (c in vars) or (C in vars):
-        #    E = [[1,0],[-1,0],[0,-1],[0,1]]
-        #    for k in range(4):
-        #        e = E[k]
-        #        mv = [i0+e[0],j0+e[1]]
-        #        if in_bounds(mv) and not((tuple(pc_pos),mv) in mvs):
-        #            #print(pc, k, mv, mvs, in_bounds(mv), not((tuple(pc_pos),mv) in mvs))
-        #            mvs = mvs+[(tuple(pc_pos),mv)]
-        #if (t in vars) or (T in vars):
-        #    E = [[[2,0],[1,0]], [[-2,0],[-1,0]], [[0,-2],[0,-1]], [[0,2],[0,1]]]
-        #    for k in range(4):
-        #        e = E[k][1]
-        #        f = E[k][0]
-        #        hop = [i0+e[0],j0+e[1]]
-        #        if not(in_bounds(hop)):
-        #            continue
-        #        hop_pc = GS[hop[0], hop[1]]
-        #        if not(hop_pc == 0):
-        #            continue
-        #        mv = [i0+f[0],j0+f[1]]
-        #        if in_bounds(mv) and not((tuple(pc_pos),mv) in mvs):
-        #            mvs = mvs+[(tuple(pc_pos),mv)]
-        #if (s in vars) or (S in vars):
-            #print("2", (s in vars), (S in vars))
-            E = [[[3,0],[2,0],[1,0]], [[-3,0],[-2,0],[-1,0]], [[0,-3],[0,-2],[0,-1]], [[0,3],[0,2],[0,1]]]
-            for k in range(4):
-                e = E[k][2]
-                f = E[k][1]
-                g = E[k][0]
-                hop1 = tuple([i0+e[0],j0+e[1]])
-                if not(in_bounds(hop1)):
-                    continue
-                hop1_pc = GS[hop1[0], hop1[1]]
-                if not(hop1_pc == 0):
-                    continue
-                hop2 = tuple([i0+f[0],j0+f[1]])
-                if not(in_bounds(hop2)):
-                    continue
-                hop2_pc = GS[hop2[0], hop2[1]]
-                if not(hop2_pc == 0):
-                    continue
-                if in_bounds(hop1) and not(tuple(hop1) in posw+posb) and in_bounds(hop2) and not(tuple(hop2) in posw+posb) and not((tuple(pc_pos),mv) in mvs):
-                    mvs = mvs + [(tuple(pc_pos),mv)]
-    if verbose:
-        print("Possible landing coordinates of ", pc, " are: ")
+    
+    # Determine move increments based on piece type
+    vars_pc = pc.variables()
+    increments = []
+    path_check_depth = 0
+
+    if (C in vars_pc) or (c in vars_pc):
+        increments = [[(1, 0)], [(-1, 0)], [(0, 1)], [(0, -1)]]
+        path_check_depth = 0 # Jumps 1 square, no intermediate checks
+    elif (T in vars_pc) or (t in vars_pc):
+        increments = [[(2, 0), (1, 0)], [(-2, 0), (-1, 0)], [(0, 2), (0, 1)], [(0, -2), (0, -1)]]
+        path_check_depth = 1 # Jumps 2 squares, checks 1 intermediate
+    elif (S in vars_pc) or (s in vars_pc) or (P in vars_pc) or (p in vars_pc):
+        increments = [[(3, 0), (2, 0), (1, 0)], [(-3, 0), (-2, 0), (-1, 0)], [(0, 3), (0, 2), (0, 1)], [(0, -3), (0, -2), (0, -1)]]
+        path_check_depth = 2 # Jumps 3 squares, checks 2 intermediate
+
+    for path in increments:
+        dest_coord = (i0 + path[0][0], j0 + path[0][1])
+
+        if not in_bounds(dest_coord):
+            continue
+
+        # Check for blockers in the path
+        path_is_clear = True
+        if path_check_depth > 0:
+            for i in range(1, path_check_depth + 1):
+                intermediate_coord = (i0 + path[i][0], j0 + path[i][1])
+                if intermediate_coord in all_occupied_pos:
+                    path_is_clear = False
+                    break
+        
+        if path_is_clear:
+            mvs.append( (pc_pos, dest_coord) )
+
     return mvs
+
 
 def valid_captures_by_addition_white(game_state, verbose = False):
     r""" 
@@ -3482,31 +3729,17 @@ def valid_captures_by_addition_white(game_state, verbose = False):
     EXAMPLES: 
         sage: GS = board_initial_matrix()
         sage: valid_captures_by_addition_white(GS)
-        []
+         []
         sage: GS = board_initial_matrix()
-        sage: GS[3,3]=0
-        sage: GS[0,12] = C^6
-        sage: GS[6,2] = 0; GS[1,11] = T^6
-        sage: lands_on( GS, C^6, verbose = False)
-        [((0, 12), [1, 11]), ((0, 12), [1, 13])]
-        sage: lands_on_by_coordinate( GS, (0,12), verbose = False)
-        [((0, 12), [1, 11]), ((0, 12), [1, 13])]
-        sage: value_of_piece( GS, 0, 12)
-        6
-        sage: lands_on( GS, T^6, verbose = False)
-        [((1, 11), [3, 11]), ((1, 11), [1, 9]), ((1, 11), [1, 13])]
-        sage: value_of_piece( GS, 1, 11)
-        6
-        sage: value_of_piece( GS, 1, 13)
-        12
-        sage: valid_captures_by_addition_white(GS)
-         [[((0, 12), 6), ((1, 11), 6), ((1, 13), 12)],
-          [((1, 11), 6), ((0, 12), 6), ((1, 13), 12)]]
+        sage: GS[3,3]=0; GS[0,13] = C^6; GS[6,2] = 0; GS[1,11] = T^6
+        sage: valid_captures_by_addition_white(GS, verbose=False)
+         [[((0, 13), [6]), ((1, 11), [6]), ((1, 13), [12])],
+          [((1, 11), [6]), ((0, 13), [6]), ((1, 13), [12])]]
         sage: valid_captures_by_addition_white(GS, verbose=True)
-         The piece C^6 at (0, 12) and the piece T^6 at (1, 11) capture by addition the piece t^12 at (1, 13)
-         The piece T^6 at (1, 11) and the piece C^6 at (0, 12) capture by addition the piece t^12 at (1, 13)
-         [[((0, 12), 6), ((1, 11), 6), ((1, 13), 12)],
-          [((1, 11), 6), ((0, 12), 6), ((1, 13), 12)]]
+         The piece C^6 at (0, 13) and the piece T^6 at (1, 11) capture by addition the piece t^12 at (1, 13)
+         The piece T^6 at (1, 11) and the piece C^6 at (0, 13) capture by addition the piece t^12 at (1, 13)
+         [[((0, 13), [6], C^6), ((1, 11), [6], T^6), ((1, 13), [12], t^12)],
+          [((1, 11), [6], T^6), ((0, 13), [6], C^6), ((1, 13), [12], t^12)]]
 
     """
     GS = copy(game_state)
@@ -3755,15 +3988,17 @@ def valid_captures_by_subtraction_black(game_state, verbose = False):
     EXAMPLES: 
         sage: GS = board_initial_matrix()
         sage: valid_captures_by_subtraction_black(GS)
-        []
+         []
         sage: GSp = board_initial_matrix(pyramid_decomposition = True)
         sage: GS = copy(GSp)
-        sage: GS[1,11] = T^9; GS[7,2] = 0
+        sage: GS[1,11] = T^9; GS[7,2] = 0; GS[2,11] = c^3; GS[2,12] = 0
+        sage: board_plot(GS)
+         Launched png viewer for Graphics object consisting of 185 graphics primitives
         sage: valid_captures_by_subtraction_black(GS)
-         [[((1, 13), 12), ((2, 12), 3), ((1, 11), 9)]]
+         [[((1, 13), [12]), ((2, 11), [3]), ((1, 11), [9])]]
         sage: valid_captures_by_subtraction_black(GS, verbose=True)
-        The piece  t^12  at  (1, 13)  and the piece  c^3  at  (2, 12)  capture by subtraction the piece  T^9  at  (1, 11)
-        [[((1, 13), 12), ((2, 12), 3), ((1, 11), 9)]]
+         The piece t^12 at (1, 13) and the piece c^3 at (2, 11) capture by subtraction the piece T^9 at (1, 11)
+         [[((1, 13), [12], t^12), ((2, 11), [3], c^3), ((1, 11), [9], T^9)]]
 
     """
     GS = game_state
@@ -3880,14 +4115,14 @@ def valid_captures_by_multiplication_white(game_state, verbose = False):  ######
             if not valb_list or valb_list == [0]:
                 continue
             # Calculate the distance (number of spaces between)
-            # pieces_in_a_line returns number of board units apart (dist+1)
+            # pieces_in_a_line returns number of board units apart (dist)
             # returns -1 if not in a line or obstructed
             dist_units = pieces_in_a_line(GS, pc1_coords, pc2_coords)
             # Check if pieces are in a line and separated by at least one space
             if dist_units <= 1:
                 continue
             # The required distance multiplier is the number of empty spaces
-            dist_spaces = dist_units - 1
+            dist_spaces = dist_units ##  - 1  
             # Iterate through all value combinations for pc1 and pc2
             for v1 in valw_list:
                 # Ensure v1 is a numeric type (handle potential non-numeric markers like P/p)
@@ -3995,7 +4230,7 @@ def valid_captures_by_multiplication_black(game_state, verbose = False):  ######
             if dist_units <= 1:
                 continue
             # The required distance multiplier is the number of empty spaces
-            dist_spaces = dist_units - 1
+            dist_spaces = dist_units ## - 1
             # Iterate through all value combinations for pc1 and pc2
             for v1 in valb_list:
                 # Ensure v1 is a numeric type (handle potential non-numeric markers like P/p)
@@ -4095,7 +4330,7 @@ def valid_captures_by_division_white(game_state, verbose = False):
             # Check if pieces are in a line and separated by at least one space
             if dist_units <= 1:
                 continue
-            dist_spaces = dist_units - 1
+            dist_spaces = dist_units ## - 1
             # Iterate through all value combinations
             for v1 in valw_list: # White attacker value component
                 if not isinstance(v1, (int, Integer)): continue # Skip non-numeric markers
@@ -4181,7 +4416,7 @@ def valid_captures_by_division_black(game_state, verbose = False):
             # Check if pieces are in a line and separated by at least one space
             if dist_units <= 1:
                 continue
-            dist_spaces = dist_units - 1
+            dist_spaces = dist_units ## - 1
             # Iterate through all value combinations
             for v1 in valb_list: # Black attacker value component
                 if not isinstance(v1, (int, Integer)): continue # Skip non-numeric markers
@@ -4220,10 +4455,18 @@ def valid_captures_by_division_black(game_state, verbose = False):
 
 def valid_captures_by_siege_white(game_state, verbose = False): ## this is gemini's improvement of the original version
     r"""
-    Lists Black pieces captured by White via siege.
+    Lists Black pieces captured by White via siege (also called surrounding).
     A piece is captured by siege if all four orthogonal adjacent squares
-    are either off-board or occupied by a white piece.
+    are either off-board or occupied by other white piece.
 
+    NOTE: If surrounding is, instead of meaning adjacent, is interpreted as 
+    close enough to be blocking the black piece's movement in each of
+    the 4 orthogonal directions. (So for a black/odd circle to be captured by siege,
+    the white/even pieces surrounding it much be adjacent, but for triangle
+    to be captured by siege, the pieces surrounding it much be either
+    adjacent or exactly one square away. For a square, the surrounding pieces
+    can be 2 squares away.)
+    
     Args:
         game_state: The 8x16 matrix representing the board.
         verbose: If True, prints details of captures.
@@ -4286,8 +4529,7 @@ def valid_captures_by_siege_white(game_state, verbose = False): ## this is gemin
 	
 def valid_captures_by_siege_black(game_state, verbose = False):
     r"""
-    Lists Black's captures of a white piece by siege,
-    according to Rithmomachia rules. 
+    Lists Black's captures of a white piece by siege, according to Rithmomachia rules. 
 
     Args: 
       game_state: The 8x16 matrix representing the board and pieces in the game.
@@ -4296,6 +4538,14 @@ def valid_captures_by_siege_black(game_state, verbose = False):
       List of names of White's captured pieces, if any.
       
     ## this is gemini's improvement of the original version
+
+    NOTE: If surrounding is, instead of meaning adjacent, is interpreted as 
+    close enough to be blocking the black piece's movement in each of
+    the 4 orthogonal directions. (So for a black/odd circle to be captured by siege,
+    the white/even pieces surrounding it much be adjacent, but for triangle
+    to be captured by siege, the pieces surrounding it much be either
+    adjacent or exactly one square away. For a square, the surrounding pieces
+    can be 2 squares away.)
 
     EXAMPLES: 
         sage: GS = board_initial_matrix()
@@ -4398,43 +4648,45 @@ def take_all_captures_black(game_state, verbose = False):
     # Capture format is [((r1, c1), v1), ((r2, c2), v2)] 
     c6 = valid_captures_by_siege_black(GS) ##################### how is this implemented in a game??
     # Capture format is ((r, c), v))
-    printed = 0
+    
+    capture_count = 0
+
+    # Capture by Numbering
     for cap in c1:
-        capturing_pc_value = cap[0][1]  #### this is a list
-        captured_pos = (cap[1][0], cap[1][1])
-        if verbose:
-            print("Capture by numbering on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos) # Use copy here too
-    for cap in c2+c3:
-        capturing_pc_value = cap[2][2]      # the value of the pc in the last arg
-        captured_pos = (cap[2][0], cap[2][1])
-        if verbose:
-            print("Capture by addition/subtraction on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos[0]) # Use copy here too
-    for cap in c4+c5:
-        capturing_pc_value = cap[1][1]        # the value of the pc in the last arg
-        captured_pos = (cap[1][0][0], cap[1][0][1])
-        if verbose:
-            print("Capture by multiplication/division on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos) # Use copy here too
+        # cap[0] is the attacker info tuple (r, c, [v])
+        # cap[1] is the victim info tuple (r, c, [v])
+        # We pass the full coordinate tuples.
+        attacker_pos = (cap[0][0], cap[0][1])
+        victim_pos = (cap[1][0], cap[1][1])
+        GS = capture_piece(GS, attacker_pos, victim_pos, verbose=verbose)
+        capture_count += 1
+
+    # Capture by Sum/Difference
+    for cap in c2 + c3:
+        # cap[0][0] is the primary attacker's position
+        GS = capture_piece(GS, cap[0][0], cap[2][0], verbose=verbose)
+        capture_count += 1
+
+    # Capture by Multiplication/Division
+    for cap in c4 + c5:
+        # cap[0][0] is the attacker's position
+        GS = capture_piece(GS, cap[0][0], cap[1][0], verbose=verbose)
+        capture_count += 1
+        
+    # Capture by Siege
     for cap in c6:
-        capturing_pos = [-1]                ######### there is no value assigned to a capturing piece in this case
-        captured_pos = (cap[0][0], cap[0][1])
-        capturing_pc_value = 0
-        if verbose:
-            print("Capture by siege on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos) # Use copy here too
-    if verbose:
-        print("There were ", printed, " captures of White pieces by Black.")
+        # For siege, there isn't one attacker. We pass the victim's own location
+        # as a placeholder for the attacker, as capture_piece doesn't use it for siege.
+	########## Note:                         ###################################
+	######### captures_as_dict   can be used to find an attacking piece ########
+        GS = capture_piece(GS, cap[0], cap[0], verbose=verbose)
+        capture_count += 1
+
+    if verbose and capture_count > 0:
+        print(f"There were {capture_count} captures of White/Even pieces by Black/Odd.")
+        
     return GS
+  
 
 
 def take_all_captures_white(game_state, verbose = False):
@@ -4462,44 +4714,45 @@ def take_all_captures_white(game_state, verbose = False):
     # Capture format is [((r1, c1), v1), ((r2, c2), v2)] 
     c6 = valid_captures_by_siege_white(GS)
     # Capture format is ((r, c), v))
-    printed = 0
-    for cap in c1:
-        capturing_pc_value = cap[0][1]  #### this is a list
-        captured_pos = (cap[1][0], cap[1][1])
-        if verbose:
-            print("Capture by numbering on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos) # Use copy here too
-    for cap in c2+c3:
-        capturing_pc_value = cap[2][2]      # the value of the pc in the last arg
-        captured_pos = (cap[2][0], cap[2][1])
-        if verbose:
-            print("Capture by addition/subtraction on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos[0]) # Use copy here too
-    for cap in c4+c5:
-        capturing_pc_value = cap[1][1]        # the value of the pc in the last arg
-        captured_pos = (cap[1][0][0], cap[1][0][1])
-        if verbose:
-            print("Capture by multiplication/division on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos) # Use copy here too
-    for cap in c6:
-        capturing_pos = [-1]                ######### there is no value assigned to a capturing piece in this case
-        captured_pos = (cap[0][0], cap[0][1])
-        capturing_pc_value = 0
-        if verbose:
-            print("Capture by siege on ", captured_pos)
-            printed = printed + 1
-        # Simulate the capture on a fresh copy of the original state
-        GS = capture_piece(copy(GS), capturing_pc_value, captured_pos) # Use copy here too
-    if verbose:
-        print("There were ", printed, " captures of Black pieces by White.")
-    return GS
+    
+    capture_count = 0
 
+    # Capture by Numbering
+    for cap in c1:
+        # cap[0] is the attacker info tuple (r, c, [v])
+        # cap[1] is the victim info tuple (r, c, [v])
+        # We pass the full coordinate tuples.
+        attacker_pos = (cap[0][0], cap[0][1])
+        victim_pos = (cap[1][0], cap[1][1])
+        GS = capture_piece(GS, attacker_pos, victim_pos, verbose=verbose)
+        capture_count += 1
+
+    # Capture by Sum/Difference
+    for cap in c2 + c3:
+        # cap[0][0] is the primary attacker's position
+        GS = capture_piece(GS, cap[0][0], cap[2][0], verbose=verbose)
+        capture_count += 1
+
+    # Capture by Multiplication/Division
+    for cap in c4 + c5:
+        # cap[0][0] is the attacker's position
+        GS = capture_piece(GS, cap[0][0], cap[1][0], verbose=verbose)
+        capture_count += 1
+        
+    # Capture by Siege
+    for cap in c6:
+        # For siege, there isn't one attacker. We pass the victim's own location
+        # as a placeholder for the attacker, as capture_piece doesn't use it for siege.
+	########## Note:                         ###################################
+	######### captures_as_dict   can be used to find an attacking piece ########
+        GS = capture_piece(GS, cap[0], cap[0], verbose=verbose)
+        capture_count += 1
+
+    if verbose and capture_count > 0:
+        print(f"There were {capture_count} captures of Black pieces by White.")
+        
+    return GS
+    
 
 def legal_moves_captures_white(game_state):
     """
@@ -4584,7 +4837,7 @@ def legal_moves_captures_black(game_state):
     c4 = valid_captures_by_multiplication_black(GS)
     c5 = valid_captures_by_division_black(GS)
     c6 = valid_captures_by_siege_black(GS)
-    L = (m1+m2+m3+m4, c1, c2+c3, c4+c5, c6)
+    L = (m1+m2+m3+m4, c1 + c2+c3 + c4+c5 + c6)
     return L
 
 
@@ -5544,7 +5797,7 @@ def black_takes_white_by_division():
 ##############################################################################
 
 
-def is_body_common_victory_black(game_state, N0 = 4):
+def is_body_common_victory_black(game_state, N0 = 4, verbose=False):
     """
     returns True if Black has a common victory by body, meaning that 
     Black has captured at least N0 of White's pieces.
@@ -5566,7 +5819,12 @@ def is_body_common_victory_black(game_state, N0 = 4):
     """
     GS = copy(game_state)
     cpw = captured_pieces_white(GS, pyramid_decomposition=True)
-    return (len(cpw) >= N0) #### Boolean
+    num_caps = len(cpw)
+    if verbose:
+        print("Black has captured ", num_caps, " pieces: ", cpw)
+        return (num_caps >= N0)
+    else:
+        return (num_caps >= N0) #### Boolean
     
 def is_body_common_victory_white(game_state, N0 = 4, verbose=False):
     """
@@ -5714,9 +5972,12 @@ def is_small_proper_victory_black(game_state):
     ## of these "harmonic "sequences. If both are true,
     ## return True, else return False
     return (arith_har or geom_har or mus_har)
-    
-    
-def list_arithmetical_patterns_white():
+
+
+################################### arithmetical patterns
+
+
+def list_arithmetical_patterns_white0():
     """
     lists all possible arithmetical patterns for white pieces.
 
@@ -5731,8 +5992,8 @@ def list_arithmetical_patterns_white():
     """
     arithmetical_patterns = []
     GS = copy(board_initial_matrix())
-    poswv = [[x[0], value_of_piece(GS, x[0][0], x[0][1])] for x in positions_w(GS, verbose=True)]
-    valsw = [x[1][0] for x in poswv if x[1][0] in ZZ]
+    poswv = [[xx[0], value_of_piece(GS, xx[0][0], xx[0][1])] for xx in positions_w(GS, verbose=True)]
+    valsw = [xx[1][0] for xx in poswv if xx[1][0] in ZZ]
     for v0 in valsw:
         for v1 in valsw:
             for v2 in valsw:
@@ -5741,8 +6002,15 @@ def list_arithmetical_patterns_white():
                         arithmetical_patterns = arithmetical_patterns + [(v0, v1, v2)]
     arithmetical_patterns.sort()
     return arithmetical_patterns
-    
-def list_arithmetical_patterns_black():
+
+EVEN_ARITHMETICAL = list_arithmetical_patterns_white0()
+
+def list_arithmetical_patterns_white():
+    return EVEN_ARITHMETICAL
+
+
+
+def list_arithmetical_patterns_black0():
     """
     lists all possible arithmetical patterns for black pieces.
 
@@ -5757,8 +6025,9 @@ def list_arithmetical_patterns_black():
     """
     arithmetical_patterns = []
     GS = copy(board_initial_matrix())
-    posbv = [[x[0], value_of_piece(GS, x[0][0], x[0][1])] for x in positions_b(GS, verbose=True)]
-    valsb = [x[1][0] for x in posbv if x[1][0] in ZZ]
+    posbv = [[xx[0], value_of_piece(GS, xx[0][0], xx[0][1])] for xx in positions_b(GS, verbose=True)]
+    #print("0000",posbv)
+    valsb = [xx[1][0] for xx in posbv if xx[1]!=[]]
     for v0 in valsb:
         for v1 in valsb:
             for v2 in valsb:
@@ -5767,6 +6036,14 @@ def list_arithmetical_patterns_black():
                         arithmetical_patterns = arithmetical_patterns + [(v0, v1, v2)]
     arithmetical_patterns.sort()
     return arithmetical_patterns
+
+ODD_ARITHMETICAL = list_arithmetical_patterns_black0()
+
+def list_arithmetical_patterns_black():
+    return ODD_ARITHMETICAL
+
+
+################################### arithmetical patterns
 
     
 def is_arithmetical_pattern_white(game_state, verbose = False):
@@ -5840,7 +6117,7 @@ def is_arithmetical_pattern_black(game_state, in_a_line = False, verbose = False
     b) there are 3 of these pieces whose values
        agree (in some order) with one of the
        arithmetical patterns listed
-    ######### c) the in_a_line condition holds.   ########## ignore this condition
+    ######### c) the in_a_line condition holds.   ########## not the de Boisseiere version of the rules -- ignore this condition
 
 
     EXAMPLES:
@@ -5897,8 +6174,11 @@ def is_arithmetical_pattern_black(game_state, in_a_line = False, verbose = False
     # If no combination satisfied both conditions
     return False
     
-    
-def list_geometrical_patterns_white():
+
+################################### geometrical patterns
+
+
+def list_geometrical_patterns_white0():
     """
     lists all possible geometrical patterns for white pieces.
 
@@ -5924,8 +6204,15 @@ def list_geometrical_patterns_white():
                         geometrical_patterns = geometrical_patterns + [(v0, v1, v2)]
     geometrical_patterns.sort()
     return geometrical_patterns
-    
-def list_geometrical_patterns_black():
+
+EVEN_GEOMETRICAL = list_geometrical_patterns_white0()
+
+def list_geometrical_patterns_white():
+    return EVEN_GEOMETRICAL
+
+
+
+def list_geometrical_patterns_black0():
     """
     lists all possible geometrical patterns for black pieces.
 
@@ -5951,6 +6238,15 @@ def list_geometrical_patterns_black():
     geometrical_patterns.sort()
     return geometrical_patterns
     
+ODD_GEOMETRICAL = list_geometrical_patterns_black0()
+
+def list_geometrical_patterns_black():
+    return ODD_GEOMETRICAL
+
+
+################################### geometrical patterns
+
+
 def is_geometrical_pattern_white(game_state, verbose = False):
     """
     returns True if White has
@@ -6088,11 +6384,15 @@ def is_geometrical_pattern_black(game_state, verbose = False):
     # If no combination satisfied both conditions
     return False
 
-    
 
-def list_musical_patterns_white():
+################################### musical patterns
+
+
+def list_musical_patterns_white0():
     """
-    lists all possible musical patterns for white pieces.
+    lists all possible harmonic/musical patterns for white pieces. Lists all
+    ordered triples of values of the white pieces that form three consecutive
+    terms in a harmonic progression.
 
     NOTE: White has relatively few (compared to the other patterns) musical patterns.
  
@@ -6117,9 +6417,17 @@ def list_musical_patterns_white():
     musical_patterns.sort()
     return musical_patterns
 
-def list_musical_patterns_black():
+EVEN_MUSICAL = list_musical_patterns_white0()
+
+def list_musical_patterns_white():
+    return EVEN_MUSICAL
+
+
+################################### musical patterns
+
+def list_musical_patterns_black0():
     """
-    This function lists all possible musical patterns for black pieces.
+    This function lists all possible harmonic/musical patterns for black pieces.
    
     NOTE: There aren't any musical patterns for Black!
 
@@ -6143,6 +6451,13 @@ def list_musical_patterns_black():
                         musical_patterns = musical_patterns + [(v0, v1, v2)]
     musical_patterns.sort()
     return musical_patterns
+
+ODD_MUSICAL = list_musical_patterns_black0()
+
+def list_musical_patterns_black():
+    return ODD_MUSICAL
+
+################################### end patterns
 
 
 def is_musical_pattern_black(game_state, verbose = False):
@@ -6339,53 +6654,6 @@ def is_in_a_line(pc0, pc1, pc2):
             return False
     return False
 
-
-def value_of_piece(GS, i, j):
-    """
-    returns the value of the piece at (i,j), in game state
-    matrix notation. If the position/coordinate is empty 
-    then the value is 0. If the piece is a pyramid then
-    it returns all the values, as a tuple.
-
-    EXAMPLE:
-        sage: GS = board_initial_matrix()
-        sage: value_of_piece(GS, 2, 4) ## 0 means there is no piece there
-        0
-        sage: value_of_piece(GS, 2, 3)
-        8
-        sage: value_of_piece(GS, 3, 3)
-        6
-        sage: value_of_piece(GS, 3, 13)
-        25
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: GS = copy(GSp)
-        sage: pyramid_positions_white(GS, verbose = True)
-         [(P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S, 1, 1)]
-        sage: value_of_piece(GS, 1, 1)
-         [4, 91, 16, 36] 
-        sage: pyramid_positions_black(GS, verbose = True)
-         [(p^190 + s^64 + s^49 + s^36 + s^25 + s^16, 7, 14)]
-        sage: value_of_piece(GS, 7, 14)
-         [16, 190, 36, 64]
-
-    """
-    c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
-    PR = ZZ[c,C,p,P,t,T,s,S]
-    all_vars = [c,C,p,P,t,T,s,S]
-    xx = GS[i,j]
-    #print("0000", xx, xx.variables())
-    if xx == 0:
-        return [xx]
-    if not(p in xx.variables()) and not(P in xx.variables()):    ######## non-pyramid case
-        return [xx.degree()]
-    else:                                                         ######## pyramid case
-        f = PR(xx)
-        #print("0001", f, f.exponents())
-        if (s in xx.variables()):
-            return [v[6] for v in f.exponents() if not(v[6]==0)]
-        if (S in xx.variables()):
-            return [v[7] for v in f.exponents() if not(v[7]==0)]
-    return [xx]
 
 def game_state_to_latex_board(GS):
     """
@@ -6920,9 +7188,9 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
             for i in range(1, d):     ### does this go to d-1??
                x = x2    ## = x1
                y = y2+i
-               if value_of_piece(GS, x, y)[0]>0:
+               if sum(value_of_piece(GS, x, y))>0:
                    return -1
-            return d.abs()                  ### should this be d-1??
+            return d.abs()-1                  ### should this be d-1??
     if (x1==x2) and (y1<y2):
         d = y2-y1
         if d==1:
@@ -6933,7 +7201,7 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
                y = y1+i
                if value_of_piece(GS, x, y)[0]>0:
                    return -1
-            return d.abs()
+            return d.abs()-1
     if (x1>x2) and (y1==y2):
         d = x1-x2
         if d==1:
@@ -6944,7 +7212,7 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
                y = y2   ## = y1
                if value_of_piece(GS, x, y)[0] > 0:
                    return -1
-            return d.abs()
+            return d.abs()-1
     if (x1<x2) and (y1==y2):
         d = x2-x1
         if d==1:
@@ -6955,7 +7223,7 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
                y = y1   ## = y2
                if value_of_piece(GS, x, y)[0] > 0:
                    return -1
-            return d.abs()
+            return d.abs()-1
     if (diagonal_lines):
         if (x2 > x1) and ((y2-y1)/(x2-x1) == 1):
             d = x2-x1
@@ -6978,7 +7246,7 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
                    y = y1-i
                    if value_of_piece(GS, x, y)[0] > 0:
                        return -1
-                return d.abs()
+                return d.abs()-1
         if (x2 > x1) and ((y2-y1)/(x2-x1) == -1):
             d = x2-x1
             #print(d, x1, x2, y1, y2)
@@ -6990,7 +7258,7 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
                    y = y1-i
                    if value_of_piece(GS, x, y)[0] > 0:
                        return -1
-                return d.abs()
+                return d.abs()-1
         if (x2 < x1) and ((y2-y1)/(x2-x1) == -1):
             d = x1-x2
             if d==1:
@@ -7001,7 +7269,7 @@ def pieces_in_a_line(game_state, pc1, pc2, diagonal_lines=False):
                    y = y1+i
                    if value_of_piece(GS, x, y)[0] > 0:
                        return -1
-                return d.abs()
+                return d.abs()-1
     return -1
 
 def draw_big_square(piece_value = "361", piece_color = "black", verbose = False):
@@ -7521,12 +7789,20 @@ def black_squares_plot_line(plot_scale = 1.5, grid_scale = 3, edge_clr = "red", 
 
 def move_capture_lists_to_latex_table(even_moves, even_captures, odd_moves, odd_captures):
     """
-    Self-explanatory.
+    Almost self-explanatory: this function takes the innputted list of
+    turns, as a specific type of move+capture list, and loops over this
+    list. For each element of the list, it adds a line of text to a string.
+    Adding these up, the final string output of the function is a
+    more-or-less correctly formatted latex table representing the
+    rithmomachia turns listed in the input.
 
-    All 4 lists must be of the same length.
+    All 4 lists must be of the same length. The pre-move captures are not
+    differentiated from the post-move captures.
 
-    TO DO: This condition rules out White making a move but not Black. FIX THIS!!!
-    
+    TO DO:
+      (1) This condition rules out White making a move but not Black. FIX THIS!!!
+      (2) The notation for the capture doesn't specify if it's before or after a move.
+      
     EXAMPLES:
         sage: even_moves = ['T^81c1e1', 'T^72c2e2', 'T^72e2g2'];
 	 even_captures = [[], [], [[((1, 6), 72, T^72), ((1, 13), 12, t^12)]]];
@@ -7679,7 +7955,34 @@ def coordinating_progression_count_even(v):
     prog_even = arith_prog_even + geom_prog_even + harm_prog_even
     L = [x for x in prog_even if v in x]
     return len(L)
+    
+def coordinating_progression_count(v, color="white"):
+    """
+    simply returns the result of 
+       coordinating_progression_count_even(v)
+    or 
+       coordinating_progression_count_even(v):
+    depending on the side. Here the color option can take
+    "white" or "even" or "black" or "odd".
 
+    EXAMPLE:
+        sage: coordinating_progression_count(9, color="blue")
+         color must be in ["white", "even", "White", "Even", "black", "Black", "odd", "Odd"]. Please try again.
+         -1
+        sage: coordinating_progression_count(9, color="white")
+         8
+        sage: coordinating_progression_count(9, color="Odd")
+         6
+
+    """
+    if color=="white" or color=="even" or color=="White" or color=="Even":
+        return coordinating_progression_count_even(v)
+    if color=="black" or color=="Black" or color=="odd" or color=="Odd":
+        return coordinating_progression_count_odd(v)
+    else:
+        print('color must be in ["white", "even", "White", "Even", "black", "Black", "odd", "Odd"]. Please try again.')
+        return -1
+	
 def even_piece_values():
     """
     returns all values of white/even pieces in some coordinating progression of White/Even pieces
@@ -7774,10 +8077,36 @@ def coordinating_progression_pair_count_even(v1, v2):
     L = [x for x in prog_even if (v1 in x) and (v2 in x)]
     return len(L)
 
-# Helper to map Sage piece variables to matplotlib shapes and colors
+
+def coordinating_progression_pair_count(v1, v2, color="white"):
+    """
+    simply returns the result of 
+       coordinating_progression_pair_count_even(v1, v2)
+    or 
+       coordinating_progression_pair_count_even(v1, v2):
+    depending on the side. Here the color option can take
+    "white" or "even" or "black" or "odd".
+
+    EXAMPLE:
+        sage: coordinating_progression_pair_count(4, 9, color="blue")
+         color must be in ["white", "even", "White", "Even", "black", "Black", "odd", "Odd"]. Please try again.
+         -1
+        sage: coordinating_progression_pair_count(4, 9, color="white")
+         1       
+
+    """
+    if color=="white" or color=="even" or color=="White" or color=="Even":
+        return coordinating_progression_pair_count_even(v1, v2)
+    if color=="black" or color=="Black" or color=="odd" or color=="Odd":
+        return coordinating_progression_pair_count_odd(v1, v2)
+    else:
+        print('color must be in ["white", "even", "White", "Even", "black", "Black", "odd", "Odd"]. Please try again.')
+        return -1
+    
 def get_piece_details_from_poly(poly_piece, default_color_w='green', default_color_b='red'):
     """
-    This is a functions that is used in display_board_matplotlib
+    This is a functions that is used in display_board_matplotlib.
+    It's a helper function to map Sage piece variables to matplotlib shapes and colors.
 
     EXAMPLES:
         sage: GSp = board_initial_matrix(pyramid_decomposition = True)
@@ -7821,3 +8150,1385 @@ def get_piece_details_from_poly(poly_piece, default_color_w='green', default_col
     # We'll sum numeric values for display or take first.
     # Note: value_of_piece needs the game_state matrix, row, col.
     return shape_mpl, color_mpl # Value will be handled in the loop
+
+
+def capture_list_to_animation_enhanced(game_state, capture_list, base_filename="capture", frame_start_index=0):
+    """
+    Creates 3 frames for a capture animation and returns the new game state and frame count.
+    1) The board position with circles around the pieces involved.
+    2) The captured piece vanishes.
+    3) The board without circles.
+    """
+    if not capture_list or len(capture_list) < 2:
+        return game_state, 0 # Return gracefully if format is wrong
+
+    attacker_info, victim_info = capture_list[0], capture_list[1]
+    loc_pc1, _, _ = attacker_info
+    loc_pc2, _, _ = victim_info
+
+    hpa = [coordinate_to_algebraic(*loc_pc1), coordinate_to_algebraic(*loc_pc2)]
+    
+    # Frame 1: Highlight pieces involved
+    filename1 = os.path.join(SAGE_DIR, f"frame_{frame_start_index:03d}.png")
+    display_board_matplotlib_enhanced(game_state, dpi=300, highlight_pieces=hpa, filename=filename1)
+    
+    # Update game state using the new signature
+    game_state2 = capture_piece(game_state, loc_pc1, loc_pc2, verbose=False)
+
+    # Frame 2: Show captured piece removed, but keep highlight
+    filename2 = os.path.join(SAGE_DIR, f"frame_{frame_start_index + 1:03d}.png")
+    display_board_matplotlib_enhanced(game_state2, dpi=300, highlight_pieces=hpa, filename=filename2)
+
+    # Frame 3: Final state with no highlights
+    filename3 = os.path.join(SAGE_DIR, f"frame_{frame_start_index + 2:03d}.png")
+    display_board_matplotlib_enhanced(game_state2, dpi=300, highlight_pieces=[], filename=filename3)
+
+    return game_state2, 3
+    
+    
+def capture_list_to_animation(game_state, capture_list):
+    """
+    creates 3 frames 
+    1) the board position for game_state
+    2) same position with circles around the pieces involved, 
+    then 
+    3) the captured piece vanishes, the circles vanish, and the
+       new game_state is displayed (with text "piece XXX/yyy has been captured"?)
+
+    The capture_list represents exactly one enemy piece being captured by a friendly
+    piece (in case of a capture by sum, where two friendly pieces cooperate to capture
+    the enemy piece, simply use the last moved friendly piece) has the structure:
+        [ (loc_pc1, val_pc1, poly_pc1), (loc_pc2, val_pc2, poly_pc2) ]
+    We want a circle around the piece at loc_pc1 and the piece at loc_pc2.
+
+    The color of the attacking piece can be determined from 
+    poly_pc1, which will be the opposing color of poly_pc2. The piece
+    at loc_pc2 will vanish.
+
+    ########## ########## ########## ########## ########## ########## ########## ########## ########## 
+    ########## perhaps the format here can be improved? The point is 
+    ########## the goal is to create frames to animate an annotated
+    ########## full rithmomachia game, for instructional/educational purposes
+    ########## This program would be used along with 
+    ########## move_piece(game_state, start_pos, end_pos, verbose = False)
+    ########## and 
+    ########## display_board_matplotlib(game_state_sage_matrix, dpi=300, highlight_pieces=None)
+    ########## to create frames, which must be named in order (such as evenmove1, oddmove2,
+    ########## or something like that) so that they can be fed into an animation
+    ########## program such as ffmpeg that will output an mp4. 
+    ########## ########## ########## ########## ########## ########## ########## ########## ########## 
+
+
+    EXAMPLES:
+        sage: c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
+        sage: PR = ZZ[c,C,p,P,t,T,s,S]
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: (loc_pc1, val_pc1, poly_pc1) = ((3, 3), 6, C^6) 
+        sage: (loc_pc2, val_pc2, poly_pc2) = ((3, 12), 5, c^5)
+	sage: cl = [(loc_pc1, val_pc1, poly_pc1), (loc_pc2, val_pc2, poly_pc2)]
+	sage: capture_list_to_animation(GSp, cl)
+         Board image saved to rithmomachia_board.png with a DPI of 300
+         Board image saved to rithmomachia_board.png with a DPI of 300
+         Board image saved to rithmomachia_board.png with a DPI of 300
+         <module 'matplotlib.pyplot' from '/private/var/tmp/.../site-packages/matplotlib/pyplot.py'>
+
+
+    """
+    cl = capture_list
+    (loc_pc1, val_pc1, poly_pc1) = cl[0]
+    (loc_pc2, val_pc2, poly_pc2) = cl[1]
+    hpa = [coordinate_to_algebraic(x[0], x[1]) for x in [loc_pc1, loc_pc2]]
+    #print(hpa, (loc_pc1, val_pc1, poly_pc1), (loc_pc2, val_pc2, poly_pc2))
+    dbm = display_board_matplotlib(game_state, dpi=300, highlight_pieces = hpa)
+    game_state2 = capture_piece(game_state, val_pc1, loc_pc2, verbose=False)
+    dbm2 = display_board_matplotlib(game_state2, dpi=300, highlight_pieces = hpa)
+    dbm3 = display_board_matplotlib(game_state2, dpi=300, highlight_pieces = [])
+    return plt
+
+def captures_as_dict(game_state, verbose = False):
+    """
+    This returns a list of dictionaries of all captures (from both sides of 
+    the board). The algorithm is to go case-by-case through the types of
+    captures, since the capture record is different for different types
+    of captures. Therefore, the program is quite simple to follow but also
+    quite long.
+
+    NOTATION for captures:
+
+    * The pieces can be dictionaries:
+
+      piece = {"color": "even"/"odd",
+               "shape": "circle"/"triangle","square"/"pyramid",
+               "value": v,
+	       "algebraic": "C^4"/"c^7"/.../"P+<subpieces>",
+	       "position": (x,y)}
+      Of course, a piece can also be represented as a 5-list, where each component is represented as above.
+
+    * The capture dictionary is similar:  
+ 
+     capture = {"friendly_piece": piece1, ######## this is the capturing/attacking piece (or one of them)
+                "enemy_piece": piece2, ######## this is the captured/attacked piece (one per capture)
+	        "capture_type": "number"/"sum"/"difference"/"product"/"divisor"/"siege"/"unknown",
+	        "pre_move_capture": True/False,
+	        "post_move_capture": True/False}
+    where the dictionary structure for piece1, piece2 are as described above (but of opposite "color,"
+    of course). 
+
+    The function computes these by means of the capture lists that arise from the legal_moves_captures_* 
+    functions. Each capture list depends on the type of capture, so expect some capture lists to be short
+    and others to be longer.
+
+    EXAMPLES:
+       sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+       sage: GS = copy(GSp)
+       sage: GS[3,3]=0; GS[0,13] = C^6; GS[6,2] = 0; GS[1,11] = T^6
+       sage: valid_captures_by_addition_white(GS)
+       [[((0, 13), [6]), ((1, 11), [6]), ((1, 13), [12])],
+        [((1, 11), [6]), ((0, 13), [6]), ((1, 13), [12])]]
+       sage: captures_as_dict(GS)
+       [{'friendly_piece': {'color': 'even',
+          'value': [6],
+          'shape': 'circle',
+          'position': (0, 13),
+          'algebraic': C^6},
+         'enemy_piece': {'color': 'odd',
+          'value': [12],
+          'shape': 'triangle',
+          'position': (1, 13),
+          'algebraic': t^12},
+         'capture_type': 'sum',
+         'pre_move_capture': True,
+         'post_move_capture': False},
+        {'friendly_piece': {'color': 'even',
+          'value': [6],
+          'shape': 'triangle',
+          'position': (1, 11),
+          'algebraic': T^6},
+         'enemy_piece': {'color': 'odd',
+          'value': [12],
+          'shape': 'triangle',
+          'position': (1, 13),
+          'algebraic': t^12},
+         'capture_type': 'sum',
+         'pre_move_capture': True,
+         'post_move_capture': False}]
+       sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+       sage: GS = copy(GSp)
+       sage: GS[1,11] = T^9; GS[7,2] = 0; GS[2,11] = c^3; GS[2,12] = 0
+       sage: captures_as_dict(GS)
+       [{'friendly_piece': {'color': 'odd',
+          'value': [12],
+          'shape': 'triangle',
+          'position': (1, 13),
+          'algebraic': t^12},
+         'enemy_piece': {'color': 'even',
+          'value': [9],
+          'shape': 'triangle',
+          'position': (1, 11),
+          'algebraic': T^9},
+         'capture_type': 'difference',
+         'pre_move_capture': True,
+         'post_move_capture': False}]
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: GS = copy(GSp)
+        sage: GS[2, 15] = C^(36); GS[3, 2] = 0; GS[5, 15] = C^(64); GS[2, 2] = 0
+        sage: valid_captures_by_numbering_white(GS)
+         [((2, 15, [36]), (2, 14, [36]), (2, 15), C^36, t^36),
+          ((5, 15, [64]), (5, 14, [64]), (5, 15), C^64, t^64)]
+        sage: captures_as_dict(GS)
+        [{'friendly_piece': {'color': 'even',
+           'value': 15,
+           'shape': 'circle',
+           'position': (2, 15),
+           'algebraic': C^36},
+          'enemy_piece': {'color': 'odd',
+           'value': 14,
+           'shape': 'triangle',
+           'position': (2, 14),
+           'algebraic': t^36},
+          'capture_type': 'number',
+          'pre_move_capture': True,
+          'post_move_capture': False},
+         {'friendly_piece': {'color': 'even',
+           'value': 15,
+           'shape': 'circle',
+           'position': (5, 15),
+           'algebraic': C^64},
+          'enemy_piece': {'color': 'odd',
+           'value': 14,
+           'shape': 'triangle',
+           'position': (5, 14),
+           'algebraic': t^64},
+          'capture_type': 'number',
+          'pre_move_capture': True,
+          'post_move_capture': False}]
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: GS = copy(GSp)
+        sage: GS[7,7] = p^190 + s^64 + s^49 + s^36 + s^25 + s^16; GS[7, 14] = 0
+        sage: valid_captures_by_multiplication_white(GS, verbose=True)
+         The piece component T^9 (value 9) at (7, 2) captures by multiplication the piece component p^190 + s^64 + s^49 + s^36 + s^25 + s^16 (value 36) at (7, 7) at separation 4
+         [[((7, 2), 9, T^9), ((7, 7), 36, p^190 + s^64 + s^49 + s^36 + s^25 + s^16)]]
+        sage: captures_as_dict(GS)
+        [{'friendly_piece': {'color': 'even',
+           'value': 9,
+           'shape': 'triangle',
+           'position': (7, 2),
+           'algebraic': T^9},
+          'enemy_piece': {'color': 'odd',
+           'value': 36,
+           'shape': 'square',
+           'position': (7, 7),
+           'algebraic': p^190 + s^64 + s^49 + s^36 + s^25 + s^16},
+          'capture_type': 'product',
+          'pre_move_capture': True,
+          'post_move_capture': False}]
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: GS = copy(GSp)
+        sage: GS[3, 6] = P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S; GS[1, 1] = 0
+        sage: valid_captures_by_division_white(GS, verbose = True)
+        sage: captures_as_dict(GS)
+        [{'friendly_piece': {'color': 'even',
+           'value': 1,
+           'shape': 'square',
+           'position': (3, 6),
+           'algebraic': P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S},
+          'enemy_piece': {'color': 'odd',
+           'value': 5,
+           'shape': 'circle',
+           'position': (3, 12),
+           'algebraic': c^5},
+          'capture_type': 'product',
+          'pre_move_capture': True,
+          'post_move_capture': False},
+         {'friendly_piece': {'color': 'odd',
+           'value': 5,
+           'shape': 'circle',
+           'position': (3, 12),
+           'algebraic': c^5},
+          'enemy_piece': {'color': 'even',
+           'value': 25,
+           'shape': 'square',
+           'position': (3, 6),
+           'algebraic': P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S},
+          'capture_type': 'product',
+          'pre_move_capture': True,
+          'post_move_capture': False},
+         {'friendly_piece': {'color': 'even',
+           'value': 25,
+           'shape': 'square',
+           'position': (3, 6),
+           'algebraic': P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S},
+          'enemy_piece': {'color': 'odd',
+           'value': 5,
+           'shape': 'circle',
+           'position': (3, 12),
+           'algebraic': c^5},
+          'capture_type': 'factor',
+          'pre_move_capture': True,
+          'post_move_capture': False},
+         {'friendly_piece': {'color': 'odd',
+           'value': 5,
+           'shape': 'circle',
+           'position': (3, 12),
+           'algebraic': c^5},
+          'enemy_piece': {'color': 'even',
+           'value': 1,
+           'shape': 'square',
+           'position': (3, 6),
+           'algebraic': P^91 + S^36 + S^25 + S^16 + S^9 + S^4 + S},
+          'capture_type': 'factor',
+          'pre_move_capture': True,
+          'post_move_capture': False}]
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: GS = copy(GSp)
+        sage: GS[2,2] = c^3; GS[2,12] = 0
+        sage: valid_captures_by_siege_white(GS, verbose = True)
+         The piece c^3 at (2, 2) with value [3] is captured by siege.
+         [[((2, 2), [3], c^3)]]
+        sage: captures_as_dict(GS)
+         [{'friendly_piece': {'color': 'even',
+          'value': [49],
+           'shape': 'triangle',
+           'position': (2, 1),
+           'algebraic': T^49},
+          'enemy_piece': {'color': 'odd',
+           'value': 2,
+           'shape': 'circle',
+           'position': (2, 2),
+           'algebraic': c^3},
+          'capture_type': 'siege',
+          'pre_move_capture': True,
+          'post_move_capture': False}]
+
+
+    """
+    GS = copy(game_state)
+    # Re-declare Sage variables if not in global scope of this function
+    # (Safer to pass them or have them accessible if this is a utility module)
+    sage_vars = var("c,C,p,P,t,T,s,S")
+    (c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var) = sage_vars
+    #c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
+    PR = ZZ[c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var]
+    ##c,C,p,P,t,T,s,S = var("c,C,p,P,t,T,s,S")
+    ##PR = ZZ[c,C,p,P,t,T,s,S]
+    captures_total = []
+    #### now we do case-by-case for each type of capture ...
+    ################ capture by sum/addition for friendly = even/white
+    # in this case, capture record is list of triples of the form
+    #           [((0, 12), 6), ((1, 11), 6), ((1, 13), 12)]
+    vca_even = valid_captures_by_addition_white(game_state, verbose = False)
+    ################ capture by sum/addition for friendly = odd/black
+    vca_odd  = valid_captures_by_addition_black(game_state, verbose = False)
+    vca_all = vca_even + vca_odd
+    for xx in vca_all:
+        piece1 = {}
+        piece2 = {}
+        pc_attacker = xx[0]
+        #print(pc_attacker, xx)
+        pos_x = pc_attacker[0][0]
+        pos_y = pc_attacker[0][1]
+        pc_attacker_alg = GS[pos_x, pos_y]
+        variables = pc_attacker_alg.variables()
+        if C_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif T_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif S_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif P_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif c_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif t_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif s_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif p_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        pc_captured = xx[2]
+        pos_x = pc_captured[0][0]
+        pos_y = pc_captured[0][1]
+        pc_captured_alg = GS[pos_x, pos_y]
+        variables = pc_captured_alg.variables()
+        if C_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif T_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif S_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif P_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif c_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif t_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif s_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif p_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        caps = {"friendly_piece": piece1, "enemy_piece": piece2, "capture_type": "sum",
+                "pre_move_capture": True, "post_move_capture": False}
+        captures_total = captures_total + [caps]
+    ################ capture by difference for friendly = even/white
+    # in this case, capture record is list of triples like capture by sum
+    vcs_even = valid_captures_by_subtraction_white(game_state, verbose = False)
+    ################ capture by sum for friendly = odd/black
+    # example of syntax:
+    # valid_captures_by_subtraction_black(GS)
+    #     [[((1, 13), [12]), ((2, 11), [3]), ((1, 11), [9])]]
+    vcs_odd  = valid_captures_by_subtraction_black(game_state, verbose = False)
+    vcs_all = vcs_even + vcs_odd
+    for xx in vcs_all:
+        piece1 = {}
+        piece2 = {}
+        pc_attacker = xx[0]
+        #print(pc_attacker, xx)
+        pos_x = pc_attacker[0][0]
+        pos_y = pc_attacker[0][1]
+        pc_attacker_alg = GS[pos_x, pos_y]
+        variables = pc_attacker_alg.variables()
+        if C_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif T_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif S_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif P_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif c_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif t_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif s_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif p_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        pc_captured = xx[2]
+        pos_x = pc_captured[0][0]
+        pos_y = pc_captured[0][1]
+        pc_captured_alg = GS[pos_x, pos_y]
+        variables = pc_captured_alg.variables()
+        if C_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif T_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif S_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif P_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif c_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif t_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif s_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif p_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        caps = {"friendly_piece": piece1, "enemy_piece": piece2, "capture_type": "difference",
+                "pre_move_capture": True, "post_move_capture": False}
+        captures_total = captures_total + [caps]
+    ################ capture by number for friendly = even/white
+    # in this case, capture record is list of 5-tuples of the form
+    #           ((2, 15, [36]), (2, 14, [36]), (2, 15), C^36, t^36)
+    vcn_even = valid_captures_by_numbering_white(game_state, verbose = False)
+    ################ capture by number for friendly = odd/black
+    vcn_odd  = valid_captures_by_numbering_black(game_state, verbose = False)
+    vcn_all = vcn_even + vcn_odd
+    for xx in vcn_all:
+        piece1 = {}
+        piece2 = {}
+        pc_attacker = xx[0]
+        #print(pc_attacker, xx)
+        pos_x = pc_attacker[0]
+        pos_y = pc_attacker[1]
+        pc_attacker_alg = GS[pos_x, pos_y]
+        variables = pc_attacker_alg.variables()
+        if C_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif T_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif S_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif P_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif c_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif t_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif s_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif p_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        pc_captured = xx[1]
+        pos_x = pc_captured[0]
+        pos_y = pc_captured[1]
+        pc_captured_alg = GS[pos_x, pos_y]
+        variables = pc_captured_alg.variables()
+        if C_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif T_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif S_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif P_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif c_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif t_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif s_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif p_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        caps = {"friendly_piece": piece1, "enemy_piece": piece2, "capture_type": "number",
+                "pre_move_capture": True, "post_move_capture": False}
+        captures_total = captures_total + [caps]
+    
+    ################ capture by product/multiplication for friendly = even/white
+    # in this case, capture record is list of pairs of the form
+    #          [((7, 2), 9), ((7, 7), 36)]
+    vcm_even = valid_captures_by_multiplication_white(game_state, verbose = False)
+    ################ capture by product/multiplication for friendly = odd/black
+    vcm_odd  = valid_captures_by_multiplication_black(game_state, verbose = False)
+    vcm_all = vcm_even + vcm_odd
+    for xx in vcm_all:
+        piece1 = {}
+        piece2 = {}
+        pc_attacker = xx[0]
+        #print(pc_attacker, xx)
+        pos_x = pc_attacker[0][0]
+        pos_y = pc_attacker[0][1]
+        pc_attacker_alg = GS[pos_x, pos_y]
+        variables = pc_attacker_alg.variables()
+        if C_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif T_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif S_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif P_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif c_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif t_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif s_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif p_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        pc_captured = xx[1]
+        pos_x = pc_captured[0][0]
+        pos_y = pc_captured[0][1]
+        pc_captured_alg = GS[pos_x, pos_y]
+        variables = pc_captured_alg.variables()
+        if C_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif T_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif S_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif P_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif c_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif t_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif s_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif p_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        caps = {"friendly_piece": piece1, "enemy_piece": piece2, "capture_type": "product",
+                "pre_move_capture": True, "post_move_capture": False}
+        captures_total = captures_total + [caps]
+    
+    ################ capture by factor/division for friendly = even/white
+    # in this case, capture record is list of pairs of the form
+    #          [((7, 2), 9), ((7, 7), 36)]
+    vcd_even = valid_captures_by_division_white(game_state, verbose = False)
+    ################ capture by factor/division for friendly = odd/black
+    vcd_odd  = valid_captures_by_division_black(game_state, verbose = False)
+    vcd_all = vcd_even + vcd_odd
+    for xx in vcd_all:
+        piece1 = {}
+        piece2 = {}
+        pc_attacker = xx[0]
+        #print(pc_attacker, xx)
+        pos_x = pc_attacker[0][0]
+        pos_y = pc_attacker[0][1]
+        pc_attacker_alg = GS[pos_x, pos_y]
+        variables = pc_attacker_alg.variables()
+        if C_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif T_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif S_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif P_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif c_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif t_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif s_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif p_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        pc_captured = xx[1]
+        pos_x = pc_captured[0][0]
+        pos_y = pc_captured[0][1]
+        pc_captured_alg = GS[pos_x, pos_y]
+        variables = pc_captured_alg.variables()
+        if C_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif T_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif S_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif P_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif c_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif t_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif s_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif p_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        caps = {"friendly_piece": piece1, "enemy_piece": piece2, "capture_type": "factor",
+                "pre_move_capture": True, "post_move_capture": False}
+        captures_total = captures_total + [caps]
+
+    ################ capture by siege/blocking for friendly = even/white
+    # in this case, capture record only lists the captured piece, so it's of the form
+    #          [((7, 2), 9)]
+    vcb_even = valid_captures_by_siege_white(game_state, verbose = False)
+    ################ capture by siege/blocking for friendly = odd/black
+    vcb_odd  = valid_captures_by_siege_black(game_state, verbose = False)
+    vcb_all = vcb_even + vcb_odd
+    for xx in vcb_all:
+        piece1 = {}
+        piece2 = {}
+        pc_captured = xx[0]
+        shifts = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        #print(pc_attacker, xx)
+        for dx, dy in shifts:
+            pos_x = pc_captured[0] + dx
+            pos_y = pc_captured[1] + dy
+            if GS[pos_x, pos_y] != 0:
+                pc_attacker_alg = GS[pos_x, pos_y]
+                pc_attacker = [(pos_x, pos_y), value_of_piece(GS, pos_x, pos_y)]
+        variables = pc_attacker_alg.variables()
+        if C_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif T_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif S_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif P_var in variables:
+            piece1["color"] = "even"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif c_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "circle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif t_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "triangle"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif s_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "square"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        elif p_var in variables:
+            piece1["color"] = "odd"
+            piece1["value"] = pc_attacker[1]
+            piece1["shape"] = "pyramid"
+            piece1["position"] = (pos_x, pos_y)
+            piece1["algebraic"] = pc_attacker_alg
+        pc_captured = xx[0]
+        #print(pc_captured)
+        pos_x = pc_captured[0]
+        pos_y = pc_captured[1]
+        pc_captured_alg = GS[pos_x, pos_y]
+        variables = pc_captured_alg.variables()
+        if C_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif T_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif S_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif P_var in variables:
+            piece2["color"] = "even"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif c_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "circle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif t_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "triangle"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif s_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "square"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        elif p_var in variables:
+            piece2["color"] = "odd"
+            piece2["value"] = pc_captured[1]
+            piece2["shape"] = "pyramid"
+            piece2["position"] = (pos_x, pos_y)
+            piece2["algebraic"] = pc_captured_alg
+        caps = {"friendly_piece": piece1, "enemy_piece": piece2, "capture_type": "siege", "pre_move_capture": True, "post_move_capture": False}
+        captures_total = captures_total + [caps]
+
+    return captures_total
+
+
+def turn_to_animation(game_state, pre_captures, move, post_captures, color, turn_number, frame_counter, verbose=False):
+    """
+    Animates a single, full turn by executing pre-captures, a move, and post-captures in sequence.
+    This function now handles all state changes within the turn.
+
+
+    A *turn* is a sequence of 3 actions, a pre-move capture(s), move, post-move capture(s), 
+    where each capture in these lists must be of the format required for the capture_list_to_animation
+    function. 
+    In other words, it is a pair of the form
+                     [attack_piece, captured_piece],
+    where each piece list has the format
+                         (loc_pc, val_pc, poly_pc),
+    as explained in the above docstring for that function).
+    For each such sequence, 
+    1) pre-move captures -- creates 3 frames for each capture, using capture_list_to_animation,
+    2) a move from the game state after the last capture -- creates 1 frame from the move,
+    3) post-move captures from the game state after the move -- creates 3 frames for each capture.
+    The color option (whose value can be "even" (for White/Even) or "odd" (for
+    Black/Odd) should be consistent with the data in the turn lists.
+    
+    NOTE: In order to iterate this turn-by-turn it is necessary for this function to also return the 
+    game_state after the turn (unless these have been precomputed and saved in a file).
+
+    EXAMPLES:
+        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: GS = copy(GSp)
+        sage: precapture_list = []
+        sage: postcapture_list = []
+        sage: move = [(1,2), (1,4)]
+        sage: turn_to_animation(GS, precapture_list, move, postcapture_list, color="even", turn_number=1, frame_counter=0)
+         Turn 1 (even): Processing move from (1, 2) to (1, 4).
+          - Generating move highlight frame: frame_000.png
+         Board image saved to frame_000.png with a DPI of 300
+          - Generating move complete frame: frame_001.png
+         Board image saved to frame_001.png with a DPI of 300
+         Turn 1 (even) complete. Total frames generated: 2
+         <new game state matrix omitted)
+	sage: GSp = board_initial_matrix(pyramid_decomposition = True)
+        sage: GS = copy(GSp)
+        sage: GS[2, 13] = 0; GS[7, 3] = c^9; GS[1, 2] = 0; GS[1, 4] = T^(72)
+        sage: precapture_list = [[((7,3), 9, c^9), ((7,2), 9, T^9)]]
+        sage: move = [(1,13), (1,11)]
+        sage: postcapture_list = [[((1,11), 12, t^(12)), ((1,4), 72, T^(72))]]
+        sage: turn_to_animation(GS, precapture_list, move, postcapture_list, color="odd", turn_number=1, frame_counter=0, verbose=True)
+         Turn 1 (odd): Animating 1 pre-move captures.
+         Board image saved to /Users/davidjoyner/sagefiles/frame_000.png with a DPI of 300
+         Board image saved to /Users/davidjoyner/sagefiles/frame_001.png with a DPI of 300
+         Board image saved to /Users/davidjoyner/sagefiles/frame_002.png with a DPI of 300
+         Turn 1 (odd): Animating move from n2 to l2.
+         Board image saved to /Users/davidjoyner/sagefiles/frame_003.png with a DPI of 300
+         Board image saved to /Users/davidjoyner/sagefiles/frame_004.png with a DPI of 300
+         Turn 1 (odd): Animating 1 post-move captures.
+         Board image saved to /Users/davidjoyner/sagefiles/frame_005.png with a DPI of 300
+         Board image saved to /Users/davidjoyner/sagefiles/frame_006.png with a DPI of 300
+         Board image saved to /Users/davidjoyner/sagefiles/frame_007.png with a DPI of 300
+          <8x16 game state matrix omitted>
+
+    """
+    GS = copy(game_state)
+    current_frame = frame_counter
+
+    # 1. Animate and Execute Pre-Move Captures
+    if pre_captures:
+        if verbose: print(f"Turn {turn_number} ({color}): Animating {len(pre_captures)} pre-move captures.")
+        for i, capture in enumerate(pre_captures):
+            if capture is None: continue
+            # This function internally updates the game state and returns the new state
+            GS, frames_generated = capture_list_to_animation_enhanced(GS, capture, frame_start_index=current_frame)
+            current_frame += frames_generated
+
+    # 2. Animate and Execute the Move
+    if move:
+        start_pos, end_pos = move
+        if verbose: print(f"Turn {turn_number} ({color}): Animating move from {coordinate_to_algebraic(*start_pos)} to {coordinate_to_algebraic(*end_pos)}.")
+        
+        # Check if move is legal on the current state before animating
+        if GS[end_pos] != 0:
+            if verbose: print(f"ANIMATION WARNING: Move to {coordinate_to_algebraic(*end_pos)} is blocked. Skipping move animation.")
+        else:
+            piece_to_move_alg = coordinate_to_algebraic(*start_pos)
+            move_highlight_filename = os.path.join(SAGE_DIR, f"frame_{current_frame:03d}.png")
+            display_board_matplotlib_enhanced(GS, dpi=300, highlight_pieces=[piece_to_move_alg], filename=move_highlight_filename)
+            current_frame += 1
+            
+            GS = move_piece(GS, start_pos, end_pos, verbose=False)
+            
+            move_complete_filename = os.path.join(SAGE_DIR, f"frame_{current_frame:03d}.png")
+            display_board_matplotlib_enhanced(GS, dpi=300, filename=move_complete_filename)
+            current_frame += 1
+
+    # 3. Animate and Execute Post-Move Captures
+    if post_captures:
+        if verbose: print(f"Turn {turn_number} ({color}): Animating {len(post_captures)} post-move captures.")
+        for i, capture in enumerate(post_captures):
+            if capture is None: continue
+            GS, frames_generated = capture_list_to_animation_enhanced(GS, capture, frame_start_index=current_frame)
+            current_frame += frames_generated
+            
+    return GS, current_frame
+
+
+def animate_full_game(max_turns=40, move_strategy='good', log_filename="rithmomachia_log.txt", verbose=False):
+    """
+    Simulates a full game of Rithmomachia, turn by turn, and generates sequential image frames for animation.
+
+    Args:
+        max_turns (int): The maximum number of turns to simulate to prevent an infinite loop.
+        move_strategy (str): The strategy for computer players ('good' or 'best'). 'good' is recommended for speed.
+        log_filename (str): The path to the output log file.
+        verbose (bool): If True, prints additional debug information to the console.
+    """
+    print("--- Starting Full Game Animation and Logging (Press Ctrl-C to stop early) ---")
+    
+    # --- Initialization ---
+    current_gs = board_initial_matrix(pyramid_decomposition=True)
+    game_history = []
+    frame_counter = 0
+    player_turn = "even"
+
+    try:
+        with open(log_filename, 'w') as log_file:
+            log_file.write("Rithmomachia Game Log\n=====================\n\n")
+
+            for turn_number in range(1, max_turns + 1):
+                log_file.write(f"--- Turn {turn_number}: {player_turn.capitalize()}'s Move ---\n")
+                if verbose: print(f"\n--- Turn {turn_number}: {player_turn.capitalize()}'s Move ---")
+
+                # 1. Determine player-specific functions
+                if player_turn == "even":
+                    move_finder = good_move_white
+                    capture_finder = legal_moves_captures_white
+                    capture_taker = take_all_captures_white
+                else:
+                    move_finder = good_move_black
+                    capture_finder = legal_moves_captures_black
+                    capture_taker = take_all_captures_black
+                
+                # 2. Determine all actions for the turn sequentially
+                pre_captures_raw = capture_finder(current_gs)[1]
+                if verbose: print("List of pre-move captures:", pre_captures_raw)
+                gs_after_pre_caps = capture_taker(current_gs, verbose=False)
+                
+                move = move_finder(gs_after_pre_caps, verbose=False)
+                
+                post_captures_raw = []
+                if move:
+                    if verbose: print(f"Move chosen: [{gs_after_pre_caps[move[0]]}, from {coordinate_to_algebraic(*move[0])} to {coordinate_to_algebraic(*move[1])}]")
+                    gs_after_move = move_piece(gs_after_pre_caps, move[0], move[1])
+                    post_captures_raw = capture_finder(gs_after_move)[1]
+                
+                if verbose: print("List of post-move captures:", post_captures_raw)
+
+                # 3. Log all determined actions to the text file
+                log_file.write("Pre-move Captures:\n")
+                if not pre_captures_raw:
+                    log_file.write("  None\n")
+                else:
+                    for cap in pre_captures_raw: log_file.write(f"  {format_capture_for_log(cap, current_gs)}\n")
+
+                log_file.write("Move:\n")
+                if not move:
+                    log_file.write("  No legal moves available. Game over.\n")
+                    print(f"No legal moves for {player_turn}. {('Odd' if player_turn == 'even' else 'Even')} wins.")
+                    break
+                else:
+                    log_file.write(f"  [{gs_after_pre_caps[move[0]]}, from {coordinate_to_algebraic(*move[0])} to {coordinate_to_algebraic(*move[1])}]\n")
+                
+                log_file.write("Post-move Captures:\n")
+                if not post_captures_raw:
+                    log_file.write("  None\n")
+                else:
+                    for cap in post_captures_raw: log_file.write(f"  {format_capture_for_log(cap, gs_after_move)}\n")
+
+                # 4. Call the animation function to execute the full turn
+                gs_after_turn, frame_counter = turn_to_animation(
+                    game_state=current_gs,
+                    pre_captures=[reformat_capture_for_animation(c, current_gs) for c in pre_captures_raw if c],
+                    move=move,
+                    post_captures=[reformat_capture_for_animation(c, gs_after_move) for c in post_captures_raw if c],
+                    color=player_turn,
+                    turn_number=turn_number,
+                    frame_counter=frame_counter,
+                    verbose=verbose
+                )
+                
+                current_gs = gs_after_turn
+                
+                # 5. Update game history list
+                if move:
+                    turn_data = {
+                        "turn": turn_number, "player": player_turn, "pre_captures": pre_captures_raw,
+                        "move": { "piece": str(gs_after_pre_caps[move[0]]), "start": coordinate_to_algebraic(*move[0]), "end": coordinate_to_algebraic(*move[1]) },
+                        "post_captures": post_captures_raw
+                    }
+                    game_history.append(turn_data)
+                
+                log_file.write("\n")
+
+                # 6. Check for Victory
+                if is_body_common_victory_white(current_gs, verbose=verbose):
+                    captured_by_white = captured_pieces_black(current_gs, pyramid_decomposition=True)
+                    log_file.write("--- GAME OVER: White Wins (common victory, by body)! ---\n")
+                    log_file.write(f"  (Captured Black pieces: {[str(p) for p in captured_by_white]})\n")
+                    print("GAME OVER: White wins (common victory, by body)!")
+                    break
+                if is_small_proper_victory_white(current_gs):
+                    log_file.write("--- GAME OVER: White Wins (small, proper victory)! ---\n")
+                    print("GAME OVER: White wins (small, proper victory)!")
+                    break
+                if is_body_common_victory_black(current_gs, verbose=verbose):
+                    captured_by_black = captured_pieces_white(current_gs, pyramid_decomposition=True)
+                    log_file.write("--- GAME OVER: Black Wins (common victory, by body)! ---\n")
+                    log_file.write(f"  (Captured White pieces: {[str(p) for p in captured_by_black]})\n")
+                    print("GAME OVER: Black wins (common victory, by body)!")
+                    break
+                if is_small_proper_victory_black(current_gs):
+                    log_file.write("--- GAME OVER: Black Wins (small, proper victory)! ---\n")
+                    print("GAME OVER: Black wins (small, proper victory)!")
+                    break
+                
+                player_turn = "odd" if player_turn == "even" else "even"
+
+            if turn_number == max_turns:
+                log_file.write(f"--- GAME OVER: Reached max turn limit of {max_turns}. ---\n")
+                print(f"GAME OVER: Reached max turn limit of {max_turns}.")
+
+    except KeyboardInterrupt:
+        print(f"\n\n--- Game manually stopped by user. ---")
+        print(f"Log file '{log_filename}' saved with progress up to the interruption.")
+    
+    finally:
+        print(f"--- Animation Generation Finished. Total frames created: {frame_counter} ---")
+
+    return game_history
+
+
+def reformat_capture_for_animation(capture_data, gs):
+    """
+    Converts a raw capture record into the standardized format required by turn_to_animation.
+    Format: [(loc_tuple, val, poly_str), (loc_tuple, val, poly_str)]
+    """
+    # This function is now more robust in identifying the capture type and extracting data.
+    try:
+        # Capture by Numbering: ((r,c,[v]), (r,c,[v]), poly, poly)
+        if len(capture_data) == 5 and isinstance(capture_data[3], sage.symbolic.expression.Expression):
+            attacker_info = capture_data[0]
+            victim_info = capture_data[1]
+            
+            loc1 = (attacker_info[0], attacker_info[1])
+            val1 = attacker_info[2][0]
+            poly1 = capture_data[3]
+
+            loc2 = (victim_info[0], victim_info[1])
+            val2 = victim_info[2][0]
+            poly2 = capture_data[4]
+            
+            return [(loc1, val1, poly1), (loc2, val2, poly2)]
+
+        # Capture by Sum/Difference: [( (r,c), [v] ), ( (r,c), [v] ), ( (r,c), [v] )]
+        elif len(capture_data) == 3 and isinstance(capture_data[0], tuple):
+            loc1, val1 = capture_data[0][0], capture_data[0][1][0]
+            loc2, val2 = capture_data[2][0], capture_data[2][1][0] # Victim is the 3rd element
+            poly1, poly2 = gs[loc1], gs[loc2]
+            return [(loc1, val1, poly1), (loc2, val2, poly2)]
+
+        # Capture by Multiplication/Division: [((pos1, val1), (pos2, val2))]
+        elif len(capture_data) == 2 and isinstance(capture_data[0], tuple):
+            loc1, val1 = capture_data[0][0], capture_data[0][1]
+            loc2, val2 = capture_data[1][0], capture_data[1][1]
+            poly1, poly2 = gs[loc1], gs[loc2]
+            return [(loc1, val1, poly1), (loc2, val2, poly2)]
+
+    except (IndexError, TypeError) as e:
+        print(f"Warning: Could not reformat capture data: {capture_data}. Error: {e}")
+        return None
+
+    return None # Return None if no known format matches
+
+
+def format_capture_for_log(capture_data, gs):
+    """
+    Converts a raw capture record into a list formatted for a text log.
+    Format: [capturing_piece_info, captured_piece_info, "descriptive_string"]
+    """
+    # Heuristic to guess capture type based on data structure
+    # This logic is similar to reformat_capture_for_animation
+    capture_type_info = "unknown"
+    
+    try:
+        # Numbering Capture: e.g., ((r1, c1, [v1]), (r2, c2, [v2]), (r1, c1), C^36, t^36)
+        if len(capture_data) == 5 and isinstance(capture_data[0], tuple):
+            attacker_poly = capture_data[3]
+            victim_poly = capture_data[4]
+            return [f"{attacker_poly}", f"{victim_poly}", "by numbering"]
+
+        # Sum/Difference Capture: e.g., [[(pos1, [v1]), (pos2, [v2]), (pos3, [v3])]]
+        elif len(capture_data) == 3 and isinstance(capture_data[0], tuple):
+            attacker1_poly = gs[capture_data[0][0]]
+            attacker2_poly = gs[capture_data[1][0]]
+            victim_poly = gs[capture_data[2][0]]
+            # Determine if it's sum or difference based on values
+            v1, v2, v3 = capture_data[0][1][0], capture_data[1][1][0], capture_data[2][1][0]
+            op_type = "by addition" if v1 + v2 == v3 else "by subtraction"
+            return [f"{attacker1_poly} and {attacker2_poly}", f"{victim_poly}", op_type]
+
+        # Product/Division Capture: e.g., [((pos1, val1), (pos2, val2))]
+        elif len(capture_data) == 2 and isinstance(capture_data[0], tuple):
+            pos1, val1 = capture_data[0][0], capture_data[0][1]
+            pos2, val2 = capture_data[1][0], capture_data[1][1]
+            attacker_poly = gs[pos1]
+            victim_poly = gs[pos2]
+            dist = pieces_in_a_line(gs, pos1, pos2) ##  - 1
+            op_type = "by multiplication" if val1 * dist == val2 else "by division"
+            return [f"{attacker_poly}", f"{victim_poly}", f"{op_type}, with separation {dist}"]
+
+        # Siege Capture: e.g., [((r, c), [v])]
+        elif len(capture_data) == 1 and isinstance(capture_data[0], tuple):
+            victim_poly = gs[capture_data[0][0]]
+            return ["Surrounding pieces", f"{victim_poly}", "by siege"]
+            
+    except (IndexError, TypeError):
+        # Fallback for unexpected formats
+        return ["Unknown Attacker", "Unknown Victim", "with unknown capture type"]
+
+    return ["-", "-", "unknown format"]
