@@ -1071,42 +1071,43 @@ def captured_pieces_white(game_state, pyramid_decomposition=True):
     """
     GS = copy(game_state)
     initial_GS = board_initial_matrix(pyramid_decomposition=pyramid_decomposition)
-    captured_list = []
+    captured_list_str = []
     
-    # 1. Compare regular (non-pyramid) pieces
+    # Define Polynomial Ring to ensure type consistency
+    PR, (_,_,_,P,_,_,S,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
+    
+    # 1. Handle regular (non-pyramid) pieces
     initial_regular = [p[1] for p in positions_w(initial_GS, verbose=True) if not P in p[1].variables()]
     current_regular = [p[1] for p in positions_w(GS, verbose=True) if not P in p[1].variables()]
     
-    # Find which regular pieces are missing
     initial_counts = Counter(initial_regular)
     initial_counts.subtract(Counter(current_regular))
     
     for piece, count in initial_counts.items():
         if count > 0:
-            captured_list.extend([piece] * count)
+            captured_list_str.extend([str(piece)] * count)
 
-    # 2. Compare pyramid sub-pieces
+    # 2. Handle the Pyramid sub-pieces separately
     initial_pyramid_pos = pyramid_positions_white(initial_GS)
     current_pyramid_pos = pyramid_positions_white(GS)
 
-    if initial_pyramid_pos and not current_pyramid_pos:
-        # The entire pyramid was captured
-        captured_list.append(PR("P^91"))
-    elif initial_pyramid_pos and current_pyramid_pos:
-        # Check for captured sub-pieces
-        initial_vals = value_of_piece(initial_GS, initial_pyramid_pos[0][0], initial_pyramid_pos[0][1])
-        current_vals = value_of_piece(GS, current_pyramid_pos[0][0], current_pyramid_pos[0][1])
+    if initial_pyramid_pos:
+        initial_pyramid_poly = initial_GS[initial_pyramid_pos[0][0], initial_pyramid_pos[0][1]]
         
-        initial_val_counts = Counter(initial_vals)
-        initial_val_counts.subtract(Counter(current_vals))
-
-        for value, count in initial_val_counts.items():
-            if count > 0:
-                # Add a representation of the captured sub-piece (e.g., S^value)
-                captured_list.extend([S**value] * count)
+        # If the pyramid is missing entirely from the board
+        if not current_pyramid_pos:
+            captured_list_str.append(f"Entire pyramid {initial_pyramid_poly}")
+        # If it's still on the board, check for missing sub-piece values
+        else:
+            initial_sub_values = set(v for v in value_of_piece(initial_GS, initial_pyramid_pos[0][0], initial_pyramid_pos[0][1]) if v != initial_pyramid_poly.degree(P))
+            current_sub_values = set(v for v in value_of_piece(GS, current_pyramid_pos[0][0], current_pyramid_pos[0][1]) if v != PR(GS[current_pyramid_pos[0][0], current_pyramid_pos[0][1]]).degree(P))
+            
+            captured_sub_values = initial_sub_values - current_sub_values
+            
+            for val in sorted(list(captured_sub_values), reverse=True):
+                captured_list_str.append(f"S^{val} of {initial_pyramid_poly}")
                 
-    return captured_list
-
+    return captured_list_str
 
 
 def captured_pieces_black(game_state, pyramid_decomposition=True):
@@ -1141,38 +1142,39 @@ def captured_pieces_black(game_state, pyramid_decomposition=True):
     """
     GS = copy(game_state)
     initial_GS = board_initial_matrix(pyramid_decomposition=pyramid_decomposition)
-    captured_list = []
+    captured_list_str = []
+    
+    PR, (_,_,p,_,_,_,s,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
 
-    # 1. Compare regular (non-pyramid) pieces
-    initial_regular = [p[1] for p in positions_b(initial_GS, verbose=True) if not p in p[1].variables()]
-    current_regular = [p[1] for p in positions_b(GS, verbose=True) if not p in p[1].variables()]
+    # 1. Handle regular (non-pyramid) pieces
+    initial_regular = [pc[1] for pc in positions_b(initial_GS, verbose=True) if not p in pc[1].variables()]
+    current_regular = [pc[1] for pc in positions_b(GS, verbose=True) if not p in pc[1].variables()]
     
     initial_counts = Counter(initial_regular)
     initial_counts.subtract(Counter(current_regular))
     
     for piece, count in initial_counts.items():
         if count > 0:
-            captured_list.extend([piece] * count)
+            captured_list_str.extend([str(piece)] * count)
 
-    # 2. Compare pyramid sub-pieces
+    # 2. Handle the Pyramid sub-pieces separately
     initial_pyramid_pos = pyramid_positions_black(initial_GS)
     current_pyramid_pos = pyramid_positions_black(GS)
 
-    if initial_pyramid_pos and not current_pyramid_pos:
-        captured_list.append(PR("p^190"))
-    elif initial_pyramid_pos and current_pyramid_pos:
-        initial_vals = value_of_piece(initial_GS, initial_pyramid_pos[0][0], initial_pyramid_pos[0][1])
-        current_vals = value_of_piece(GS, current_pyramid_pos[0][0], current_pyramid_pos[0][1])
+    if initial_pyramid_pos:
+        initial_pyramid_poly = initial_GS[initial_pyramid_pos[0][0], initial_pyramid_pos[0][1]]
+        if not current_pyramid_pos:
+            captured_list_str.append(f"Entire pyramid {initial_pyramid_poly}")
+        else:
+            initial_sub_values = set(v for v in value_of_piece(initial_GS, initial_pyramid_pos[0][0], initial_pyramid_pos[0][1]) if v != initial_pyramid_poly.degree(p))
+            current_sub_values = set(v for v in value_of_piece(GS, current_pyramid_pos[0][0], current_pyramid_pos[0][1]) if v != PR(GS[current_pyramid_pos[0][0], current_pyramid_pos[0][1]]).degree(p))
 
-        initial_val_counts = Counter(initial_vals)
-        initial_val_counts.subtract(Counter(current_vals))
+            captured_sub_values = initial_sub_values - current_sub_values
 
-        for value, count in initial_val_counts.items():
-            if count > 0:
-                captured_list.extend([s**value] * count)
+            for val in sorted(list(captured_sub_values), reverse=True):
+                captured_list_str.append(f"s^{val} of {initial_pyramid_poly}")
                 
-    return captured_list
-
+    return captured_list_str
 
 
 
@@ -1224,8 +1226,14 @@ def capture_piece(game_state, attacker_pos, captured_pos, verbose=False):
             if verbose: print(f"No valid capture method found from {attacker_pos} to {captured_pos}.")
             return GS
 
-        # Collect the values of all sub-pieces being captured in this single action
-        values_to_remove = {cap[1][1] for cap in relevant_captures}
+        # For numbering, the value is a list; for others, it's an int. This handles both.
+        values_to_remove = set()
+        for cap in relevant_captures:
+            val = cap[1][1]
+            if isinstance(val, list):
+                values_to_remove.add(val[0]) # Add the integer from the list
+            else:
+                values_to_remove.add(val) # Add the integer directly
 
         if verbose:
             print(f"Attacker at {attacker_pos} is capturing sub-piece(s) with values {list(values_to_remove)} from pyramid at {captured_pos}.")
