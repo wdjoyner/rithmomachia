@@ -1,7 +1,6 @@
 """
-This is a very basic but complete implementation of
-rithmomachia in python, using tkinter for the GUI. It comtains
-a standalone function 
+This is a very basic but complete implementation of rithmomachia in python, 
+using tkinter for the GUI. It comtains a standalone function 
 
 launch_rithmomachia_gui()
 
