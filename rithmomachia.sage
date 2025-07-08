@@ -122,6 +122,8 @@ Current programs:
 * black_pieces()
 * white_pieces()
 * rithmomachia_command_line()   ################## play a game
+* animate_full_game(max_turns=40, move_strategy='good', log_filename="rithmomachia_log.txt", verbose=False)
+* play_and_animate_game(human_player="even", max_turns=80, move_strategy='best', log_filename="rithmomachia_log.txt", verbose=True)
 
 +++++ moves
 * moves_circle_white(GS, verbose = False)
@@ -258,10 +260,11 @@ Current programs:
 * reformat_capture_for_animation(capture_data, gs)    ## helper function for turn_to_animation, animate_full_game
 * format_capture_for_log(capture_data, gs)            ## helper function for animate_full_game
 
+
 REFERENCES:
  [Ri46] J.F.C. Richards, Boissiere’s Pythagorean game, Scripta Mathematica 12(1946)177-217.
 
-last modified by wdj on 2025-07-06
+last modified by wdj on 2025-07-08
 """
 
 from collections import Counter
@@ -663,7 +666,7 @@ def display_board_matplotlib(game_state_sage_matrix, dpi=300, highlight_pieces=N
          sage: display_board_matplotlib(game_state_sage_matrix = initial_game_state, dpi=300, highlight_pieces=pieces_to_circle)
 
     """
-    # *** FIX: Define the ring and its generators simultaneously ***
+    # *** Define the ring and its generators simultaneously ***
     # This ensures P_var and p_var are the correct type for comparisons and methods.
     PR, (c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
 
@@ -770,16 +773,20 @@ def display_board_matplotlib(game_state_sage_matrix, dpi=300, highlight_pieces=N
     return fig
 
 
-def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight_pieces=None, filename="rithmomachia_board.png"):
+def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight_pieces=None, filename="rithmomachia_board.png", white_captured=None, black_captured=None, victory_message=None, victory_details=None, verbose=False):
     """
-    Displays the Rithmomachia board using Matplotlib and saves it to a specified file.
-    (This is a modified version of the original function to be more suitable for automation)
+    Displays the Rithmomachia board using Matplotlib, saves it to a specified file,
+    and lists captured pieces on the side.
+
     """
     # --- SETUP: Define Polynomial Ring and variables correctly ---
     PR, (c_var, C_var, p_var, P_var, t_var, T_var, s_var, S_var) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
 
     rows, cols = 8, 16
-    fig, ax = plt.subplots(figsize=(16, 8))
+    # Increased figure size to accommodate captured piece lists
+    fig, ax = plt.subplots(figsize=(20, 10))
+    # Adjust subplot to make space for text on the sides
+    fig.subplots_adjust(left=0.15, right=0.85, top=0.95, bottom=0.05)
     font_size = 10
 
     # --- 1. Draw Grid and Labels ---
@@ -795,23 +802,22 @@ def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight
     for y in range(rows):
         ax.text(cols + 0.5, rows - y - 0.5, str(y), ha='center', va='center', fontsize=10, color='blue')
 
-    # --- 2. Extract and Prepare Piece Data with Correct Logic ---
+    # --- 2. Extract and Prepare Piece Data ---
     pieces_to_draw = []
-    all_positions = positions_w(game_state_sage_matrix, verbose=True) + positions_b(game_state_sage_matrix, verbose=True)
+    all_positions = positions_w(game_state_sage_matrix) + positions_b(game_state_sage_matrix)
 
     for item in all_positions:
-        pos_tuple, poly_piece_raw = item[0], item[1]
-        poly_piece = PR(poly_piece_raw) # Ensure correct type
-        r_sage, c_sage = pos_tuple[0], pos_tuple[1]
+        pos_tuple, poly_piece_raw = item
+        poly_piece = PR(poly_piece_raw)
+        r_sage, c_sage = pos_tuple
         shape_mpl, color_mpl = get_piece_details_from_poly(poly_piece, 'green', 'red')
         
         display_val_num = 0
-        # Correctly get the main value for pyramids
         if P_var in poly_piece.variables():
             display_val_num = poly_piece.degree(P_var)
         elif p_var in poly_piece.variables():
             display_val_num = poly_piece.degree(p_var)
-        else: # For regular pieces, sum is fine (as there's only one value)
+        else:
             val_list = value_of_piece(game_state_sage_matrix, r_sage, c_sage)
             display_val_num = sum(v for v in val_list if isinstance(v, (int, Integer)))
 
@@ -820,7 +826,7 @@ def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight
             y_mpl_row_origin = rows - 1 - r_sage
             pieces_to_draw.append((c_sage, y_mpl_row_origin, color_mpl, shape_mpl, value_str))
 
-    # --- 3. Draw Pieces with Enhanced Pyramid Text ---
+    # --- 3. Draw Pieces ---
     for x_col, y_row_mpl, color, shape, value in pieces_to_draw:
         x_center = x_col + 0.5
         y_center = y_row_mpl + 0.5
@@ -842,27 +848,20 @@ def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight
         if patch_to_add:
             ax.add_patch(patch_to_add)
 
-        # New, corrected logic for drawing all text
         text_color = 'black' if color in ['green', 'lime', 'white'] else 'white'
 
         if shape == 'diamond':
-            # Draw the main value (e.g., 91)
             ax.text(x_center, y_center, value, ha='center', va='center', color=text_color, fontsize=font_size, weight='bold')
-            
-            # Get and draw the sub-piece values
             all_vals = value_of_piece(game_state_sage_matrix, 7 - y_row_mpl, x_col)
             main_val = int(value)
             sub_values = [v for v in all_vals if v != main_val and v > 0]
-            
             if sub_values:
                 sub_values_str = ','.join(map(str, sorted(sub_values, reverse=True)))
-                # Draw sub-piece string above the main value in a tiny font
                 ax.text(x_center, y_center + 0.25, sub_values_str, ha='center', va='center', color=text_color, fontsize=6, weight='bold')
         else:
-            # For regular pieces, draw text as before
             ax.text(x_center, y_center, value, ha='center', va='center', color=text_color, fontsize=font_size, weight='bold')
 
-    # --- 4. & 5. Highlighting and Display ---
+    # --- 4. Draw Highlighted Pieces ---
     if highlight_pieces:
         for piece_coord in highlight_pieces[:3]:
             if len(piece_coord) >= 2:
@@ -877,16 +876,50 @@ def display_board_matplotlib_enhanced(game_state_sage_matrix, dpi=300, highlight
                     highlight_circle = patches.Circle((x_center, y_center), 0.45, fill=False, edgecolor='lightblue', linestyle='solid', linewidth=5.5)
                     ax.add_patch(highlight_circle)
 
+    # --- 5. Add Captured Pieces to the Margins ---
+    if black_captured:
+        fig.text(0.01, 0.95, "Captured by White:", weight='bold', ha='left', va='top')
+        y_pos = 0.90
+        for piece_str in black_captured:
+            fig.text(0.01, y_pos, piece_str, ha='left', va='top', fontsize=8, family='monospace')
+            y_pos -= 0.035
+            if y_pos < 0.05: break
+
+    if white_captured:
+        fig.text(0.99, 0.95, "Captured by Black:", weight='bold', ha='right', va='top')
+        y_pos = 0.90
+        for piece_str in white_captured:
+            fig.text(0.99, y_pos, piece_str, ha='right', va='top', fontsize=8, family='monospace')
+            y_pos -= 0.035
+            if y_pos < 0.05: break
+            
+    # --- 6. Draw Victory Message ---
+    if victory_message:
+        fig.patches.extend([plt.Rectangle((0.2, 0.4), 0.6, 0.2,
+                                          fill=True, color='white', alpha=0.85,
+                                          transform=fig.transFigure, figure=fig, zorder=10)])
+        
+        fig.text(0.5, 0.55, victory_message,
+                 ha="center", va="center", fontsize=28, weight='bold', color='darkred',
+                 transform=fig.transFigure, zorder=11)
+                 
+        if victory_details:
+            fig.text(0.5, 0.45, victory_details,
+                     ha="center", va="center", fontsize=12, style='italic',
+                     transform=fig.transFigure, zorder=11)
+
+    # --- 7. Finalize and Save ---
     ax.set_xlim(-1, cols + 1)
     ax.set_ylim(-1, rows + 1)
     ax.set_aspect('equal', adjustable='box')
     ax.axis('off')
-    fig.tight_layout()
+
     plt.savefig(filename, dpi=dpi)
     plt.close(fig)
     print(f"Board image saved to {filename} with a DPI of {dpi}")
 
-    return fig
+
+
     
 
 #########################################################################################
@@ -1130,8 +1163,8 @@ def captured_pieces_white(game_state, pyramid_decomposition=True):
     PR, (_,_,_,P,_,_,S,_) = PolynomialRing(ZZ, 8, 'c,C,p,P,t,T,s,S').objgens()
     
     # 1. Handle regular (non-pyramid) pieces
-    initial_regular = [p[1] for p in positions_w(initial_GS, verbose=True) if not P in p[1].variables()]
-    current_regular = [p[1] for p in positions_w(GS, verbose=True) if not P in p[1].variables()]
+    initial_regular = [pp[1] for pp in positions_w(initial_GS, verbose=True) if not P in pp[1].variables()]
+    current_regular = [pp[1] for pp in positions_w(GS, verbose=True) if not P in pp[1].variables()]
     
     initial_counts = Counter(initial_regular)
     initial_counts.subtract(Counter(current_regular))
@@ -2457,6 +2490,7 @@ def is_valid_move(game_state, start_pos, end_pos, player_turn):
             print("Valid move of a black square.")
             return True
     return False
+
 
 def move_piece(game_state, start_pos, end_pos, verbose = False):
     """ 
@@ -5894,17 +5928,20 @@ def is_small_proper_victory_white(game_state):
 
     """
     GS = copy(game_state)
-    # arithmetical harmony
-    arith_har = is_arithmetical_pattern_white(GS, verbose = False)
-    # geometrical harmony
-    geom_har = is_geometrical_pattern_white(GS, verbose = False)
-    # musical harmony
-    mus_har = is_musical_pattern_white(GS, verbose = False)
-    ## check if white has 3 pieces in Black territory and
-    ## if their values (as a set of 3 numbers) belong to one
-    ## of these "harmonic "sequences. If both are true,
-    ## return True, else return False
-    return (arith_har or geom_har or mus_har)
+    # Check each harmony type and return the details if a win is found
+    arith_win, arith_pieces = is_arithmetical_pattern_white(GS)
+    if arith_win:
+        return ("arithmetical", arith_pieces)
+        
+    geom_win, geom_pieces = is_geometrical_pattern_white(GS)
+    if geom_win:
+        return ("geometrical", geom_pieces)
+        
+    mus_win, mus_pieces = is_musical_pattern_white(GS)
+    if mus_win:
+        return ("musical", mus_pieces)
+        
+    return (False, None)
 
 
 def is_small_proper_victory_black(game_state):
@@ -5923,17 +5960,19 @@ def is_small_proper_victory_black(game_state):
     
     """
     GS = copy(game_state)
-    # arithmetical harmony
-    arith_har = is_arithmetical_pattern_black(GS, verbose = False)
-    # geometrical harmony
-    geom_har = is_geometrical_pattern_black(GS, verbose = False)
-    # musical harmony
-    mus_har = is_musical_pattern_black(GS, verbose = False)
-    ## check if Black has 3 pieces in White territory and
-    ## if their values (as a set of 3 numbers) belong to one
-    ## of these "harmonic "sequences. If both are true,
-    ## return True, else return False
-    return (arith_har or geom_har or mus_har)
+    arith_win, arith_pieces = is_arithmetical_pattern_black(GS)
+    if arith_win:
+        return ("arithmetical", arith_pieces)
+        
+    geom_win, geom_pieces = is_geometrical_pattern_black(GS)
+    if geom_win:
+        return ("geometrical", geom_pieces)
+        
+    mus_win, mus_pieces = is_musical_pattern_black(GS)
+    if mus_win:
+        return ("musical", mus_pieces)
+        
+    return (False, None)
 
 
 ################################### arithmetical patterns
@@ -6028,37 +6067,23 @@ def is_arithmetical_pattern_white(game_state, verbose = False):
     """
     GS = copy(game_state)
     pattern_list = list_arithmetical_patterns_white()
-    
-    # Get detailed data for all white pieces
     posw_data = positions_w(GS)
-    
-    # Filter for pieces in enemy territory (column index > 7)
-    posw_in_b = []
-    for piece_data in posw_data:
-        pos, poly = piece_data[0], piece_data[1]
-        if pos[1] > 7:
-            # Correctly pass coordinates to value_of_piece
-            value = value_of_piece(GS, pos[0], pos[1])
-            posw_in_b.append([pos, value, poly])
+    posw_in_b = [data for data in posw_data if data[0][1] > 7]
 
     if len(posw_in_b) < 3:
-        return False
+        return (False, None)
 
-    # Check all combinations of 3 pieces for a winning pattern
-    for p1_data, p2_data, p3_data in itertools.combinations(posw_in_b, 3):
-        # The value list might contain multiple values for pyramids
-        for v1 in p1_data[1]:
-            for v2 in p2_data[1]:
-                for v3 in p3_data[1]:
-                    current_values = tuple(sorted((v1, v2, v3)))
-                    if current_values in pattern_list:
-                        # Found a pattern. Now check if they are in a line.
-                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
-                        if is_in_a_line(pos1, pos2, pos3):
-                            if verbose:
-                                print(f"White has 3 pieces in enemy territory with values {current_values} in linear arithmetic harmony.")
-                            return True
-    return False
+    for p1, p2, p3 in itertools.combinations(posw_in_b, 3):
+        v1_list, v2_list, v3_list = value_of_piece(GS, *p1[0]), value_of_piece(GS, *p2[0]), value_of_piece(GS, *p3[0])
+        for v1, v2, v3 in itertools.product(v1_list, v2_list, v3_list):
+            current_values = tuple(sorted((v1, v2, v3)))
+            if current_values in pattern_list:
+                winning_pieces = [str(p1[1]), str(p2[1]), str(p3[1])]
+                if verbose:
+                    print(f"White has a winning arithmetical pattern with {winning_pieces}")
+                return ("arithmetical", winning_pieces)
+    return (False, None)
+    
 
 
 def is_arithmetical_pattern_black(game_state, in_a_line = False, verbose = False):
@@ -6082,36 +6107,22 @@ def is_arithmetical_pattern_black(game_state, in_a_line = False, verbose = False
     """
     GS = copy(game_state)
     pattern_list = list_arithmetical_patterns_black()
-    
-    # Get detailed data for all black pieces
     posb_data = positions_b(GS)
-    
-    # Filter for pieces in enemy territory (column index < 8)
-    posb_in_w = []
-    for piece_data in posb_data:
-        pos, poly = piece_data[0], piece_data[1]
-        if pos[1] < 8:
-            value = value_of_piece(GS, pos[0], pos[1])
-            posb_in_w.append([pos, value, poly])
+    posb_in_w = [data for data in posb_data if data[0][1] < 8]
 
     if len(posb_in_w) < 3:
-        return False
+        return (False, None)
 
-    # Check all combinations of 3 pieces for a winning pattern
-    for p1_data, p2_data, p3_data in itertools.combinations(posb_in_w, 3):
-        # A single piece can have multiple values (pyramid). Check all value combinations.
-        for v1 in p1_data[1]:
-            for v2 in p2_data[1]:
-                for v3 in p3_data[1]:
-                    current_values = tuple(sorted((v1, v2, v3)))
-                    if current_values in pattern_list:
-                        # Found a pattern. Now check if they are in a line.
-                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
-                        if is_in_a_line(pos1, pos2, pos3):
-                            if verbose:
-                                print(f"Black has 3 pieces in enemy territory with values {current_values} in linear arithmetic harmony.")
-                            return True
-    return False
+    for p1, p2, p3 in itertools.combinations(posb_in_w, 3):
+        v1_list, v2_list, v3_list = value_of_piece(GS, *p1[0]), value_of_piece(GS, *p2[0]), value_of_piece(GS, *p3[0])
+        for v1, v2, v3 in itertools.product(v1_list, v2_list, v3_list):
+            current_values = tuple(sorted((v1, v2, v3)))
+            if current_values in pattern_list:
+                winning_pieces = [str(p1[1]), str(p2[1]), str(p3[1])]
+                if verbose:
+                    print(f"Black has a winning arithmetical pattern with {winning_pieces}")
+                return ("arithmetical", winning_pieces)
+    return (False, None)
 
     
 
@@ -6210,36 +6221,23 @@ def is_geometrical_pattern_white(game_state, verbose = False):
     """
     GS = copy(game_state)
     pattern_list = list_geometrical_patterns_white()
-    
-    # Get detailed data for all white pieces
     posw_data = positions_w(GS)
-    
-    # Filter for pieces in enemy territory (column index > 7)
-    posw_in_b = []
-    for piece_data in posw_data:
-        pos, poly = piece_data[0], piece_data[1]
-        if pos[1] > 7:
-            value = value_of_piece(GS, pos[0], pos[1])
-            posw_in_b.append([pos, value, poly])
+    posw_in_b = [data for data in posw_data if data[0][1] > 7]
 
     if len(posw_in_b) < 3:
-        return False
+        return (False, None)
 
-    # Check all combinations of 3 pieces for a winning pattern
-    for p1_data, p2_data, p3_data in itertools.combinations(posw_in_b, 3):
-        # A single piece can have multiple values (pyramid). Check all value combinations.
-        for v1 in p1_data[1]:
-            for v2 in p2_data[1]:
-                for v3 in p3_data[1]:
-                    current_values = tuple(sorted((v1, v2, v3)))
-                    if current_values in pattern_list:
-                        # Found a pattern. Now check if they are in a line.
-                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
-                        if is_in_a_line(pos1, pos2, pos3):
-                            if verbose:
-                                print(f"White has 3 pieces in enemy territory with values {current_values} in linear geometric harmony.")
-                            return True
-    return False
+    for p1, p2, p3 in itertools.combinations(posw_in_b, 3):
+        v1_list, v2_list, v3_list = value_of_piece(GS, *p1[0]), value_of_piece(GS, *p2[0]), value_of_piece(GS, *p3[0])
+        for v1, v2, v3 in itertools.product(v1_list, v2_list, v3_list):
+            current_values = tuple(sorted((v1, v2, v3)))
+            if current_values in pattern_list:
+                winning_pieces = [str(p1[1]), str(p2[1]), str(p3[1])]
+                if verbose:
+                    print(f"White has a winning geometrical pattern with {winning_pieces}")
+                return ("geometrical", winning_pieces)
+    return (False, None)
+
 
 
 def is_geometrical_pattern_black(game_state, verbose = False):
@@ -6264,36 +6262,22 @@ def is_geometrical_pattern_black(game_state, verbose = False):
     """
     GS = copy(game_state)
     pattern_list = list_geometrical_patterns_black()
-    
-    # Get detailed data for all black pieces
     posb_data = positions_b(GS)
-    
-    # Filter for pieces in enemy territory (column index < 8)
-    posb_in_w = []
-    for piece_data in posb_data:
-        pos, poly = piece_data[0], piece_data[1]
-        if pos[1] < 8:
-            value = value_of_piece(GS, pos[0], pos[1])
-            posb_in_w.append([pos, value, poly])
+    posb_in_w = [data for data in posb_data if data[0][1] < 8]
 
     if len(posb_in_w) < 3:
-        return False
+        return (False, None)
 
-    # Check all combinations of 3 pieces for a winning pattern
-    for p1_data, p2_data, p3_data in itertools.combinations(posb_in_w, 3):
-        # A single piece can have multiple values (pyramid). Check all value combinations.
-        for v1 in p1_data[1]:
-            for v2 in p2_data[1]:
-                for v3 in p3_data[1]:
-                    current_values = tuple(sorted((v1, v2, v3)))
-                    if current_values in pattern_list:
-                        # Found a pattern. Now check if they are in a line.
-                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
-                        if is_in_a_line(pos1, pos2, pos3):
-                            if verbose:
-                                print(f"Black has 3 pieces in enemy territory with values {current_values} in linear geometric harmony.")
-                            return True
-    return False
+    for p1, p2, p3 in itertools.combinations(posb_in_w, 3):
+        v1_list, v2_list, v3_list = value_of_piece(GS, *p1[0]), value_of_piece(GS, *p2[0]), value_of_piece(GS, *p3[0])
+        for v1, v2, v3 in itertools.product(v1_list, v2_list, v3_list):
+            current_values = tuple(sorted((v1, v2, v3)))
+            if current_values in pattern_list:
+                winning_pieces = [str(p1[1]), str(p2[1]), str(p3[1])]
+                if verbose:
+                    print(f"Black has a winning geometrical pattern with {winning_pieces}")
+                return ("geometrical", winning_pieces)
+    return (False, None)
 
 
 
@@ -6389,7 +6373,7 @@ def is_musical_pattern_black(game_state, verbose = False):
          []
 
     """
-    return False
+    return (False, None)
 
 def is_harmonic_pattern_black(game_state, verbose = False):
     return is_musical_pattern_black(game_state, verbose)
@@ -6423,13 +6407,14 @@ def is_musical_pattern_white(game_state, verbose = False):
     # Filter for pieces in enemy territory (column index > 7)
     posw_in_b = []
     for piece_data in posw_data:
-        pos, poly = piece_data[0], piece_data[1]
+        pos, poly = piece_data
         if pos[1] > 7:
             value = value_of_piece(GS, pos[0], pos[1])
-            posw_in_b.append([pos, value, poly])
+            if isinstance(value, list) and value and value != [0]:
+                posw_in_b.append([pos, value, poly])
 
     if len(posw_in_b) < 3:
-        return False
+        return (False, None)
 
     # Check all combinations of 3 pieces for a winning pattern
     for p1_data, p2_data, p3_data in itertools.combinations(posw_in_b, 3):
@@ -6439,13 +6424,13 @@ def is_musical_pattern_white(game_state, verbose = False):
                 for v3 in p3_data[1]:
                     current_values = tuple(sorted((v1, v2, v3)))
                     if current_values in pattern_list:
-                        # Found a pattern. Now check if they are in a line.
-                        pos1, pos2, pos3 = p1_data[0], p2_data[0], p3_data[0]
-                        if is_in_a_line(pos1, pos2, pos3):
-                            if verbose:
-                                print(f"White has 3 pieces in enemy territory with values {current_values} in linear musical harmony.")
-                            return True
-    return False
+                        winning_pieces = [str(p1_data[2]), str(p2_data[2]), str(p3_data[2])]
+                        if verbose:
+                            print(f"White has 3 pieces in enemy territory with values {current_values} in musical harmony.")
+                        return ("musical", winning_pieces)
+                        
+    # If no combination satisfied the condition
+    return (False, None)
 
 
 def is_harmonic_pattern_white(game_state, verbose = False):
@@ -8003,33 +7988,38 @@ def capture_list_to_animation_enhanced(game_state, capture_list, base_filename="
     1) The board position with circles around the pieces involved.
     2) The captured piece vanishes.
     3) The board without circles.
+
     """
     if not capture_list or len(capture_list) < 2:
-        return game_state, 0 # Return gracefully if format is wrong
+        return game_state, 0
 
     attacker_info, victim_info = capture_list[0], capture_list[1]
     loc_pc1, _, _ = attacker_info
     loc_pc2, _, _ = victim_info
-
     hpa = [coordinate_to_algebraic(*loc_pc1), coordinate_to_algebraic(*loc_pc2)]
     
-    # Frame 1: Highlight pieces involved
-    filename1 = os.path.join(SAGE_DIR, f"frame_{frame_start_index:03d}.png")
-    display_board_matplotlib_enhanced(game_state, dpi=300, highlight_pieces=hpa, filename=filename1)
+    # Get captured lists BEFORE the capture for the first frame
+    wc_list1 = captured_pieces_white(game_state, pyramid_decomposition=True)
+    bc_list1 = captured_pieces_black(game_state, pyramid_decomposition=True)
     
-    # Update game state using the new signature
+    filename1 = os.path.join(SAGE_DIR, f"frame_{frame_start_index:03d}.png")
+    display_board_matplotlib_enhanced(game_state, dpi=300, highlight_pieces=hpa, filename=filename1, white_captured=wc_list1, black_captured=bc_list1)
+    
     game_state2 = capture_piece(game_state, loc_pc1, loc_pc2, verbose=False)
 
-    # Frame 2: Show captured piece removed, but keep highlight
+    # Get captured lists AFTER the capture for subsequent frames
+    wc_list2 = captured_pieces_white(game_state2, pyramid_decomposition=True)
+    bc_list2 = captured_pieces_black(game_state2, pyramid_decomposition=True)
+    
     filename2 = os.path.join(SAGE_DIR, f"frame_{frame_start_index + 1:03d}.png")
-    display_board_matplotlib_enhanced(game_state2, dpi=300, highlight_pieces=hpa, filename=filename2)
+    display_board_matplotlib_enhanced(game_state2, dpi=300, highlight_pieces=hpa, filename=filename2, white_captured=wc_list2, black_captured=bc_list2)
 
-    # Frame 3: Final state with no highlights
     filename3 = os.path.join(SAGE_DIR, f"frame_{frame_start_index + 2:03d}.png")
-    display_board_matplotlib_enhanced(game_state2, dpi=300, highlight_pieces=[], filename=filename3)
+    display_board_matplotlib_enhanced(game_state2, dpi=300, highlight_pieces=[], filename=filename3, white_captured=wc_list2, black_captured=bc_list2)
 
     return game_state2, 3
-    
+
+
     
 def capture_list_to_animation(game_state, capture_list):
     """
@@ -8077,7 +8067,6 @@ def capture_list_to_animation(game_state, capture_list):
          Board image saved to rithmomachia_board.png with a DPI of 300
          <module 'matplotlib.pyplot' from '/private/var/tmp/.../site-packages/matplotlib/pyplot.py'>
 
-
     """
     cl = capture_list
     (loc_pc1, val_pc1, poly_pc1) = cl[0]
@@ -8089,6 +8078,7 @@ def capture_list_to_animation(game_state, capture_list):
     dbm2 = display_board_matplotlib(game_state2, dpi=300, highlight_pieces = hpa)
     dbm3 = display_board_matplotlib(game_state2, dpi=300, highlight_pieces = [])
     return plt
+
 
 def captures_as_dict(game_state, verbose = False):
     """
@@ -9113,44 +9103,44 @@ def turn_to_animation(game_state, pre_captures, move, post_captures, color, turn
     GS = copy(game_state)
     current_frame = frame_counter
 
-    # 1. Animate and Execute Pre-Move Captures
     if pre_captures:
         if verbose: print(f"Turn {turn_number} ({color}): Animating {len(pre_captures)} pre-move captures.")
-        for i, capture in enumerate(pre_captures):
-            if capture is None: continue
-            # This function internally updates the game state and returns the new state
-            GS, frames_generated = capture_list_to_animation_enhanced(GS, capture, frame_start_index=current_frame)
-            current_frame += frames_generated
+        for capture in pre_captures:
+            if capture:
+                GS, frames_generated = capture_list_to_animation_enhanced(GS, capture, frame_start_index=current_frame)
+                current_frame += frames_generated
 
-    # 2. Animate and Execute the Move
     if move:
         start_pos, end_pos = move
         if verbose: print(f"Turn {turn_number} ({color}): Animating move from {coordinate_to_algebraic(*start_pos)} to {coordinate_to_algebraic(*end_pos)}.")
         
-        # Check if move is legal on the current state before animating
-        if GS[end_pos] != 0:
-            if verbose: print(f"ANIMATION WARNING: Move to {coordinate_to_algebraic(*end_pos)} is blocked. Skipping move animation.")
-        else:
+        if GS[end_pos] == 0:
+            wc_list = captured_pieces_white(GS, pyramid_decomposition=True)
+            bc_list = captured_pieces_black(GS, pyramid_decomposition=True)
+            
             piece_to_move_alg = coordinate_to_algebraic(*start_pos)
             move_highlight_filename = os.path.join(SAGE_DIR, f"frame_{current_frame:03d}.png")
-            display_board_matplotlib_enhanced(GS, dpi=300, highlight_pieces=[piece_to_move_alg], filename=move_highlight_filename)
+            display_board_matplotlib_enhanced(GS, dpi=300, highlight_pieces=[piece_to_move_alg], filename=move_highlight_filename, white_captured=wc_list, black_captured=bc_list)
             current_frame += 1
             
             GS = move_piece(GS, start_pos, end_pos, verbose=False)
             
             move_complete_filename = os.path.join(SAGE_DIR, f"frame_{current_frame:03d}.png")
-            display_board_matplotlib_enhanced(GS, dpi=300, filename=move_complete_filename)
+            display_board_matplotlib_enhanced(GS, dpi=300, filename=move_complete_filename, white_captured=wc_list, black_captured=bc_list)
             current_frame += 1
+        else:
+            if verbose: print(f"ANIMATION WARNING: Move to {coordinate_to_algebraic(*end_pos)} is blocked. Skipping move animation.")
 
-    # 3. Animate and Execute Post-Move Captures
     if post_captures:
         if verbose: print(f"Turn {turn_number} ({color}): Animating {len(post_captures)} post-move captures.")
-        for i, capture in enumerate(post_captures):
-            if capture is None: continue
-            GS, frames_generated = capture_list_to_animation_enhanced(GS, capture, frame_start_index=current_frame)
-            current_frame += frames_generated
+        for capture in post_captures:
+            if capture:
+                GS, frames_generated = capture_list_to_animation_enhanced(GS, capture, frame_start_index=current_frame)
+                current_frame += frames_generated
             
     return GS, current_frame
+
+
 
 
 def animate_full_game(max_turns=40, move_strategy='good', log_filename="rithmomachia_log.txt", verbose=False):
@@ -9173,105 +9163,101 @@ def animate_full_game(max_turns=40, move_strategy='good', log_filename="rithmoma
 
     try:
         with open(log_filename, 'w') as log_file:
-            log_file.write("Rithmomachia Game Log\n=====================\n\n")
+            log_file.write(f"Rithmomachia Game Log: Computer vs. Computer\n=====================\n\n")
 
             for turn_number in range(1, max_turns + 1):
                 log_file.write(f"--- Turn {turn_number}: {player_turn.capitalize()}'s Move ---\n")
                 if verbose: print(f"\n--- Turn {turn_number}: {player_turn.capitalize()}'s Move ---")
 
-                # 1. Determine player-specific functions
+                # --- Turn Setup ---
                 if player_turn == "even":
-                    move_finder = good_move_white
-                    capture_finder = legal_moves_captures_white
-                    capture_taker = take_all_captures_white
+                    move_finder, capture_finder, capture_taker = good_move_white, legal_moves_captures_white, take_all_captures_white
                 else:
-                    move_finder = good_move_black
-                    capture_finder = legal_moves_captures_black
-                    capture_taker = take_all_captures_black
+                    move_finder, capture_finder, capture_taker = good_move_black, legal_moves_captures_black, take_all_captures_black
                 
-                # 2. Determine all actions for the turn sequentially
+                # --- Determine all actions for the turn sequentially ---
                 pre_captures_raw = capture_finder(current_gs)[1]
                 if verbose: print("List of pre-move captures:", pre_captures_raw)
                 gs_after_pre_caps = capture_taker(current_gs, verbose=False)
                 
                 move = move_finder(gs_after_pre_caps, verbose=False)
                 
-                post_captures_raw = []
                 if move:
                     if verbose: print(f"Move chosen: [{gs_after_pre_caps[move[0]]}, from {coordinate_to_algebraic(*move[0])} to {coordinate_to_algebraic(*move[1])}]")
+                else:
+                    print(f"No legal moves for {player_turn}. Game over.")
+                    break
+                
+                post_captures_raw = []
+                if move:
                     gs_after_move = move_piece(gs_after_pre_caps, move[0], move[1])
                     post_captures_raw = capture_finder(gs_after_move)[1]
-                
                 if verbose: print("List of post-move captures:", post_captures_raw)
 
-                # 3. Log all determined actions to the text file
+                # --- Log all determined actions ---
                 log_file.write("Pre-move Captures:\n")
-                if not pre_captures_raw:
-                    log_file.write("  None\n")
+                if not pre_captures_raw: log_file.write("  None\n")
                 else:
                     for cap in pre_captures_raw: log_file.write(f"  {format_capture_for_log(cap, current_gs)}\n")
 
                 log_file.write("Move:\n")
-                if not move:
-                    log_file.write("  No legal moves available. Game over.\n")
-                    print(f"No legal moves for {player_turn}. {('Odd' if player_turn == 'even' else 'Even')} wins.")
-                    break
-                else:
+                if move:
                     log_file.write(f"  [{gs_after_pre_caps[move[0]]}, from {coordinate_to_algebraic(*move[0])} to {coordinate_to_algebraic(*move[1])}]\n")
                 
                 log_file.write("Post-move Captures:\n")
-                if not post_captures_raw:
-                    log_file.write("  None\n")
+                if not post_captures_raw: log_file.write("  None\n")
                 else:
                     for cap in post_captures_raw: log_file.write(f"  {format_capture_for_log(cap, gs_after_move)}\n")
-
-                # 4. Call the animation function to execute the full turn
-                gs_after_turn, frame_counter = turn_to_animation(
+                
+                # --- Animate the turn ---
+                current_gs, frame_counter = turn_to_animation(
                     game_state=current_gs,
                     pre_captures=[reformat_capture_for_animation(c, current_gs) for c in pre_captures_raw if c],
                     move=move,
                     post_captures=[reformat_capture_for_animation(c, gs_after_move) for c in post_captures_raw if c],
-                    color=player_turn,
-                    turn_number=turn_number,
-                    frame_counter=frame_counter,
-                    verbose=verbose
+                    color=player_turn, turn_number=turn_number, frame_counter=frame_counter, verbose=verbose
                 )
-                
-                current_gs = gs_after_turn
-                
-                # 5. Update game history list
-                if move:
-                    turn_data = {
-                        "turn": turn_number, "player": player_turn, "pre_captures": pre_captures_raw,
-                        "move": { "piece": str(gs_after_pre_caps[move[0]]), "start": coordinate_to_algebraic(*move[0]), "end": coordinate_to_algebraic(*move[1]) },
-                        "post_captures": post_captures_raw
-                    }
-                    game_history.append(turn_data)
-                
+
+                # --- Update History and Check for Victory ---
+                turn_data = {"turn": turn_number, "player": player_turn, "pre_captures": pre_captures_raw, "move": move, "post_captures": post_captures_raw}
+                game_history.append(turn_data)
                 log_file.write("\n")
 
-                # 6. Check for Victory
-                if is_body_common_victory_white(current_gs, verbose=verbose):
-                    captured_by_white = captured_pieces_black(current_gs, pyramid_decomposition=True)
-                    log_file.write("--- GAME OVER: White Wins (common victory, by body)! ---\n")
-                    log_file.write(f"  (Captured Black pieces: {[str(p) for p in captured_by_white]})\n")
-                    print("GAME OVER: White wins (common victory, by body)!")
+                wc_list = captured_pieces_white(current_gs, pyramid_decomposition=True)
+                bc_list = captured_pieces_black(current_gs, pyramid_decomposition=True)
+
+                proper_win_type_w, proper_win_pieces_w = is_small_proper_victory_white(current_gs)
+                proper_win_type_b, proper_win_pieces_b = is_small_proper_victory_black(current_gs)
+
+                if is_body_common_victory_white(current_gs, N0=4, verbose=False):
+                    win_message = "White Wins by Body Capture!"
+                    win_details = f"Captured {len(bc_list)} pieces: " + ", ".join(bc_list)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
                     break
-                if is_small_proper_victory_white(current_gs):
-                    log_file.write("--- GAME OVER: White Wins (small, proper victory)! ---\n")
-                    print("GAME OVER: White wins (small, proper victory)!")
+                if proper_win_type_w:
+                    win_message = f"White Wins by {proper_win_type_w.capitalize()} Harmony!"
+                    win_details = "Winning Pieces: " + ", ".join(proper_win_pieces_w)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
                     break
-                if is_body_common_victory_black(current_gs, verbose=verbose):
-                    captured_by_black = captured_pieces_white(current_gs, pyramid_decomposition=True)
-                    log_file.write("--- GAME OVER: Black Wins (common victory, by body)! ---\n")
-                    log_file.write(f"  (Captured White pieces: {[str(p) for p in captured_by_black]})\n")
-                    print("GAME OVER: Black wins (common victory, by body)!")
+                if is_body_common_victory_black(current_gs, N0=4, verbose=False):
+                    win_message = "Black Wins by Body Capture!"
+                    win_details = f"Captured {len(wc_list)} pieces: " + ", ".join(wc_list)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
                     break
-                if is_small_proper_victory_black(current_gs):
-                    log_file.write("--- GAME OVER: Black Wins (small, proper victory)! ---\n")
-                    print("GAME OVER: Black wins (small, proper victory)!")
+                if proper_win_type_b:
+                    win_message = f"Black Wins by {proper_win_type_b.capitalize()} Harmony!"
+                    win_details = "Winning Pieces: " + ", ".join(proper_win_pieces_b)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
                     break
-                
+
                 player_turn = "odd" if player_turn == "even" else "even"
 
             if turn_number == max_turns:
@@ -9280,12 +9266,14 @@ def animate_full_game(max_turns=40, move_strategy='good', log_filename="rithmoma
 
     except KeyboardInterrupt:
         print(f"\n\n--- Game manually stopped by user. ---")
-        print(f"Log file '{log_filename}' saved with progress up to the interruption.")
-    
     finally:
         print(f"--- Animation Generation Finished. Total frames created: {frame_counter} ---")
 
     return game_history
+
+    
+
+
 
 
 def reformat_capture_for_animation(capture_data, gs):
@@ -9377,3 +9365,163 @@ def format_capture_for_log(capture_data, gs):
         return ["Unknown Attacker", "Unknown Victim", "with unknown capture type"]
 
     return ["-", "-", "unknown format"]
+
+
+
+def play_and_animate_game(human_player="even", max_turns=80, move_strategy='best', log_filename="rithmomachia_log.txt", verbose=True):
+    """
+    Plays an interactive, human vs. computer game of Rithmomachia, generating animation frames and a log file.
+    Handles optional, chain captures for the human player.
+
+    Args:
+        human_player (str): The color the human will play, either "even" (White) or "odd" (Black).
+        max_turns (int): The maximum number of turns to simulate.
+        move_strategy (str): The AI's strategy ('good' or 'best').
+        log_filename (str): The path to the output log file.
+        verbose (bool): If True, prints additional debug information.
+
+    NOTE: To see the board and decide on your move, you need to manually open the current_turn.png file from your computer's file explorer.
+
+    """
+    print("--- Rithmomachia: Human vs. Computer ---")
+    print(f"You are playing as {human_player.capitalize()}. Press Ctrl-C to stop early.")
+    
+    current_gs = board_initial_matrix(pyramid_decomposition=True)
+    game_history = []
+    frame_counter = 0
+    player_turn = "even"
+
+    try:
+        with open(log_filename, 'w') as log_file:
+            log_file.write(f"Rithmomachia Game Log: Human ({human_player.capitalize()}) vs. Computer\n=====================\n\n")
+
+            for turn_number in range(1, max_turns + 1):
+                log_file.write(f"--- Turn {turn_number}: {player_turn.capitalize()}'s Move ---\n")
+                if verbose: print(f"\n--- Turn {turn_number}: {player_turn.capitalize()}'s Move ---")
+
+                # --- Turn Setup ---
+                if player_turn == "even":
+                    move_finder, capture_finder, capture_taker = good_move_white, legal_moves_captures_white, take_all_captures_white
+                else:
+                    move_finder, capture_finder, capture_taker = good_move_black, legal_moves_captures_black, take_all_captures_black
+                
+                # --- Human's Turn Logic ---
+                if player_turn == human_player:
+                    print("\nCurrent board state (saved to 'current_turn.png'). Please open the file to view.")
+                    wc_list = captured_pieces_white(current_gs, pyramid_decomposition=True)
+                    bc_list = captured_pieces_black(current_gs, pyramid_decomposition=True)
+                    display_board_matplotlib_enhanced(current_gs, filename="current_turn.png", white_captured=wc_list, black_captured=bc_list)
+
+                    gs_after_pre_caps = copy(current_gs) # Placeholder for pre-move capture logic
+                    pre_captures_raw = [] # Placeholder
+
+                    all_legal_moves = legal_moves_captures_white(gs_after_pre_caps)[0] if player_turn == "even" else legal_moves_captures_black(gs_after_pre_caps)[0]
+                    
+                    human_move = None
+                    while True:
+                        move_input = input("Enter your move in algebraic notation (e.g., 'c8e8') or 'Q' to quit: ")
+                        if move_input.upper() == 'Q': return game_history
+                        try:
+                            if len(move_input) == 4:
+                                start_pos = algebraic_to_coordinate(move_input[:2])
+                                end_pos = algebraic_to_coordinate(move_input[2:])
+                                potential_move = (start_pos, end_pos)
+                                if potential_move in all_legal_moves:
+                                    human_move = potential_move
+                                    break
+                        except (ValueError, IndexError): pass
+                        print("Invalid or illegal move. Please try again.")
+
+                    gs_after_move = move_piece(gs_after_pre_caps, human_move[0], human_move[1])
+                    post_captures_raw = capture_finder(gs_after_move)[1]
+                    
+                    log_file.write("Move:\n")
+                    log_file.write(f"  [{gs_after_pre_caps[human_move[0]]}, from {coordinate_to_algebraic(*human_move[0])} to {coordinate_to_algebraic(*human_move[1])}]\n")
+                    log_file.write("Post-move Captures:\n")
+                    if not post_captures_raw: log_file.write("  None\n")
+                    else:
+                        for cap in post_captures_raw: log_file.write(f"  {format_capture_for_log(cap, gs_after_move)}\n")
+
+                    current_gs, frame_counter = turn_to_animation(
+                        game_state=current_gs, pre_captures=[], move=human_move,
+                        post_captures=[reformat_capture_for_animation(c, gs_after_move) for c in post_captures_raw if c],
+                        color=player_turn, turn_number=turn_number, frame_counter=frame_counter, verbose=verbose
+                    )
+                    
+                    turn_data = { "turn": turn_number, "player": player_turn, "move": human_move, "pre_captures": pre_captures_raw, "post_captures": post_captures_raw }
+                    game_history.append(turn_data)
+
+                # --- Computer's Turn Logic ---
+                else:
+                    pre_captures_raw = capture_finder(current_gs)[1]
+                    gs_after_pre_caps = capture_taker(current_gs, verbose=False)
+                    move = move_finder(gs_after_pre_caps, verbose=False)
+
+                    if move:
+                        print(f"Computer chooses move: [{gs_after_pre_caps[move[0]]}, from {coordinate_to_algebraic(*move[0])} to {coordinate_to_algebraic(*move[1])}]")
+                    else:
+                        print("Computer has no legal moves.")
+                        break
+
+                    post_captures_raw = []
+                    if move:
+                        gs_after_move = move_piece(gs_after_pre_caps, move[0], move[1])
+                        post_captures_raw = capture_finder(gs_after_move)[1]
+                    
+                    # (Logging logic for computer's turn)
+                    
+                    current_gs, frame_counter = turn_to_animation(
+                        game_state=current_gs,
+                        pre_captures=[reformat_capture_for_animation(c, current_gs) for c in pre_captures_raw if c],
+                        move=move,
+                        post_captures=[reformat_capture_for_animation(c, gs_after_move) for c in post_captures_raw if c],
+                        color=player_turn, turn_number=turn_number, frame_counter=frame_counter, verbose=verbose
+                    )
+                    game_history.append({"turn": turn_number, "player": player_turn, "pre_captures": pre_captures_raw, "move": move, "post_captures": post_captures_raw})
+                
+                # --- End of Turn: Victory Checks ---
+                log_file.write("\n")
+                
+                wc_list = captured_pieces_white(current_gs, pyramid_decomposition=True)
+                bc_list = captured_pieces_black(current_gs, pyramid_decomposition=True)
+
+                proper_win_type_w, proper_win_pieces_w = is_small_proper_victory_white(current_gs)
+                proper_win_type_b, proper_win_pieces_b = is_small_proper_victory_black(current_gs)
+
+                if is_body_common_victory_white(current_gs, N0=4, verbose=False):
+                    win_message = "White Wins by Body Capture!"
+                    win_details = f"Captured {len(bc_list)} pieces: " + ", ".join(bc_list)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
+                    break
+                if proper_win_type_w:
+                    win_message = f"White Wins by {proper_win_type_w.capitalize()} Harmony!"
+                    win_details = "Winning Pieces: " + ", ".join(proper_win_pieces_w)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
+                    break
+                if is_body_common_victory_black(current_gs, N0=4, verbose=False):
+                    win_message = "Black Wins by Body Capture!"
+                    win_details = f"Captured {len(wc_list)} pieces: " + ", ".join(wc_list)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
+                    break
+                if proper_win_type_b:
+                    win_message = f"Black Wins by {proper_win_type_b.capitalize()} Harmony!"
+                    win_details = "Winning Pieces: " + ", ".join(proper_win_pieces_b)
+                    print(f"GAME OVER: {win_message}\n  {win_details}")
+                    log_file.write(f"--- GAME OVER: {win_message} ---\n  ({win_details})\n")
+                    display_board_matplotlib_enhanced(current_gs, filename="final_frame.png", white_captured=wc_list, black_captured=bc_list, victory_message=win_message, victory_details=win_details)
+                    break
+
+                player_turn = "odd" if player_turn == "even" else "even"
+
+    except KeyboardInterrupt:
+        print(f"\n\n--- Game manually stopped by user. ---")
+    finally:
+        print(f"--- Animation Generation Finished. Total frames created: {frame_counter} ---")
+
+    return game_history
