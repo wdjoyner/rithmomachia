@@ -20,6 +20,10 @@ and there is no ambiguity, the enemy piece disappears and a
 record is printed in the log. If there is a choice to be made, a 
 window pops up with and you make the capture more specific.
 
+Another option is to use 
+play_and_animate_game
+with all the arguments and optional arguments that uses.
+
 This module is an object-oriented version of python fcns in 
 my python/sagemath module rithmomachia.sage, which completely 
 implements a command line version of rithmomachia to be run in sage. 
