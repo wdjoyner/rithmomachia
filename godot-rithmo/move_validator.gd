@@ -358,3 +358,177 @@ func get_all_possible_moves(color: String) -> Array:
 				for move in moves:
 					all_moves.append({"from": pos, "to": move})
 	return all_moves
+
+# Add this function inside your move_validator.gd script
+
+# --- NEW: Get all captures for a piece based on simulated board state ---
+func get_all_possible_captures_from_state(piece_id: String, start_pos: Vector2i, board_state: Array) -> Array:
+	"""
+	Calculates all possible captures for a given piece (identified by ID and position)
+	based *only* on the provided board_state array.
+
+	Args:
+		piece_id (String): The ID of the attacking piece (e.g., "T072_1", "p190_1").
+		start_pos (Vector2i): The position of the attacking piece in the board_state.
+		board_state (Array): The 2D array representing the simulated board.
+
+	Returns:
+		Array: A list of captures. The exact format depends on how you store capture info.
+			   It should be consistent with what _get_all_captures_for_player_from_state expects.
+			   Example format: [{"attacker_pos": Vector2i, "victim_pos": Vector2i, "type": String, "value": int}, ...]
+	"""
+	var captures = []
+	if piece_id == "": return [] # No piece, no captures
+
+	# --- You need to adapt your existing capture logic here ---
+	# Example: Replicating Capture by Numbering check for a Triangle (T)
+
+	var piece_data = board. _parse_piece_data(piece_id) # Need access to board's helper or replicate it
+	var attacker_values = piece_data.label
+	var piece_color = piece_data.color
+	var opponent_color = "black" if piece_color == "white" else "white"
+
+	# 1. Determine which squares the piece *could* land on based on its type
+	var potential_landing_spots = []
+	match piece_data.shape:
+		"C": # Circle
+			var increments = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+			for inc in increments:
+				var dest = start_pos + inc
+				# Check bounds directly using board_state dimensions
+				if dest.y >= 0 and dest.y < board_state.size() and dest.x >= 0 and dest.x < board_state[0].size():
+					potential_landing_spots.append(dest)
+		"T": # Triangle
+			var increments = [Vector2i(0, 2), Vector2i(0, -2), Vector2i(2, 0), Vector2i(-2, 0)]
+			var path_incs = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+			for i in range(increments.size()):
+				var dest = start_pos + increments[i]
+				var hop1 = start_pos + path_incs[i]
+				# Check bounds and path clearance using board_state
+				if dest.y >= 0 and dest.y < board_state.size() and dest.x >= 0 and dest.x < board_state[0].size() and \
+				   hop1.y >= 0 and hop1.y < board_state.size() and hop1.x >= 0 and hop1.x < board_state[0].size() and \
+				   board_state[hop1.y][hop1.x] == "":
+					potential_landing_spots.append(dest)
+		"S", "P": # Square, Pyramid
+			var increments = [Vector2i(0, 3), Vector2i(0, -3), Vector2i(3, 0), Vector2i(-3, 0)]
+			var path1_incs = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+			var path2_incs = [Vector2i(0, 2), Vector2i(0, -2), Vector2i(2, 0), Vector2i(-2, 0)]
+			for i in range(increments.size()):
+				var dest = start_pos + increments[i]
+				var hop1 = start_pos + path1_incs[i]
+				var hop2 = start_pos + path2_incs[i]
+				# Check bounds and path clearance using board_state
+				if dest.y >= 0 and dest.y < board_state.size() and dest.x >= 0 and dest.x < board_state[0].size() and \
+				   hop1.y >= 0 and hop1.y < board_state.size() and hop1.x >= 0 and hop1.x < board_state[0].size() and \
+				   hop2.y >= 0 and hop2.y < board_state.size() and hop2.x >= 0 and hop2.x < board_state[0].size() and \
+				   board_state[hop1.y][hop1.x] == "" and board_state[hop2.y][hop2.x] == "":
+					potential_landing_spots.append(dest)
+
+	# 2. Check each potential landing spot for an opponent piece
+	for dest_pos in potential_landing_spots:
+		var victim_id = board_state[dest_pos.y][dest_pos.x]
+		if victim_id != "":
+			var victim_color = "white" if victim_id[0] == victim_id[0].to_upper() else "black"
+			if victim_color == opponent_color:
+				var victim_data = board._parse_piece_data(victim_id) # Need helper access
+				var victim_values = victim_data.label
+
+				# 3. Check capture condition (e.g., Numbering)
+				if not attacker_values.is_empty() and not victim_values.is_empty():
+					# Check if any attacker value matches any victim value
+					var common_value = -1
+					for av in attacker_values:
+						if av in victim_values:
+							common_value = av
+							break
+					if common_value != -1:
+						captures.append({
+							"attacker_pos": start_pos,
+							"victim_pos": dest_pos,
+							"type": "numbering",
+							"value": common_value # The specific value used for capture
+						})
+
+	# --- TODO: Add similar logic for ALL OTHER CAPTURE TYPES ---
+	# (Addition, Subtraction, Multiplication, Division, Siege)
+	# Each will need to be adapted to read from the board_state array.
+	# This will involve getting piece IDs, parsing data, checking distances/paths,
+	# comparing values based only on the array content.
+
+	# Example for Multiplication (conceptual):
+	# for y_vic in range(board_state.size()):
+	#     for x_vic in range(board_state[y_vic].size()):
+	#         var victim_id = board_state[y_vic][x_vic]
+	#         # ... check if it's opponent ...
+	#         var victim_pos = Vector2i(x_vic, y_vic)
+	#         var dist = _calculate_distance_in_line(start_pos, victim_pos, board_state) # Need this helper
+	#         if dist > 0:
+	#             # ... get victim_values ...
+	#             for v_att in attacker_values:
+	#                 for v_vic in victim_values:
+	#                     if v_att * dist == v_vic:
+	#                         captures.append({... type: "multiplication" ...})
+
+
+	return captures
+
+func get_valid_moves_from_state(piece_id: String, start_pos: Vector2i, board_state: Array) -> Array:
+	"""
+	Get valid move destinations for a piece based on a board state array.
+	
+	Args:
+		piece_id: The piece identifier (e.g., "T072_1")
+		start_pos: Current position of the piece
+		board_state: 2D array representing the board
+	
+	Returns:
+		Array of Vector2i positions the piece can move to
+	"""
+	var valid_moves = []
+	var piece_data = board._parse_piece_data(piece_id)
+	
+	# Define movement patterns based on piece shape
+	var potential_moves = []
+	match piece_data.shape:
+		"C": # Circle - moves 1 square orthogonally
+			potential_moves = [
+				Vector2i(0, 1), Vector2i(0, -1),
+				Vector2i(1, 0), Vector2i(-1, 0)
+			]
+		"T": # Triangle - moves 2 squares orthogonally (must hop over empty square)
+			var increments = [Vector2i(0, 2), Vector2i(0, -2), Vector2i(2, 0), Vector2i(-2, 0)]
+			var hops = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+			for i in range(increments.size()):
+				var dest = start_pos + increments[i]
+				var hop_pos = start_pos + hops[i]
+				# Check bounds and that hop square is empty
+				if _is_valid_pos(dest, board_state) and _is_valid_pos(hop_pos, board_state):
+					if board_state[hop_pos.y][hop_pos.x] == "":
+						potential_moves.append(increments[i])
+		"S", "P": # Square/Pyramid - moves 3 squares orthogonally (hops over 2 empty squares)
+			var increments = [Vector2i(0, 3), Vector2i(0, -3), Vector2i(3, 0), Vector2i(-3, 0)]
+			var hop1s = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+			var hop2s = [Vector2i(0, 2), Vector2i(0, -2), Vector2i(2, 0), Vector2i(-2, 0)]
+			for i in range(increments.size()):
+				var dest = start_pos + increments[i]
+				var hop1_pos = start_pos + hop1s[i]
+				var hop2_pos = start_pos + hop2s[i]
+				# Check bounds and that both hop squares are empty
+				if _is_valid_pos(dest, board_state) and _is_valid_pos(hop1_pos, board_state) and _is_valid_pos(hop2_pos, board_state):
+					if board_state[hop1_pos.y][hop1_pos.x] == "" and board_state[hop2_pos.y][hop2_pos.x] == "":
+						potential_moves.append(increments[i])
+	
+	# Check each potential move
+	for move_offset in potential_moves:
+		var dest_pos = start_pos + move_offset
+		if _is_valid_pos(dest_pos, board_state):
+			# Destination must be empty
+			if board_state[dest_pos.y][dest_pos.x] == "":
+				valid_moves.append(dest_pos)
+	
+	return valid_moves
+
+func _is_valid_pos(pos: Vector2i, board_state: Array) -> bool:
+	"""Helper to check if position is within board bounds"""
+	return pos.y >= 0 and pos.y < board_state.size() and \
+		   pos.x >= 0 and pos.x < board_state[pos.y].size()
