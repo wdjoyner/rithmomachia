@@ -1,4 +1,5 @@
 # board.gd - Complete with Turn Phase System, Button, and Game Logging
+# for rithmo4
 extends CenterContainer
 
 # --- Node References ---
@@ -13,6 +14,7 @@ extends CenterContainer
 @onready var left_panel = $CanvasLayer/LeftPanel
 @onready var center_panel = $CanvasLayer/CenterPanel
 @onready var right_panel = $CanvasLayer/RightPanel
+@onready var log_window = $CanvasLayer/LogWindowPanel
 
 # Direct references to labels for easier access
 @onready var turn_label = $CanvasLayer/CenterPanel/MarginContainer/VBoxContainer/TurnLabel
@@ -24,9 +26,14 @@ extends CenterContainer
 
 @onready var white_score_label = null
 @onready var black_score_label = null
+@onready var victory_label = null  # Dedicated victory announcement label
 
 # --- Scene and Style Variables ---
 var tile_color = Color("#ADD8E6")
+
+#  For computer vs computer with logging
+var ai_vs_ai_mode: bool = false # NEW: Flag for AI vs. AI simulation
+signal simulation_game_complete
 
 # --- Piece Setup Variables ---
 @export var piece_scene: PackedScene
@@ -94,6 +101,8 @@ var selected_piece_tween: Tween = null
 
 var current_player: String = "white"
 var demo_mode: bool = false  # NEW: Controls whether AI plays as Black
+var move_made_this_turn: bool = false  # NEW: Track if move was made this turn
+var ai_turn_in_progress: bool = false  # Prevents concurrent AI turns
 
 # --- Turn Phase System ---
 enum TurnPhase { PRE_MOVE_CAPTURE, MOVE, POST_MOVE_CAPTURE }
@@ -105,6 +114,7 @@ var phase_button: Button = null
 # --- Game Log System ---
 var game_log: Array = []
 var current_turn_log: Dictionary = {}
+var log_already_exported: bool = false  # Add this variable at the top
 
 # --- Captured Pieces Tracking ---
 var captured_white_piece_values: Array[int] = []
@@ -118,11 +128,14 @@ var game_ended: bool = false
 
 # --- Move Validator ---
 var move_validator = null
+var victory_checker = null
 
 # UI References
 var help_button: Button
 var help_window: Panel
 var hint_label: Label = null # --- NEW: Reference for the hint label ---
+var demo_checkbox: CheckBox = null # <-- ADD THIS
+var ai_vs_ai_checkbox: CheckBox = null # <-- ADD THIS
 
 # Game Setup Window
 var setup_window: Panel
@@ -149,19 +162,24 @@ func _ready():
 	var MoveValidator = load("res://move_validator.gd")
 	move_validator = MoveValidator.new(self)
 	
+	var VictoryChecker = load("res://victory_checker.gd")
+	victory_checker = VictoryChecker.new(self, victory_n0, victory_n1)
+	
 	generate_board()
 	generate_labels()
 	setup_pieces()
 	setup_capture_containers()
 	setup_ui_overlay()           # Set up UI overlays
+	create_log_window_programmatically()  # Create the log window
+	create_victory_label()        # Create the victory announcement label
 	setup_score_labels()  # Add this line after setup_ui_overlay()
 	
 	# === FIX: Only make captured piece containers ignore mouse ===
 	# These containers are positioned over the board and block input
-	if captured_white_container:
-		make_container_pass_through(captured_white_container)
-	if captured_black_container:
-		make_container_pass_through(captured_black_container)
+	#if captured_white_container:
+	#	make_container_pass_through(captured_white_container)
+	#if captured_black_container:
+	#	make_container_pass_through(captured_black_container)
 	
 	# FIND YOUR STATUS LABEL - try one of these:
 	status_label = $CanvasLayer/CenterPanel/MarginContainer/VBoxContainer/ActionLabel
@@ -291,67 +309,113 @@ func generate_labels():
 		column_labels_container.add_child(label)
 
 func setup_capture_containers():
-	if captured_white_container:
-		# Position on left side for debugging
-		captured_white_container.position = Vector2(20, 20)
-		captured_white_container.size = Vector2(220, 350)
-		captured_white_container.columns = 3  # 4 columns
-		captured_white_container.add_theme_constant_override("separation", 10)
-		
-		# DON'T ADD A COLORRECT AS A CHILD!
-		# Instead, create a Panel parent to hold the GridContainer
-		var white_panel = Panel.new()
-		white_panel.position = Vector2(get_viewport_rect().size.x - 250, 20)  # Top right
-		white_panel.size = Vector2(220, 350)
-		
-		var white_style = StyleBoxFlat.new()
-		white_style.bg_color = Color(0.95, 0.95, 0.95, 0.8)
-		white_style.border_width_left = 2
-		white_style.border_width_right = 2
-		white_style.border_width_top = 2
-		white_style.border_width_bottom = 2
-		white_style.border_color = Color.WHITE
-		white_panel.add_theme_stylebox_override("panel", white_style)
-		
-		# Reparent the GridContainer
-		get_node("CanvasLayer").add_child(white_panel)
-		captured_white_container.get_parent().remove_child(captured_white_container)
-		white_panel.add_child(captured_white_container)
-		captured_white_container.position = Vector2.ZERO
-		captured_white_container.size = Vector2(220, 350)
-		captured_white_container.anchor_right = 1.0
-		captured_white_container.anchor_bottom = 1.0
-		
-		print("White capture container setup")
+	"""Position captured piece containers on RIGHT side of screen"""
 	
-	if captured_black_container:
-		captured_black_container.position = Vector2(20, 390)
-		captured_black_container.size = Vector2(220, 350)
-		captured_black_container.columns = 3
-		captured_black_container.add_theme_constant_override("separation", 10)
-		
-		var black_panel = Panel.new()
-		black_panel.position = Vector2(get_viewport_rect().size.x - 250, 390) # Below white
-		black_panel.size = Vector2(220, 350)
-		
-		var black_style = StyleBoxFlat.new()
-		black_style.bg_color = Color(0.2, 0.2, 0.2, 0.8)
-		black_style.border_width_left = 2
-		black_style.border_width_right = 2
-		black_style.border_width_top = 2
-		black_style.border_width_bottom = 2
-		black_style.border_color = Color.BLACK
-		black_panel.add_theme_stylebox_override("panel", black_style)
-		
-		get_node("CanvasLayer").add_child(black_panel)
-		captured_black_container.get_parent().remove_child(captured_black_container)
-		black_panel.add_child(captured_black_container)
-		captured_black_container.position = Vector2.ZERO
-		captured_black_container.size = Vector2(220, 350)
-		captured_black_container.anchor_right = 1.0
-		captured_black_container.anchor_bottom = 1.0
-		
-		print("Black capture container setup")
+	if not captured_white_container or not captured_black_container:
+		printerr("ERROR: Capture containers not found!")
+		return
+	
+	# CRITICAL: Clear all anchors and use absolute positioning
+	
+	# WHITE - RIGHT SIDE, TOP HALF
+	captured_white_container.columns = 3
+	captured_white_container.custom_minimum_size = Vector2(190, 250)
+	
+	# Clear anchors (this is the critical fix!)
+	captured_white_container.anchor_left = 0.0
+	captured_white_container.anchor_top = 0.0
+	captured_white_container.anchor_right = 0.0
+	captured_white_container.anchor_bottom = 0.0
+	
+	# Clear offsets
+	captured_white_container.offset_left = 0
+	captured_white_container.offset_top = 0
+	captured_white_container.offset_right = 0
+	captured_white_container.offset_bottom = 0
+	
+	# Set absolute position
+	captured_white_container.position = Vector2(1660, 100)
+	captured_white_container.size = Vector2(190, 250)
+	
+	# Disable layout modes that might interfere
+	captured_white_container.grow_horizontal = Control.GROW_DIRECTION_END
+	captured_white_container.grow_vertical = Control.GROW_DIRECTION_END
+	
+	captured_white_container.z_index = 10
+	captured_white_container.visible = true
+	
+	# --- START OF FIX 1 (WHITE) ---
+	# Add visible background for debugging
+	var white_bg = ColorRect.new()
+	white_bg.color = Color(0.9, 0.9, 0.9, 0.1)
+	white_bg.custom_minimum_size = Vector2(190, 250)
+	white_bg.size = Vector2(190, 250) # Fixed size mismatch from 200 to 190
+	white_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Add background to the CONTAINER'S PARENT
+	captured_white_container.get_parent().add_child(white_bg)
+	
+	# Position it exactly where the container is
+	white_bg.position = captured_white_container.position
+	
+	# Set its Z-index to be *behind* the container (10 - 1 = 9)
+	white_bg.z_index = 9
+	
+	# Move it in the scene tree to be right before the container (for clean rendering)
+	captured_white_container.get_parent().move_child(white_bg, captured_white_container.get_index())
+	# --- END OF FIX 1 ---
+	
+	# BLACK - RIGHT SIDE, BOTTOM HALF
+	captured_black_container.columns = 3
+	captured_black_container.custom_minimum_size = Vector2(190, 250)
+	
+	# Clear anchors (this is the critical fix!)
+	captured_black_container.anchor_left = 0.0
+	captured_black_container.anchor_top = 0.0
+	captured_black_container.anchor_right = 0.0
+	captured_black_container.anchor_bottom = 0.0
+	
+	# Clear offsets
+	captured_black_container.offset_left = 0
+	captured_black_container.offset_top = 0
+	captured_black_container.offset_right = 0
+	captured_black_container.offset_bottom = 0
+	
+	# Set absolute position
+	captured_black_container.position = Vector2(1660, 370)
+	captured_black_container.size = Vector2(190, 250)
+	
+	# Disable layout modes that might interfere
+	captured_black_container.grow_horizontal = Control.GROW_DIRECTION_END
+	captured_black_container.grow_vertical = Control.GROW_DIRECTION_END
+	
+	captured_black_container.z_index = 10
+	captured_black_container.visible = true
+	
+	# --- START OF FIX 2 (BLACK) ---
+	# Add visible background for debugging
+	var black_bg = ColorRect.new()
+	black_bg.color = Color(0.1, 0.1, 0.1, 0.1)
+	black_bg.custom_minimum_size = Vector2(190, 250)
+	black_bg.size = Vector2(190, 250)
+	black_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Add background to the CONTAINER'S PARENT
+	captured_black_container.get_parent().add_child(black_bg)
+	
+	# Position it exactly where the container is
+	black_bg.position = captured_black_container.position
+	
+	# Set its Z-index to be *behind* the container (10 - 1 = 9)
+	black_bg.z_index = 9
+	
+	# Move it in the scene tree to be right before the container
+	captured_black_container.get_parent().move_child(black_bg, captured_black_container.get_index())
+	# --- END OF FIX 2 ---
+	
+	print("Capture containers positioned: BOTH on RIGHT side (White=top, Black=bottom)")
+	print("  White at: ", captured_white_container.position)
+	print("  Black at: ", captured_black_container.position)
 
 func create_phase_button():
 	"""Creates a button for advancing phases."""
@@ -416,16 +480,54 @@ func update_phase_button_text():
 			phase_button.text = "Waiting for Move..."
 			phase_button.disabled = true
 		TurnPhase.POST_MOVE_CAPTURE:
-			phase_button.text = "End Turn"
-			phase_button.disabled = false
+			# Show different text if no move made
+			if not move_made_this_turn:
+				phase_button.text = "Must Make a Move First"
+				phase_button.disabled = true  # Disable button
+			else:
+				phase_button.text = "End Turn"
+				phase_button.disabled = false
 
 func _on_phase_button_pressed():
-	"""Handle phase button press."""
+	"""Handle phase button press with complete safeguards."""
+	
+	# Guard 1: Don't allow interrupting AI turns
+	if ai_turn_in_progress:
+		print("BLOCKED: AI turn in progress, ignoring button press")
+		return
+	
+	# Guard 2: During Human vs AI mode, only the human player can use the button
+	if current_player == "black" and not demo_mode and not ai_vs_ai_mode:
+		print("BLOCKED: Cannot manually control AI player")
+		return
+	
 	match current_phase:
 		TurnPhase.PRE_MOVE_CAPTURE:
+			# Moving from pre-capture to move phase is OK without a capture
 			advance_to_move_phase()
+			
+		TurnPhase.MOVE:
+			# Should NOT be able to skip move phase!
+			# This case shouldn't happen since moves auto-advance
+			print("ERROR: Cannot skip MOVE phase - you must move a piece!")
+			if action_label:
+				action_label.text = "Error: You must move a piece!"
+			return
+			
 		TurnPhase.POST_MOVE_CAPTURE:
+			# CRITICAL CHECK: Ensure a move was actually made
+			if not move_made_this_turn:
+				print("ERROR: Cannot end turn - no move was made!")
+				if action_label:
+					action_label.text = "Action: Must make a move before ending turn!"
+				return
+			
+			# Only advance if all checks passed
 			advance_to_next_player()
+		
+		_:
+			# Unknown phase - safety fallback
+			print("ERROR: Unknown phase in button press handler: ", current_phase)
 
 
 # ============================================
@@ -688,34 +790,107 @@ func advance_to_post_capture_phase():
 	deselect_piece()
 	update_phase_display()
 
+
 func advance_to_next_player():
 	print("Advancing to next player's turn")
 	finalize_turn_log()
 	current_player = "black" if current_player == "white" else "white"
 	current_phase = TurnPhase.PRE_MOVE_CAPTURE
+	move_made_this_turn = false  # Reset for new turn
 	start_new_turn_log()
 	deselect_piece()
 	update_phase_display()
 	check_if_player_can_move()
-	update_all_scores()  # ADD THIS LINE - refresh score displays
+	update_all_scores()
 	
-	# NEW: Auto-call AI if it's Black's turn and not in demo mode
-	if current_player == "black" and not demo_mode:
-		# Small delay for visual feedback before AI moves
-		await get_tree().create_timer(0.5).timeout
-		execute_ai_turn()
+	# Check for progression victories at end of turn
+	if not game_ended:
+		check_all_victory_conditions("white")
+		# --- FIX: Add this check ---
+		# If White won, stop all further turn processing.
+		if game_ended:
+			return
+
+		check_all_victory_conditions("black")
+		# --- FIX: Add this check ---
+		# If Black won, stop all further turn processing.
+		if game_ended:
+			return
+	
+	# NEW REPLACEMENT CODE
+	# Check if the AI should take this turn
+	var is_ai_turn = false
+	if ai_vs_ai_mode:
+		is_ai_turn = true # In simulation mode, AI always plays
+	elif current_player == "black" and not demo_mode:
+		is_ai_turn = true # Your original Human vs. AI logic
+
+	if is_ai_turn and not game_ended:
+		# We remove the 0.5s timer for simulation speed
+		# Using call_deferred() prevents errors if this is called during _ready
+		call_deferred("execute_ai_turn")
 
 func execute_ai_turn():
 	"""Execute a complete turn for Professor Pyramid (Black AI)."""
-	if demo_mode or current_player != "black":
-		return  # Safety check
 	
-	print("\n=== PROFESSOR PYRAMID'S TURN ===")
+	# CRITICAL FIX: Prevent concurrent execution
+	if ai_turn_in_progress:
+		print("AI turn already in progress, skipping duplicate call")
+		return
 	
-	# Phase 1: Pre-move captures (skip for now - AI doesn't capture before moving yet)
-	# You can add this later if desired
+	if demo_mode:
+		return # Still need to check for demo_mode
+	
+	if game_ended:
+		print("Game already ended, skipping AI turn")
+		return
+	
+	# Set the flag to prevent re-entry
+	ai_turn_in_progress = true
+	
+	print("\n=== %s'S TURN (AI) ===" % current_player.to_upper())
+	
+	# Phase 1: Pre-move captures (MANDATORY if available)
+	print("Phase 1: Checking for pre-move captures...")
+	var available_captures = _get_all_captures_for_player_from_state(current_player, initial_board_state)
+	
+	if available_captures.size() > 0:
+		print("Professor Pyramid found %d possible captures - executing them..." % available_captures.size())
+		
+		# Execute all available captures (in Rithmomachia, you can capture multiple pieces in pre-move phase)
+		for capture_info in available_captures:
+			# The structure from get_all_possible_captures_from_state is flat:
+			# { "attacker_pos": Vector2i, "victim_pos"/"target_pos": Vector2i, "type": String, "value": int, "helper_pos": Vector2i or null }
+			
+			# Validate capture structure
+			if not capture_info.has("attacker_pos"):
+				continue
+			if not (capture_info.has("victim_pos") or capture_info.has("target_pos")):
+				continue
+			if not capture_info.has("type") or not capture_info.has("value"):
+				continue
+			
+			var attacker_pos = capture_info.attacker_pos
+			var victim_pos = capture_info.get("victim_pos", capture_info.get("target_pos", null))
+			
+			if victim_pos == null:
+				continue
+			
+			# Get the tiles
+			var attacker_tile = get_tile_at_coords(attacker_pos.x, attacker_pos.y)
+			var victim_tile = get_tile_at_coords(victim_pos.x, victim_pos.y)
+			
+			if attacker_tile and victim_tile and attacker_tile.get_child_count() > 0 and victim_tile.get_child_count() > 0:
+				print("  AI capturing at position %s with piece at %s (type: %s)" % [victim_pos, attacker_pos, capture_info.type])
+				attempt_capture(attacker_tile, victim_tile)
+				await get_tree().create_timer(0.5).timeout  # Visual delay between captures
+		
+		print("Pre-move captures complete!")
+	else:
+		print("No pre-move captures available.")
 	
 	# Phase 2: Make the AI move
+	print("Phase 2: Selecting best move...")
 	current_phase = TurnPhase.MOVE
 	update_phase_display()
 	
@@ -723,6 +898,7 @@ func execute_ai_turn():
 	
 	if best_move == null:
 		print("Professor Pyramid has no legal moves - game over!")
+		ai_turn_in_progress = false  # Reset flag before returning
 		show_game_over("White wins! Professor Pyramid has no legal moves.")
 		return
 	
@@ -738,17 +914,56 @@ func execute_ai_turn():
 		print("Professor Pyramid moved from %s to %s" % [start_pos, end_pos])
 	else:
 		print("ERROR: AI move failed - invalid tiles")
+		ai_turn_in_progress = false  # Reset flag before returning
 		return
 	
-	# Phase 3: Post-move captures (skip for now - simple AI)
-	# You can add this later if desired
+	# Phase 3: Post-move captures (MANDATORY if available)
+	print("Phase 3: Checking for post-move captures...")
+	current_phase = TurnPhase.POST_MOVE_CAPTURE
+	update_phase_display()
+	
+	var post_captures = _get_all_captures_for_player_from_state(current_player, initial_board_state)
+	
+	if post_captures.size() > 0:
+		print("Professor Pyramid found %d post-move captures - executing them..." % post_captures.size())
+		
+		# Execute all available post-move captures
+		for capture_info in post_captures:
+			# The structure from get_all_possible_captures_from_state is flat:
+			# { "attacker_pos": Vector2i, "victim_pos"/"target_pos": Vector2i, "type": String, "value": int, "helper_pos": Vector2i or null }
+			
+			# Validate capture structure
+			if not capture_info.has("attacker_pos"):
+				continue
+			if not (capture_info.has("victim_pos") or capture_info.has("target_pos")):
+				continue
+			if not capture_info.has("type") or not capture_info.has("value"):
+				continue
+			
+			var attacker_pos = capture_info.attacker_pos
+			var victim_pos = capture_info.get("victim_pos", capture_info.get("target_pos", null))
+			
+			if victim_pos == null:
+				continue
+			
+			# Get the tiles
+			var attacker_tile = get_tile_at_coords(attacker_pos.x, attacker_pos.y)
+			var victim_tile = get_tile_at_coords(victim_pos.x, victim_pos.y)
+			
+			if attacker_tile and victim_tile and attacker_tile.get_child_count() > 0 and victim_tile.get_child_count() > 0:
+				print("  AI post-move capturing at position %s with piece at %s (type: %s)" % [victim_pos, attacker_pos, capture_info.type])
+				attempt_capture(attacker_tile, victim_tile)
+				await get_tree().create_timer(0.5).timeout  # Visual delay between captures
+		
+		print("Post-move captures complete!")
+	else:
+		print("No post-move captures available.")
 	
 	# Small delay before advancing to White's turn
 	await get_tree().create_timer(0.5).timeout
 	
-	# End AI turn and advance to White
-	current_phase = TurnPhase.POST_MOVE_CAPTURE
-	update_phase_display()
+	# CRITICAL FIX: Reset flag before calling advance_to_next_player
+	ai_turn_in_progress = false
 	
 	# Auto-advance to next player (White)
 	await get_tree().create_timer(0.3).timeout
@@ -766,9 +981,14 @@ func check_if_player_can_move() -> bool:
 func show_game_over(message: String):
 	print("GAME OVER: ", message)
 	
+	# Show in victory label if it exists
+	if victory_label:
+		victory_label.text = "🏆 " + message + " 🏆"
+		victory_label.visible = true
+	
 	# Update action label to show game over
 	if action_label:
-		action_label.text = "GAME OVER"
+		action_label.text = "🏆 GAME OVER 🏆"
 	
 	# Update turn label with the win message
 	if turn_label:
@@ -778,6 +998,28 @@ func show_game_over(message: String):
 	if phase_button:
 		phase_button.text = message
 		phase_button.disabled = true
+	
+	# Set game_ended flag
+	game_ended = true
+	simulation_game_complete.emit() 
+
+
+# Add this new function to board.gd (for computer vs computer)
+func set_victory_conditions(n0_pieces: int, n1_value: int, difficulty_name: String):
+	victory_n0 = n0_pieces
+	victory_n1 = n1_value
+	setup_difficulty = difficulty_name
+	
+	# This is the most important part:
+	# Re-create the victory_checker with the new values
+	if is_instance_valid(victory_checker):
+		victory_checker.queue_free() # Free the old one
+	
+	var VictoryChecker = load("res://victory_checker.gd")
+	victory_checker = VictoryChecker.new(self, victory_n0, victory_n1)
+	
+	print("Simulation: Victory conditions set to N0=%d, N1=%d" % [victory_n0, victory_n1])
+
 
 # --- Game Log System ---
 
@@ -787,6 +1029,22 @@ func log_capture(attacker_piece: Node2D, attacker_pos: Vector2i, victim_piece: N
 	"""
 	Record a capture in the current turn log.
 	"""
+	# === START: ADDED SAFETY CHECK (from board1.gd) ===
+	# Ensures current_turn_log is properly initialized
+	if not current_turn_log.has("pre_move_captures"):
+		print("WARNING: current_turn_log not initialized, initializing now...")
+		current_turn_log = {
+			"turn_number": game_log.size() + 1,
+			"player": current_player,
+			"phase": current_phase,
+			"pre_move_captures": [],
+			"move": null,
+			"post_move_captures": [],
+			"board_state_snapshot": capture_board_state(),
+			"captured_white_before": captured_white_piece_values.duplicate(),
+			"captured_black_before": captured_black_piece_values.duplicate()
+		}
+	# === END: ADDED SAFETY CHECK ===
 	var capture_entry = {
 		"captured_piece": {
 			"id": victim_piece.piece_id,
@@ -822,15 +1080,15 @@ func log_capture(attacker_piece: Node2D, attacker_pos: Vector2i, victim_piece: N
 		})
 	
 	if current_phase == TurnPhase.PRE_MOVE_CAPTURE:
-		current_turn_log.pre_move_captures.append(capture_entry)
+		current_turn_log["pre_move_captures"].append(capture_entry)
 	else:
-		current_turn_log.post_move_captures.append(capture_entry)
+		current_turn_log["post_move_captures"].append(capture_entry)
 	
 	print_capture_to_console(capture_entry)
 
 func log_move(piece: Node2D, from_pos: Vector2i, to_pos: Vector2i):
 	"""Record a move in the current turn log."""
-	current_turn_log.move = {
+	current_turn_log["move"] = {
 		"piece": {
 			"id": piece.piece_id,
 			"value": piece.piece_label[0] if piece.piece_label.size() > 0 else 0,
@@ -840,7 +1098,7 @@ func log_move(piece: Node2D, from_pos: Vector2i, to_pos: Vector2i):
 		"from_pos": from_pos,
 		"to_pos": to_pos
 	}
-	print_move_to_console(current_turn_log.move)
+	print_move_to_console(current_turn_log["move"])
 
 func finalize_turn_log():
 	"""
@@ -896,11 +1154,11 @@ func print_move_to_console(move: Dictionary):
 
 func print_turn_summary(turn_log: Dictionary):
 	"""Print summary of entire turn."""
-	print("\n========== TURN %d SUMMARY (%s) ==========" % [turn_log.turn_number, turn_log.player.to_upper()])
-	print("Pre-move captures: %d" % turn_log.pre_move_captures.size())
-	if turn_log.move:
-		print("Move: %s from %s to %s" % [turn_log.move.piece.id, turn_log.move.from_pos, turn_log.move.to_pos])
-	print("Post-move captures: %d" % turn_log.post_move_captures.size())
+	print("\n========== TURN %d SUMMARY (%s) ==========" % [turn_log["turn_number"], turn_log["player"].to_upper()])
+	print("Pre-move captures: %d" % turn_log["pre_move_captures"].size())
+	if turn_log["move"]:
+		print("Move: %s from %s to %s" % [turn_log["move"]["piece"]["id"], turn_log["move"]["from_pos"], turn_log["move"]["to_pos"]])
+	print("Post-move captures: %d" % turn_log["post_move_captures"].size())
 	print("=".repeat(50) + "\n")
 
 func find_piece_position(piece: Node2D) -> Vector2i:
@@ -923,24 +1181,26 @@ func export_game_log_to_text() -> String:
 	text += "=".repeat(60) + "\n\n"
 	
 	for turn in game_log:
-		text += "Turn %d - %s\n" % [turn.turn_number, turn.player.capitalize()]
+		text += "Turn %d - %s\n" % [turn["turn_number"], turn["player"].capitalize()]
 		text += "-".repeat(40) + "\n"
 		
-		if turn.pre_move_captures.size() > 0:
+		if turn["pre_move_captures"].size() > 0:
 			text += "Pre-move captures:\n"
-			for cap in turn.pre_move_captures:
+			for cap in turn["pre_move_captures"]:
 				text += format_capture_for_log(cap)
 		
-		if turn.move:
+		if turn["move"]:
+			var from_alg = coordinate_to_algebraic_gd(turn["move"]["from_pos"].x, turn["move"]["from_pos"].y)
+			var to_alg = coordinate_to_algebraic_gd(turn["move"]["to_pos"].x, turn["move"]["to_pos"].y)
 			text += "Move: %s from %s to %s\n" % [
-				turn.move.piece.id,
-				turn.move.from_pos,
-				turn.move.to_pos
+					 turn["move"]["piece"]["id"],
+					 from_alg,
+					 to_alg
 			]
 		
-		if turn.post_move_captures.size() > 0:
+		if turn["post_move_captures"].size() > 0:
 			text += "Post-move captures:\n"
-			for cap in turn.post_move_captures:
+			for cap in turn["post_move_captures"]:
 				text += format_capture_for_log(cap)
 		
 		text += "\n"
@@ -1014,7 +1274,17 @@ func format_capture_for_log(cap: Dictionary) -> String:
 		]
 	
 	# Regular full piece capture
-	return "  - %s by %s\n" % [cap.captured_piece.id, cap.capture_type]
+	var attacker_names = []
+	for attacker in cap.capturing_pieces:
+		attacker_names.append(attacker.id)
+	
+	var attackers_str = " + ".join(attacker_names)
+	
+	return "  - %s captured by %s (%s)\n" % [
+		cap.captured_piece.id,
+		attackers_str,
+		cap.capture_type
+	]
 
 # --- Player Input Handling ---
 func _on_tile_clicked(event: InputEvent, clicked_tile: ColorRect):
@@ -1234,6 +1504,11 @@ func get_all_capturable_enemy_pieces(attacking_color: String) -> Array:
 				if victim.piece_color != enemy_color:
 					continue
 				
+				# Validate capture_data structure
+				if not capture_data.has("capture_types"):
+					printerr("get_capturable_pieces: capture_data missing capture_types key")
+					continue
+				
 				# Create unique key for this victim
 				var pos_key = "%d,%d" % [target_pos.x, target_pos.y]
 				
@@ -1433,8 +1708,12 @@ func attempt_capture(attacker_tile: ColorRect, victim_tile: ColorRect):
 			valid_capture_options = capture_option
 			break
 
-	if valid_capture_options == null or valid_capture_options.capture_types.size() == 0:
-		print("ERROR: Clicked on a valid target, but no capture type was found.")
+	if valid_capture_options == null:
+		print("ERROR: Clicked on a valid target, but no capture option was found.")
+		return
+	
+	if not valid_capture_options.has("capture_types") or valid_capture_options.capture_types.size() == 0:
+		print("ERROR: Capture option found but no capture_types available.")
 		return
 
 	# 4. For simplicity, we execute the FIRST valid capture type found.
@@ -1623,6 +1902,9 @@ func execute_move(from_tile: ColorRect, to_tile: ColorRect):
 	to_tile.add_child(piece)
 	piece.position = to_tile.size / 2.0
 	update_board_state_array(from_tile, to_tile, false)
+	
+	move_made_this_turn = true  # Track that move was made
+	
 	print("Move complete!")
 
 func move_to_capture_zone(piece: Node2D):
@@ -1751,18 +2033,18 @@ func undo_last_turn():
 	
 	print("\n=== UNDOING LAST TURN ===")
 	var last_turn = game_log.pop_back()
-	print("Undoing turn %d by %s" % [last_turn.turn_number, last_turn.player])
+	print("Undoing turn %d by %s" % [last_turn["turn_number"], last_turn["player"]])
 	
 	# Restore board state
-	restore_board_state(last_turn.board_state_snapshot)
+	restore_board_state(last_turn["board_state_snapshot"])
 	
 	# Restore captured pieces
-	captured_white_piece_values = last_turn.captured_white_before.duplicate()
-	captured_black_piece_values = last_turn.captured_black_before.duplicate()
+	captured_white_piece_values = last_turn["captured_white_before"].duplicate()
+	captured_black_piece_values = last_turn["captured_black_before"].duplicate()
 	
 	# Restore turn/phase
-	current_player = last_turn.player
-	current_phase = last_turn.phase
+	current_player = last_turn["player"]
+	current_phase = last_turn["phase"]
 	
 	# Update all displays
 	update_captured_display("white", captured_white_piece_values)
@@ -1819,79 +2101,86 @@ func create_export_button():
 	$CanvasLayer.add_child(export_button)
 	export_button.pressed.connect(_on_export_pressed)
 
-var log_already_exported: bool = false  # Add this variable at the top
-
 func _on_export_pressed():
 	"""
-	Export game log to file.
+	Display game log in popup window AND auto-save on desktop.
 	"""
-	# Skip export on web builds
-	if OS.has_feature("web"):
-		print("Game log export not available in web version")
-		if action_label:
-			action_label.text = "Log export unavailable on web"
-			await get_tree().create_timer(2.0).timeout
-		return
-		
 	if game_log.size() == 0:
 		print("No game log to export - no turns have been played yet!")
+		if action_label:
+			var old_text = action_label.text
+			action_label.text = "No log to export!"
+			await get_tree().create_timer(2.0).timeout
+			action_label.text = old_text
 		return
 	
-	# Prevent double export
-	if log_already_exported:
-		print("Log already exported, skipping...")
-		return
-	
-	log_already_exported = true
-	
+	# Generate the log text
 	var log_text = export_game_log_to_text()
 	
-	# Create filename with timestamp
-	var datetime = Time.get_datetime_dict_from_system()
-	var timestamp = "%04d-%02d-%02d_%02d-%02d-%02d" % [
-		datetime.year, datetime.month, datetime.day,
-		datetime.hour, datetime.minute, datetime.second
-	]
-	var filename = "rithmomachia_game_%s.txt" % timestamp
+	# Check if the log window exists
+	if log_window == null:
+		printerr("Log window not found. Cannot display log.")
+		return
 	
-	# Ensure game_logs directory exists in PROJECT folder
-	var dir = DirAccess.open("res://")
-	if dir and not dir.dir_exists("game_logs"):
-		dir.make_dir("game_logs")
+	# Find the TextEdit node inside the log window
+	var text_display = log_window.find_child("LogTextDisplay", true, false)
 	
-	# Save to PROJECT's game_logs subdirectory
-	var file = FileAccess.open("res://game_logs/%s" % filename, FileAccess.WRITE)
-	if file:
-		file.store_string(log_text)
-		file.flush()  # IMPORTANT: Force write to disk
-		file.close()
-		
-		# Wait a moment to ensure write completes
-		await get_tree().process_frame
-		
-		print("Game log exported successfully!")
-		print("Location: ", ProjectSettings.globalize_path("res://game_logs/%s" % filename))
-		
-		# Show feedback to user
-		if action_label:
-			var old_text = action_label.text
-			action_label.text = "Game log exported!"
-			await get_tree().create_timer(2.0).timeout
-			action_label.text = old_text
+	if text_display and text_display is TextEdit:
+		text_display.text = log_text
+		log_window.show()
+		print("Game log displayed in window")
 	else:
-		print("ERROR: Failed to save file!")
-		if action_label:
-			var old_text = action_label.text
-			action_label.text = "Export failed!"
-			await get_tree().create_timer(2.0).timeout
-			action_label.text = old_text
+		printerr("LogTextDisplay node (TextEdit) not found inside log_window.")
+		return
+	
+	# DESKTOP ONLY: Also auto-save to file (keeping your original behavior)
+	if not OS.has_feature("web"):
+		# Prevent double export
+		if log_already_exported:
+			print("Log already exported, skipping auto-save...")
+			return
+		
+		log_already_exported = true
+		
+		# Create filename with timestamp
+		var datetime = Time.get_datetime_dict_from_system()
+		var timestamp = "%04d-%02d-%02d_%02d-%02d-%02d" % [
+			datetime.year, datetime.month, datetime.day,
+			datetime.hour, datetime.minute, datetime.second
+		]
+		var filename = "rithmomachia_game_%s.txt" % timestamp
+		
+		# Ensure game_logs directory exists
+		var dir = DirAccess.open("res://")
+		if dir and not dir.dir_exists("game_logs"):
+			dir.make_dir("game_logs")
+		
+		# Save to file
+		var file = FileAccess.open("res://game_logs/%s" % filename, FileAccess.WRITE)
+		if file:
+			file.store_string(log_text)
+			file.flush()
+			file.close()
+			
+			await get_tree().process_frame
+			
+			print("Game log auto-saved to: ", ProjectSettings.globalize_path("res://game_logs/%s" % filename))
+		else:
+			print("ERROR: Failed to auto-save file!")
 
 func create_undo_button():
 	"""Creates a button to undo the last turn."""
 	var undo_button = Button.new()
 	undo_button.text = "Undo Last Turn"
 	undo_button.custom_minimum_size = Vector2(200, 50)
-	undo_button.position = Vector2(900, 20)
+	
+	# Anchor to top-right corner so it stays on the right side regardless of window size
+	undo_button.anchor_left = 1.0
+	undo_button.anchor_right = 1.0
+	undo_button.offset_left = -440.0  # 220px for capture window + 20px margin + 200px button width = 440px from right
+	undo_button.offset_right = -240.0  # 240px from right edge (20px margin + 220px capture window)
+	undo_button.offset_top = 20.0
+	undo_button.offset_bottom = 70.0
 	
 	# Style the button
 	var style_normal = StyleBoxFlat.new()
@@ -2006,10 +2295,8 @@ func on_piece_captured(piece_color: String, piece_value: int):
 			black_value_captured += piece_value  # Changed from piece.value
 			print("Black total: %d pieces, %d value" % [black_pieces_captured, black_value_captured])
 			
-			if check_victory_by_body("Black", black_pieces_captured):
-				declare_victory("Black", "Body")
-			elif check_victory_by_goods("Black", black_value_captured):
-				declare_victory("Black", "Goods")
+			# Check ALL victory conditions for Black
+			check_all_victory_conditions("black")
 		
 		# If a BLACK piece was captured, WHITE did the capturing
 		elif piece_color == "black":
@@ -2017,10 +2304,8 @@ func on_piece_captured(piece_color: String, piece_value: int):
 			white_value_captured += piece_value  # Changed from piece.value
 			print("White total: %d pieces, %d value" % [white_pieces_captured, white_value_captured])
 			
-			if check_victory_by_body("White", white_pieces_captured):
-				declare_victory("White", "Body")
-			elif check_victory_by_goods("White", white_value_captured):
-				declare_victory("White", "Goods")
+			# Check ALL victory conditions for White
+			check_all_victory_conditions("white")
 	
 	# Add to the appropriate captured list
 	if piece_color == "white":
@@ -2101,19 +2386,22 @@ func create_victory_label():
 		await get_tree().process_frame
 		
 		# Create new label for victory conditions
-		var victory_label = Label.new()
-		victory_label.name = "VictoryLabel"
-		victory_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		victory_label.add_theme_font_size_override("font_size", 14)
-		victory_label.add_theme_color_override("font_color", Color(0.831, 0.686, 0.216))
-		victory_label.text = ""  # Start empty, will be filled by update_status_display()
-		victory_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var temp_label = Label.new()
+		temp_label.name = "VictoryLabel"
+		temp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		temp_label.add_theme_font_size_override("font_size", 20)  # Increased for visibility
+		temp_label.add_theme_color_override("font_color", Color.GOLD)  # Gold for prominence
+		temp_label.text = ""  # Start empty, will be filled by update_status_display()
+		temp_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		temp_label.visible = true  # Visible by default
 		
-		center_vbox.add_child(victory_label)
-		center_vbox.move_child(victory_label, 0)
+		center_vbox.add_child(temp_label)
+		center_vbox.move_child(temp_label, 0)
 		
-		status_label = victory_label
-		print("Victory label created at: ", victory_label.get_path())
+		# Assign to both class variables
+		status_label = temp_label
+		victory_label = temp_label  # Use same label for both purposes
+		print("Victory label created at: ", temp_label.get_path())
 		
 # ============================================
 # SECTION 4: Helper functions for UI creation
@@ -2268,14 +2556,230 @@ func create_help_window() -> Panel:
 	# --- END NEW ---
 
 	# Add Demo Mode checkbox
-	var demo_checkbox = CheckBox.new()
+	demo_checkbox = CheckBox.new()
 	demo_checkbox.text = "Demo Mode (Play Both Sides)"
 	demo_checkbox.button_pressed = demo_mode
 	demo_checkbox.toggled.connect(_on_demo_mode_toggled)
 	demo_hbox.add_child(demo_checkbox)
 
+	# --- ADD THIS NEW CHECKBOX ---
+	ai_vs_ai_checkbox = CheckBox.new()
+	ai_vs_ai_checkbox.text = "AI vs. AI (Watch Mode)"
+	ai_vs_ai_checkbox.button_pressed = ai_vs_ai_mode
+	ai_vs_ai_checkbox.toggled.connect(_on_ai_vs_ai_toggled)
+	demo_hbox.add_child(ai_vs_ai_checkbox)
+	# --- END OF NEW CODE ---
+
 	return panel
 	
+# Add this function after create_help_window() (around line 2531)
+func create_log_window() -> Panel:
+	"""Create the game log window programmatically with scrollable text display"""
+	
+	# Main panel
+	var panel = Panel.new()
+	panel.name = "LogWindowPanel"
+	panel.custom_minimum_size = Vector2(800, 600)
+	
+	# Center it on screen
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -400  # Half of width
+	panel.offset_top = -300   # Half of height
+	panel.offset_right = 400
+	panel.offset_bottom = 300
+	
+	# Initially hidden
+	panel.visible = false
+	
+	# Style the panel - match help window style
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.165, 0.137, 0.118, 0.98)  # Dark brown, almost opaque
+	panel_style.border_color = Color(0.545, 0.451, 0.333)
+	panel_style.border_width_left = 3
+	panel_style.border_width_top = 3
+	panel_style.border_width_right = 3
+	panel_style.border_width_bottom = 3
+	panel_style.corner_radius_top_left = 10
+	panel_style.corner_radius_top_right = 10
+	panel_style.corner_radius_bottom_left = 10
+	panel_style.corner_radius_bottom_right = 10
+	panel.add_theme_stylebox_override("panel", panel_style)
+	
+	# Add margin container
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 15)
+	margin.add_theme_constant_override("margin_top", 15)
+	margin.add_theme_constant_override("margin_right", 15)
+	margin.add_theme_constant_override("margin_bottom", 15)
+	panel.add_child(margin)
+	
+	# VBox for layout
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	margin.add_child(vbox)
+	
+	# Top bar with title and close button
+	var top_bar = HBoxContainer.new()
+	vbox.add_child(top_bar)
+	
+	var title = Label.new()
+	title.text = "Game Log"
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color(0.831, 0.686, 0.216))  # Gold
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_bar.add_child(title)
+	
+	var close_btn = Button.new()
+	close_btn.text = "×"
+	close_btn.custom_minimum_size = Vector2(40, 40)
+	close_btn.add_theme_font_size_override("font_size", 28)
+	close_btn.pressed.connect(_on_log_window_close_pressed)
+	top_bar.add_child(close_btn)
+	
+	# TextEdit for scrollable log display
+	var text_edit = TextEdit.new()
+	text_edit.name = "LogTextDisplay"
+	text_edit.editable = false  # Read-only
+	text_edit.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY  # Wrap long lines
+	text_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	text_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_edit.custom_minimum_size = Vector2(770, 450)
+	
+	# Style the TextEdit
+	text_edit.add_theme_color_override("background_color", Color(0.1, 0.1, 0.1, 0.95))
+	text_edit.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	text_edit.add_theme_font_size_override("font_size", 14)
+	
+	vbox.add_child(text_edit)
+	
+	# Bottom button bar
+	var button_bar = HBoxContainer.new()
+	button_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_bar.add_theme_constant_override("separation", 15)
+	vbox.add_child(button_bar)
+	
+	# Copy to Clipboard button
+	#var copy_btn = Button.new()
+	#copy_btn.text = "Copy to Clipboard"
+	#copy_btn.custom_minimum_size = Vector2(180, 40)
+	#copy_btn.pressed.connect(_on_copy_log_to_clipboard)
+	#style_log_button(copy_btn)
+	#button_bar.add_child(copy_btn)
+	
+	# Save to File button (desktop only)
+	if not OS.has_feature("web"):
+		var save_btn = Button.new()
+		save_btn.text = "Save to File"
+		save_btn.custom_minimum_size = Vector2(180, 40)
+		save_btn.pressed.connect(_on_save_log_to_file)
+		style_log_button(save_btn)
+		button_bar.add_child(save_btn)
+	
+	return panel
+
+
+func style_log_button(button: Button):
+	"""Apply consistent styling to log window buttons"""
+	var style_normal = StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.545, 0.451, 0.333)  # Brown
+	style_normal.border_color = Color(0.831, 0.686, 0.216)  # Gold
+	style_normal.border_width_left = 2
+	style_normal.border_width_top = 2
+	style_normal.border_width_right = 2
+	style_normal.border_width_bottom = 2
+	style_normal.corner_radius_top_left = 5
+	style_normal.corner_radius_top_right = 5
+	style_normal.corner_radius_bottom_left = 5
+	style_normal.corner_radius_bottom_right = 5
+	
+	var style_hover = style_normal.duplicate()
+	style_hover.bg_color = Color(0.645, 0.551, 0.433)  # Lighter brown
+	
+	var style_pressed = style_normal.duplicate()
+	style_pressed.bg_color = Color(0.445, 0.351, 0.233)  # Darker brown
+	
+	button.add_theme_stylebox_override("normal", style_normal)
+	button.add_theme_stylebox_override("hover", style_hover)
+	button.add_theme_stylebox_override("pressed", style_pressed)
+	button.add_theme_color_override("font_color", Color.WHITE)
+
+
+# ============================================
+# CALLBACK FUNCTIONS
+# ============================================
+
+func _on_log_window_close_pressed():
+	"""Close the log window"""
+	if log_window:
+		log_window.hide()
+
+
+func _on_copy_log_to_clipboard():
+	"""Copy the game log to clipboard"""
+	var text_display = log_window.find_child("LogTextDisplay")
+	if text_display and text_display is TextEdit:
+		DisplayServer.clipboard_set(text_display.text)
+		print("Game log copied to clipboard!")
+		
+		# Show brief feedback
+		if action_label:
+			var old_text = action_label.text
+			action_label.text = "Log copied to clipboard!"
+			await get_tree().create_timer(1.5).timeout
+			action_label.text = old_text
+
+
+func _on_save_log_to_file():
+	"""Save the game log to a file (desktop only)"""
+	if OS.has_feature("web"):
+		return  # Should never happen, but safety check
+	
+	# Create filename with timestamp
+	var datetime = Time.get_datetime_dict_from_system()
+	var timestamp = "%04d-%02d-%02d_%02d-%02d-%02d" % [
+		datetime.year, datetime.month, datetime.day,
+		datetime.hour, datetime.minute, datetime.second
+	]
+	var filename = "rithmomachia_game_%s.txt" % timestamp
+	
+	# Ensure game_logs directory exists
+	var dir = DirAccess.open("res://")
+	if dir and not dir.dir_exists("game_logs"):
+		dir.make_dir("game_logs")
+	
+	# Get the text from the display
+	var text_display = log_window.find_child("LogTextDisplay")
+	if not text_display or not text_display is TextEdit:
+		print("ERROR: Cannot find log text to save!")
+		return
+	
+	# Save to file
+	var file = FileAccess.open("res://game_logs/%s" % filename, FileAccess.WRITE)
+	if file:
+		file.store_string(text_display.text)
+		file.flush()
+		file.close()
+		
+		print("Game log saved successfully!")
+		print("Location: ", ProjectSettings.globalize_path("res://game_logs/%s" % filename))
+		
+		# Show feedback
+		if action_label:
+			var old_text = action_label.text
+			action_label.text = "Log saved to file!"
+			await get_tree().create_timer(1.5).timeout
+			action_label.text = old_text
+	else:
+		print("ERROR: Failed to save file!")
+		if action_label:
+			var old_text = action_label.text
+			action_label.text = "Save failed!"
+			await get_tree().create_timer(1.5).timeout
+			action_label.text = old_text
+
 
 func create_help_tab(tab_container: TabContainer, tab_name: String, content: String) -> VBoxContainer: # --- MODIFIED: Return VBoxContainer ---
 	"""Helper to create a single help tab"""
@@ -2406,6 +2910,14 @@ func pulse_help_button():
 func _on_demo_mode_toggled(is_pressed: bool):
 	"""Handle demo mode checkbox toggle."""
 	demo_mode = is_pressed
+
+	# --- ADD THIS BLOCK ---
+	# Make checkboxes mutually exclusive
+	if demo_mode and ai_vs_ai_mode:
+		ai_vs_ai_mode = false
+		if is_instance_valid(ai_vs_ai_checkbox):
+			ai_vs_ai_checkbox.button_pressed = false
+	# --- END OF BLOCK ---
 	
 	# Update the action label to show demo mode status
 	if action_label:
@@ -2782,6 +3294,39 @@ func check_victory_by_goods(player: String, captured_value: int) -> bool:
 		print("%s wins by Common Victory by Goods! (%d points captured)" % [player, captured_value])
 		return true
 	return false
+
+
+func check_all_victory_conditions(player_color: String):
+	"""Check all victory conditions including progressions"""
+	if game_ended or not victory_checker:
+		return
+	
+	# Get captured pieces for this player
+	var captured_pieces = []
+	if player_color == "black":
+		captured_pieces = captured_white_piece_values
+	else:
+		captured_pieces = captured_black_piece_values
+	
+	# Use victory_checker to check all conditions
+	var result = victory_checker.check_for_win(player_color, captured_pieces)
+	
+	if result.won:
+		# Map the reason to a display name
+		var victory_type_display = ""
+		match result.reason:
+			"arithmetical progression":
+				victory_type_display = "Arithmetical Progression"
+			"geometrical progression":
+				victory_type_display = "Geometrical Progression"
+			"harmonic progression":
+				victory_type_display = "Harmonic Progression"
+			"body":
+				victory_type_display = "Body"
+			"goods":
+				victory_type_display = "Goods"
+		
+		declare_victory(player_color.capitalize(), victory_type_display)
 	
 func declare_victory(winner: String, victory_type: String):
 	"""Handle game victory"""
@@ -2793,25 +3338,52 @@ func declare_victory(winner: String, victory_type: String):
 	game_victory_type = victory_type
 	
 	var victory_message = ""
-	if victory_type == "Body":
-		var pieces_captured = black_pieces_captured if winner == "Black" else white_pieces_captured
-		victory_message = "%s WINS by Common Victory by Body! (%d pieces captured, needed %d)" % [
-			winner, pieces_captured, victory_n0
-		]
-	elif victory_type == "Goods":
-		var value_captured = black_value_captured if winner == "Black" else white_value_captured
-		victory_message = "%s WINS by Common Victory by Goods! (%d points captured, needed %d)" % [
-			winner, value_captured, victory_n1
-		]
+	
+	# Handle different victory types
+	match victory_type:
+		"Body":
+			var pieces_captured = black_pieces_captured if winner == "Black" else white_pieces_captured
+			victory_message = "%s WINS by Common Victory by Body! (%d pieces captured, needed %d)" % [
+				winner, pieces_captured, victory_n0
+			]
+		"Goods":
+			var value_captured = black_value_captured if winner == "Black" else white_value_captured
+			victory_message = "%s WINS by Common Victory by Goods! (%d points captured, needed %d)" % [
+				winner, value_captured, victory_n1
+			]
+		"Arithmetical Progression":
+			victory_message = "%s WINS by Arithmetical Progression! (Three pieces in enemy territory forming arithmetic sequence)" % winner
+		"Geometrical Progression":
+			victory_message = "%s WINS by Geometrical Progression! (Three pieces in enemy territory forming geometric sequence)" % winner
+		"Harmonic Progression":
+			victory_message = "%s WINS by Harmonic Progression! (Three pieces in enemy territory forming harmonic sequence)" % winner
+		_:
+			victory_message = "%s WINS by %s!" % [winner, victory_type]
 	
 	print("\n" + "=".repeat(60))
 	print("🏆 VICTORY! 🏆")
 	print(victory_message)
 	print("=".repeat(60) + "\n")
 	
-	# Update status display
-	if status_label:
+	# Update BOTH labels for maximum visibility
+	if victory_label:
+		victory_label.text = "🏆 " + victory_message + " 🏆"
+		victory_label.visible = true
+	
+	if action_label:
+		action_label.text = "🏆 GAME OVER 🏆"
+	
+	if turn_label:
+		turn_label.text = victory_message
+	
+	# Also update status_label if it's different
+	if status_label and status_label != action_label:
 		status_label.text = "🏆 " + victory_message
+	
+	# Disable the phase button
+	if phase_button:
+		phase_button.text = "GAME OVER - " + winner + " WINS!"
+		phase_button.disabled = true
 	
 	# CRITICAL: Finalize the current turn so it gets logged!
 	if current_turn_log.size() > 0:
@@ -2828,6 +3400,7 @@ func declare_victory(winner: String, victory_type: String):
 	await get_tree().create_timer(0.5).timeout
 	
 	print("Game log saved. Victory processing complete.")
+	simulation_game_complete.emit() 
 	
 # ============================================
 # SECTION 7: Optional - Create/reference status label
@@ -3817,22 +4390,37 @@ func _simulate_captures(player_color: String, board_state: Array) -> Array:
 	var captured_coords = [] # Keep track of captured piece locations to avoid double captures etc.
 
 	for capture_info in possible_captures:
-		# capture_info structure from get_all_captures_for_player:
-		# { attacker_pos: Vector2i, target_pos: Vector2i, piece: Dictionary,
-		#   capture_types: [ { type: String, value: int, helper_pos: Vector2i or null } ] }
+		# capture_info structure from get_all_possible_captures_from_state is FLAT:
+		# { attacker_pos: Vector2i, victim_pos/target_pos: Vector2i, type: String, value: int, helper_pos: Vector2i or null }
+		# NOT the nested structure with capture_types array!
 
+		# Validate that capture_info has the expected structure
+		if not capture_info.has("attacker_pos"):
+			printerr("Simulate capture: Invalid capture_info structure - missing attacker_pos: %s" % str(capture_info))
+			continue
+		
+		if not (capture_info.has("victim_pos") or capture_info.has("target_pos")):
+			printerr("Simulate capture: Invalid capture_info structure - missing victim/target position: %s" % str(capture_info))
+			continue
+		
+		if not capture_info.has("type") or not capture_info.has("value"):
+			printerr("Simulate capture: Invalid capture_info structure - missing type or value: %s" % str(capture_info))
+			continue
+		
 		var attacker_pos = capture_info.attacker_pos
-		var victim_pos = capture_info.victim_pos
+		# Handle both 'victim_pos' and 'target_pos' for compatibility
+		var victim_pos = capture_info.get("victim_pos", capture_info.get("target_pos", null))
+		
+		if victim_pos == null:
+			printerr("Simulate capture: Could not find victim position in capture_info")
+			continue
 		
 		# Skip if victim already captured in this simulation step
 		if victim_pos in captured_coords:
 			continue
 
-		# For simulation, just take the first capture type available
-		if capture_info.capture_types.is_empty():
-			continue
-		var capture_type_data = capture_info.capture_types[0]
-		var captured_value = capture_type_data.value # Value being removed
+		# Get capture data directly from the flat structure
+		var captured_value = capture_info.value
 
 		# Simulate the piece removal/modification on sim_board
 		if victim_pos.y >= 0 and victim_pos.y < sim_board.size() and \
@@ -3946,3 +4534,43 @@ func _calculate_position_score(board_state: Array, player_color: String) -> floa
 	var opponent_score_part = (opponent_fireteam_moves * 10.0) + opponent_regular_moves + (opponent_captures.size() * 5.0)
 
 	return player_score_part - opponent_score_part
+
+func _on_ai_vs_ai_toggled(is_pressed: bool):
+	"""Handle AI vs. AI checkbox toggle."""
+	ai_vs_ai_mode = is_pressed
+
+	# Make checkboxes mutually exclusive
+	if ai_vs_ai_mode and demo_mode:
+		demo_mode = false
+		if is_instance_valid(demo_checkbox):
+			demo_checkbox.button_pressed = false
+
+	print("AI vs. AI mode %s" % ("enabled" if ai_vs_ai_mode else "disabled"))
+	update_action_display() # Update UI
+
+	# --- START OF FIX ---
+	# Check if the AI should take a turn *right now*
+	var is_ai_turn = false
+	if ai_vs_ai_mode:
+		is_ai_turn = true # AI vs AI mode, AI always plays
+	elif current_player == "black" and not demo_mode:
+		is_ai_turn = true # Human vs AI mode, it's Black's turn
+
+	if is_ai_turn and not game_ended:
+		call_deferred("execute_ai_turn")
+	# --- END OF FIX ---
+
+func create_log_window_programmatically():
+	"""Helper to create and add the log window to the scene"""
+	var window = create_log_window()
+	
+	# Add to a high-layer CanvasLayer so it appears on top
+	var log_layer = CanvasLayer.new()
+	log_layer.name = "LogLayer"
+	log_layer.layer = 105  # Higher than help layer (110 might be too high)
+	add_child(log_layer)
+	log_layer.add_child(window)
+	
+	# Update the reference
+	log_window = window
+	print("Log window created successfully!")
