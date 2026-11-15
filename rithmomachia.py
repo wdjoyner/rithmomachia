@@ -269,9 +269,9 @@ REFERENCES:
 last modified by wdj on 2025-08-15
 """
 
-# SageMath-backed Python module; run with `sage -python`.
+# Standard-library rules engine; run with ordinary Python 3.
 # Derived from the author's August 2025 SageMath implementation.
-from sage.all import *
+from rithmomachia_compat import *
 from copy import copy
 from pathlib import Path
 import os
@@ -283,10 +283,17 @@ from collections import Counter
 import itertools
 import string
 import random 
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+except ImportError:  # Core rules and analysis require only the standard library
+    plt = None
+    patches = None
 #from sage.all import var, ZZ, Integer
-import numpy as np
+try:
+    import numpy as np
+except ImportError:  # NumPy is used only by optional drawing helpers
+    np = None
 import sys
 
 ############### unused global constants #############
@@ -1091,58 +1098,20 @@ def random_board_state(verbose=False):
 
 
 def value_of_piece(GS, i, j):
+    """Return values represented by the piece at one board square.
+
+    The undecomposed pyramid represents a single whole value. A decomposed
+    pyramid represents its *surviving component* values, without counting the
+    P/p marker as another piece. An empty square returns [0].
     """
-    Returns the value(s) of the piece at (i,j) in the game state matrix.
-    If the position is empty, it returns [0].
-    If the piece is a pyramid, it returns a flat list of all its component values.
-
-    EXAMPLE:
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: value_of_piece(GS, 2, 3)
-         [8]
-        sage: value_of_piece(GSp, 1, 1)
-         [36, 25, 16, 9, 4, 1]
-
-    """
-    c,C,p,P,t,T,s,S = PIECE_RING.gens()
-    PR = PIECE_RING
-    
-    poly_piece = GS[i, j]
-
-    if poly_piece == 0:
+    piece = GS[i, j]
+    if piece == 0:
         return [0]
-
-    # For non-pyramid pieces, the value is simply the degree.
-    if not (p in poly_piece.variables() or P in poly_piece.variables()):
-        return [poly_piece.degree()]
-        
-    # For pyramids, collect the value of every component.
-    else:
-        values = []
-        f = PR(poly_piece)
-        exponents = f.exponents()
-        
-        for exp_tuple in exponents:
-            # Indices: p=2, P=3, s=6, S=7
-            if exp_tuple[2] > 0: # Black pyramid main value
-                values.append(exp_tuple[2])
-            if exp_tuple[3] > 0: # White pyramid main value
-                values.append(exp_tuple[3])
-            if exp_tuple[6] > 0: # Black square sub-piece value
-                values.append(exp_tuple[6])
-            if exp_tuple[7] > 0: # White square sub-piece value
-                values.append(exp_tuple[7])
-        
-        # This handles the legacy format where the pyramid value was stored
-        # as a degree, in case the polynomial is just 'P' or 'p'.
-        if not values:
-            if p in poly_piece.variables():
-                values.append(poly_piece.degree(p))
-            elif P in poly_piece.variables():
-                values.append(poly_piece.degree(P))
-             
-        return sorted(list(set(values)))
-
+    data = _pyramid_data(piece)
+    if data is None:
+        return [int(piece.degree())]
+    _, whole, components = data
+    return sorted(components) if components else [whole]
 
 def captured_pieces_white(game_state, pyramid_decomposition=True): 
     """
@@ -7101,7 +7070,7 @@ def draw_big_circle(piece_value = "49", piece_color = "black", center_pt = (0,0)
     return plt
 
 
-from sage.plot.colors import Color # Import the Color object
+from rithmomachia_compat import Color
 
 def create_styled_shape(word, cntr=(0,0), scl=1, type="square", color_scheme="white", brdr_color="blue", font_size = 50):
     """
