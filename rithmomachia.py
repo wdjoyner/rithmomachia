@@ -1276,102 +1276,175 @@ def captured_pieces_black(game_state, pyramid_decomposition=True):
 
 
 
-def capture_piece(game_state, attacker_pos, captured_pos, verbose=False):
-    """
-    Identifies a piece at a given position and removes it from the game board.
-    If the captured piece is a pyramid, it finds all possible ways the attacker
-    at attacker_pos captures it and removes all corresponding sub-pieces.
+
+def _piece_side(poly):
+    """Recognize a piece by its polynomial's generators."""
+    if poly == 0:
+        return None
+    vars_piece=set(poly.variables())
+    if vars_piece.intersection({C,T,S,P}): return "white"
+    if vars_piece.intersection({c,t,s,p}): return "black"
+    return None
 
 
-    ###### new code suggested by gemini was added
-
-
-    EXAMPLES:
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: GS = copy(GSp)
-
-    """
-    GS = copy(game_state)
-    c,C,p,P,t,T,s,S = PIECE_RING.gens()
-    PR = PIECE_RING
-    
-    i0, j0 = captured_pos
-
-    if not in_bounds((i0, j0)):
-        if verbose: print(f"Coordinate {captured_pos} out of bounds, no capture.")
-        return GS
-
-    victim_poly = PR(GS[i0, j0])
-    if victim_poly == 0:
-        if verbose: print(f"No piece at {captured_pos}, no capture.")
-        return GS
-
-    vars_pc = victim_poly.variables()
-    
-    # If the captured piece is a regular piece, remove it completely.
-    if not (p in vars_pc or P in vars_pc):
-        if verbose: print(f"Removing piece {victim_poly} at {captured_pos}.")
-        GS[i0, j0] = 0
-        return GS
-
-    # --- Robust Logic for Pyramid Captures ---
+def _pyramid_data(poly):
+    """Return (side,total,subpiece_values), or None for non-pyramids."""
+    poly=PIECE_RING(poly)
+    vars_piece=set(poly.variables())
+    if P in vars_piece:
+        marker,sub,sub_index,side=P,S,7,"white"
+    elif p in vars_piece:
+        marker,sub,sub_index,side=p,s,6,"black"
     else:
-        # Find all captures between the specific attacker and victim
-        all_possible_captures = get_captures_by_piece(GS, attacker_pos, verbose=False)
-        relevant_captures = [cap for cap in all_possible_captures if cap and len(cap) > 1 and cap[1][0] == captured_pos]
+        return None
+    components=sorted(int(e[sub_index]) for e in poly.exponents() if e[sub_index]>0)
+    total=sum(components)
+    if not components:
+        total=int(poly.degree(marker))
+        if total==1:  # legacy encoding P + S^91 or p + s^190
+            total=int(poly.degree(sub))
+    return side,total,components
 
-        if not relevant_captures:
-            if verbose: print(f"No valid capture method found from {attacker_pos} to {captured_pos}.")
-            return GS
 
-        # For numbering, the value is a list; for others, it's an int. This handles both.
-        values_to_remove = set()
-        for cap in relevant_captures:
-            val = cap[1][1]
-            if isinstance(val, list):
-                values_to_remove.add(val[0]) # Add the integer from the list
-            else:
-                values_to_remove.add(val) # Add the integer directly
+def captured_piece_values(game_state,color,pyramid_decomposition=True):
+    """Values of captured pieces, including lost pyramid subpieces.
 
-        if verbose:
-            print(f"Attacker at {attacker_pos} is capturing sub-piece(s) with values {list(values_to_remove)} from pyramid at {captured_pos}.")
+    Derive numeric values from the polynomial game-state data. Avoid parsing
+    text from captured_pieces_white/black, which are display-only functions.
+    """
+    if color not in ("white","black"): raise ValueError("invalid color")
+    initial=board_initial_matrix(pyramid_decomposition=pyramid_decomposition)
+    positions=positions_w if color=="white" else positions_b
+    original=positions(initial)
+    current=positions(game_state)
+    initial_regular=Counter(PIECE_RING(poly) for _,poly in original if _pyramid_data(poly) is None)
+    current_regular=Counter(PIECE_RING(poly) for _,poly in current if _pyramid_data(poly) is None)
+    values=[]
+    for poly,count in (initial_regular-current_regular).items():
+        values.extend([int(poly.degree())]*count)
+    init_pyramids=[poly for _,poly in original if _pyramid_data(poly) is not None]
+    curr_pyramids=[poly for _,poly in current if _pyramid_data(poly) is not None]
+    if init_pyramids:
+        _,total,components=_pyramid_data(init_pyramids[0])
+        if not curr_pyramids:
+            values.append(total)
+        else:
+            _,_,remaining=_pyramid_data(curr_pyramids[0])
+            values.extend(list((Counter(components)-Counter(remaining)).elements()))
+    return values
 
-        # 1. Start with a clean, correctly-typed version of the polynomial
-        temp_poly = PR(victim_poly)
-        
-        # 2. Get the initial main value ONCE before any modifications
-        initial_main_value = 0
-        if P in vars_pc:
-            #print("0000", temp_poly, type(temp_poly), "\n", victim_poly, type(victim_poly), "\n", values_to_remove)
-            initial_main_value = SR(temp_poly).degree(P)
-        elif p in vars_pc:
-            #print("0001", temp_poly, type(temp_poly), "\n", victim_poly, type(victim_poly), "\n", values_to_remove)
-            initial_main_value = SR(temp_poly).degree(p)
 
-        # 3. Modify the polynomial based on all calculations
-        total_value_removed = sum(values_to_remove)
-        new_main_value = initial_main_value - total_value_removed
+def _capture_event_from_record(kind,rec,side):
+    """Normalize the legacy capture record formats into coordinate pairs."""
+    if kind=="siege":
+        return None,tuple(rec[0]),None
+    if kind in ("sum","difference"):
+        attacker,victim=tuple(rec[0][0]),tuple(rec[2][0])
+        raw_values=rec[2][1]
+    else:
+        attacker,victim=tuple(rec[0][0]),tuple(rec[1][0])
+        raw_values=rec[1][1]
+    if not (in_bounds(attacker) and in_bounds(victim)):
+        return None
+    if isinstance(raw_values,(tuple,list,set)):
+        values=[int(v) for v in raw_values]
+    else:
+        values=[int(raw_values)]
+    return attacker,victim,values
 
-        # Remove sub-piece terms
-        for val in values_to_remove:
-            if P in vars_pc: temp_poly = temp_poly - S**val
-            elif p in vars_pc: temp_poly = temp_poly - s**val
 
-        # Remove old main value term
-        if initial_main_value > 0:
-            if P in vars_pc: temp_poly = temp_poly - P**initial_main_value
-            elif p in vars_pc: temp_poly = temp_poly - p**initial_main_value
-        
-        # Add new main value term, if it's still greater than zero
-        if new_main_value > 0:
-            if P in vars_pc: temp_poly = temp_poly + P**new_main_value
-            elif p in vars_pc: temp_poly = temp_poly + p**new_main_value
-        
-        # 4. Assign the final, correctly-typed polynomial back to the game state
-        GS[i0, j0] = PR(temp_poly)
-                
+def _take_all_captures(game_state,side,verbose=False):
+    """Apply current captures, recalculating possibilities after each mutation."""
+    GS=copy(game_state)
+    tables={
+        "white":(valid_captures_by_numbering_white,valid_captures_by_addition_white,
+                 valid_captures_by_subtraction_white,valid_captures_by_multiplication_white,
+                 valid_captures_by_division_white,valid_captures_by_siege_white),
+        "black":(valid_captures_by_numbering_black,valid_captures_by_addition_black,
+                 valid_captures_by_subtraction_black,valid_captures_by_multiplication_black,
+                 valid_captures_by_division_black,valid_captures_by_siege_black),
+    }
+    if side not in tables: raise ValueError(side)
+    applied=0
+    # Each capture removes a positive-valued component. Bound the iteration
+    # count as a defense against malformed discovery functions.
+    for _ in range(80):
+        changed=False
+        for kind,detect in zip(("number","sum","difference","multiplication","division","siege"),tables[side]):
+            if changed: break
+            for rec in detect(GS):
+                event=_capture_event_from_record(kind,rec,side)
+                if event is None: continue
+                attacker,victim,victim_values=event
+                if not in_bounds(victim) or GS[victim]==0: continue
+                if _piece_side(GS[victim])==side: continue
+                if attacker is not None:
+                    if GS[attacker]==0 or _piece_side(GS[attacker])!=side: continue
+                matched=None
+                pyramid=_pyramid_data(GS[victim])
+                if pyramid is not None and kind!="siege":
+                    _,total,components=pyramid
+                    candidates=[v for v in victim_values if v in set(components)|{total}]
+                    if kind=="number":
+                        attacker_values=value_of_piece(GS,*attacker)
+                        candidates=[v for v in candidates if v in attacker_values]
+                    if not candidates: continue
+                    matched=min(candidates)
+                new_GS=capture_piece(GS,attacker,victim,verbose=verbose,
+                                     captured_value=matched,capture_type=kind)
+                if new_GS!=GS:
+                    GS=new_GS
+                    applied+=1
+                    changed=True
+                    break
+        if not changed: break
+    if verbose: print("%s performed %d capture event(s)."%(side,applied))
+    return GS
+
+
+def capture_piece(game_state, attacker_pos, captured_pos, verbose=False,
+                  captured_value=None, capture_type=None):
+    """Return a board after capturing a regular piece or a pyramid component.
+
+    A value equal to the pyramid total, or a siege capture, removes it wholly.
+    A specific subpiece value removes exactly that component.
+    """
+    GS=copy(game_state)
+    if not in_bounds(captured_pos) or GS[captured_pos]==0:
         return GS
-
+    victim=PIECE_RING(GS[captured_pos])
+    victim_side=_piece_side(victim)
+    if attacker_pos is not None:
+        if not in_bounds(attacker_pos) or GS[attacker_pos]==0:
+            return GS
+        if _piece_side(GS[attacker_pos])==victim_side:
+            return GS
+    elif capture_type!="siege":
+        return GS
+    pyramid=_pyramid_data(victim)
+    if pyramid is None or capture_type=="siege":
+        GS[captured_pos]=PIECE_RING(0)
+        return GS
+    side,total,parts=pyramid
+    if captured_value is None:
+        # A direct call is permitted only for an unambiguous equal value.
+        if attacker_pos is None: return GS
+        matches=sorted(set(value_of_piece(GS,*attacker_pos)).intersection(set(parts)|{total}))
+        if len(matches)!=1: return GS
+        captured_value=matches[0]
+    captured_value=int(captured_value)
+    if captured_value==total:
+        GS[captured_pos]=PIECE_RING(0)
+        return GS
+    if captured_value not in parts: return GS
+    marker,sub=(P,S) if side=="white" else (p,s)
+    old_power=int(victim.degree(marker))
+    remaining_total=total-captured_value
+    if remaining_total<=0:
+        GS[captured_pos]=PIECE_RING(0)
+    else:
+        GS[captured_pos]=PIECE_RING(victim-sub**captured_value-marker**old_power+marker**remaining_total)
+    return GS
 
 def get_captures_by_piece(game_state, piece_coords, verbose=False):
     """
@@ -4473,140 +4546,13 @@ def valid_captures_by_siege_black(game_state, verbose = False):
 
 
    
-def take_all_captures_black(game_state, verbose = False):
-    """
-    Performs all of Black's legal captures of White pieces.
+def take_all_captures_black(game_state,verbose=False):
+    """Apply the currently available Black captures."""
+    return _take_all_captures(game_state,"black",verbose=verbose)
 
-    NOTE:  ################# Capture format is described in c1, ..., c6 #################
-
-    EXAMPLES:
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: GS = copy(GSp)
-        sage: GS[3,13] = 0; GS[5,0] = c^(25)
-        sage: take_all_captures_black(GS, verbose = True)
-         Capture by numbering on  (5, 1)
-         There were  1  captures of White pieces by Black.
-         <8x16 matrix omitted>
-
-    """
-    GS = copy(game_state)
-    c1 = valid_captures_by_numbering_black(GS)
-    # Capture format is ((r1, c1, [v1]), (r2, c2, [v2]), (r1, c1)) 
-    c2 = valid_captures_by_addition_black(GS)
-    # Capture format is [(r1, c1, [v1]), (r2, c2, [v2]), (r3, c3, [v3])] 
-    c3 = valid_captures_by_subtraction_black(GS)
-    # Capture format is [(r1, c1, [v1]), (r2, c2, [v2]), (r3, c3, [v3])] 
-    c4 = valid_captures_by_multiplication_black(GS)
-    # Capture format is [((r1, c1), v1), ((r2, c2), v2)] 
-    c5 = valid_captures_by_division_black(GS)
-    # Capture format is [((r1, c1), v1), ((r2, c2), v2)] 
-    c6 = valid_captures_by_siege_black(GS) ##################### how is this implemented in a game??
-    # Capture format is ((r, c), v))
-    
-    capture_count = 0
-
-    # Capture by Numbering
-    for cap in c1:
-        # cap[0] is the attacker info tuple (r, c, [v])
-        # cap[1] is the victim info tuple (r, c, [v])
-        # We pass the full coordinate tuples.
-        attacker_pos = (cap[0][0], cap[0][1])
-        victim_pos = (cap[1][0], cap[1][1])
-        GS = capture_piece(GS, attacker_pos, victim_pos, verbose=verbose)
-        capture_count += 1
-
-    # Capture by Sum/Difference
-    for cap in c2 + c3:
-        # cap[0][0] is the primary attacker's position
-        GS = capture_piece(GS, cap[0][0], cap[2][0], verbose=verbose)
-        capture_count += 1
-
-    # Capture by Multiplication/Division
-    for cap in c4 + c5:
-        # cap[0][0] is the attacker's position
-        GS = capture_piece(GS, cap[0][0], cap[1][0], verbose=verbose)
-        capture_count += 1
-        
-    # Capture by Siege
-    for cap in c6:
-        # For siege, there isn't one attacker. We pass the victim's own location
-        # as a placeholder for the attacker, as capture_piece doesn't use it for siege.
-	########## Note:                         ###################################
-	######### captures_as_dict   can be used to find an attacking piece ########
-        GS = capture_piece(GS, cap[0], cap[0], verbose=verbose)
-        capture_count += 1
-
-    if verbose and capture_count > 0:
-        print(f"There were {capture_count} captures of White/Even pieces by Black/Odd.")
-        
-    return GS
-  
-
-
-def take_all_captures_white(game_state, verbose = False):
-    """
-    Performs all of White's legal captures of Black pieces.
-
-    NOTE:  ################# Capture format is described in c1, ..., c6 #################
-
-    EXAMPLES:
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: GS = copy(GSp)
-
-
-    """
-    GS = copy(game_state)
-    c1 = valid_captures_by_numbering_white(GS)
-    # Capture format is ((r1, c1, [v1]), (r2, c2, [v2]), (r1, c1)) 
-    c2 = valid_captures_by_addition_white(GS)
-    # Capture format is [(r1, c1, [v1]), (r2, c2, [v2]), (r3, c3, [v3])] 
-    c3 = valid_captures_by_subtraction_white(GS)
-    # Capture format is [(r1, c1, [v1]), (r2, c2, [v2]), (r3, c3, [v3])] 
-    c4 = valid_captures_by_multiplication_white(GS)
-    # Capture format is [((r1, c1), v1), ((r2, c2), v2)] 
-    c5 = valid_captures_by_division_white(GS)
-    # Capture format is [((r1, c1), v1), ((r2, c2), v2)] 
-    c6 = valid_captures_by_siege_white(GS)
-    # Capture format is ((r, c), v))
-    
-    capture_count = 0
-
-    # Capture by Numbering
-    for cap in c1:
-        # cap[0] is the attacker info tuple (r, c, [v])
-        # cap[1] is the victim info tuple (r, c, [v])
-        # We pass the full coordinate tuples.
-        attacker_pos = (cap[0][0], cap[0][1])
-        victim_pos = (cap[1][0], cap[1][1])
-        GS = capture_piece(GS, attacker_pos, victim_pos, verbose=verbose)
-        capture_count += 1
-
-    # Capture by Sum/Difference
-    for cap in c2 + c3:
-        # cap[0][0] is the primary attacker's position
-        GS = capture_piece(GS, cap[0][0], cap[2][0], verbose=verbose)
-        capture_count += 1
-
-    # Capture by Multiplication/Division
-    for cap in c4 + c5:
-        # cap[0][0] is the attacker's position
-        GS = capture_piece(GS, cap[0][0], cap[1][0], verbose=verbose)
-        capture_count += 1
-        
-    # Capture by Siege
-    for cap in c6:
-        # For siege, there isn't one attacker. We pass the victim's own location
-        # as a placeholder for the attacker, as capture_piece doesn't use it for siege.
-	########## Note:                         ###################################
-	######### captures_as_dict   can be used to find an attacking piece ########
-        GS = capture_piece(GS, cap[0], cap[0], verbose=verbose)
-        capture_count += 1
-
-    if verbose and capture_count > 0:
-        print(f"There were {capture_count} captures of Black pieces by White.")
-        
-    return GS
-    
+def take_all_captures_white(game_state,verbose=False):
+    """Apply the currently available White captures."""
+    return _take_all_captures(game_state,"white",verbose=verbose)
 
 def legal_moves_captures_white(game_state):
     """
