@@ -1,80 +1,150 @@
-# rithmomachia
-A Python module to play Rithmomachia. Uses tkinter for the gui interface.
+# Rithmomachia
 
-This is a very basic but complete implementation of
-rithmomachia in python, using tkinter for the GUI. It comtains
-a standalone function 
+Rithmomachia is the medieval mathematical strategy game sometimes called the
+*Philosophers' Game*. This repository contains related but independent
+implementations, along with educational material and graphics tools.
 
-launch_rithmomachia_gui()
+The mathematical rules and capture mechanisms follow the author's study of
+Claude de Boissière's 1556 presentation, as discussed by J. F. C. Richards
+(1946). **Rithmomachia has historical rule variants**; the programs do not
+yet provide a single, exhaustively validated implementation of every variant.
 
-(run on the command line) to start a game. A few windows pop up,
-including the game board, and you make various choices. For example, 
-in one window to select between playing against another person 
-or playing against the computer). There is a help button with the 
-rules. Moving a piece is by clicking on its current position and then on 
-the destination square. Similarly, captures are performed by 
-clicking on your (or one of your) attacking piece and then clicking 
-on the enemy piece you want to capture. The computer checks for 
-all possible ways to capture. If your choice is a valid capture 
-and there is no ambiguity, the enemy piece disappears and a 
-record is printed in the log. If there is a choice to be made, a 
-window pops up with and you make the capture more specific.
+## Implementations
 
-This module is an object-oriented version of python fcns in 
-my python/sagemath module rithmomachia.sage, which completely 
-implements a command line version of rithmomachia to be run in sage. 
-There is also a version which run in in a sagemath jupyter 
-notebook. It's about 8000 lines, including all the commented out 
-lines of documentation.
+| Location | Runtime | Purpose |
+| --- | --- | --- |
+| [`rithmomachia.py`](rithmomachia.py) | **SageMath Python** | Large, function-oriented rules, gameplay, computational, plotting, and animation implementation |
+| [`rithmo.py`](rithmo.py) | Python 3 + Tkinter | Shorter, object-oriented graphical game with an experimental computer opponent |
+| [`godot-rithmo/`](godot-rithmo/) | Godot 4 / GDScript | Separate graphical implementation and rule-checking scripts |
+| [`rithmomachia.sage`](rithmomachia.sage) | SageMath (.sage format) | Historical predecessor kept for comparison; **not** the corrected source |
+| [`docs/`](docs/) | PDF and LaTeX | Background on the game and implementation notes |
+| Blender/Matplotlib scripts in the root | Blender/Python | Board and pyramid animation experiments |
 
-The conversion/refactoring here follows chatGPT and Gemini's suggestions.
-In fact, the vast majority of the lines of code below are from
-either Gemini or chatGPT directly, following very detailed 
-prompts on my part based on my above-mentioned working code.
-This rewritten code is under 1000 lines.
+**The Python and SageMath programs are separate.** The `.py` extension on
+`rithmomachia.py` does not mean it will run in an ordinary Python
+installation: it imports `sage.all`, uses Sage polynomial rings and matrices,
+and requires a SageMath-enabled Python interpreter.
 
-Classes:
+The repository's development branch is named `main`. The old `baseball` and
+`rithmomachia-tutor` branches remain in the repository. Changing the GitHub
+default branch is a separate repository setting.
 
-* Piece
-   Each of these subclasses have get_potential_moves and valid_moves methods:
+## Run the SageMath-based implementation
 
-** Circle(Piece)
+Install [SageMath](https://www.sagemath.org/) first. The module also imports
+Matplotlib and NumPy, which are typically available in SageMath installations.
 
-** Triangle(Piece)
+From the repository root:
 
-** Square(Piece)
+```bash
+sage -python -c 'import rithmomachia as r; G = r.board_initial_matrix(pyramid_decomposition=True); print(r.is_valid_move(G, (6, 0), (3, 0), "white"))'
+```
 
-** Pyramid(Piece)  (this also has a lose_subpiece method)
+To use the available functions interactively:
 
-* Player
-  This has a record_capture method
+```bash
+sage -python
+```
 
-* Board 
-  This has a get_piece, move_piece, remove_piece, all_positions.
-  The init method uses a stand-alone function 
-  standard_rithmomachia_setup(board).
+```python
+import rithmomachia as r
 
-* RithmomachiaGame 
-  This has too many methods to mention. 
+G = r.board_initial_matrix(pyramid_decomposition=True)
+print(r.is_valid_move(G, (6, 0), (3, 0), "white"))
+G2 = r.move_piece(G, (6, 0), (3, 0))
+# Plotting requires a usable graphics backend:
+# r.board_plot(G2).show()
+```
 
-* RithmomachiaGUI
-  This class uses a number of tkinter classes, such as the class
-  GameSetupDialog(tk.Toplevel), for displaying and communicating 
-  with the user.
+The large SageMath module exposes additional functions such as
+`valid_captures_by_numbering_white`,
+`take_all_captures_white`,
+`is_arithmetical_pattern_white`,
+`display_board_matplotlib`, and gameplay/animation helpers.
+To discover public functions and historical comments, search the source.
 
-To work with this file: Save the Python rithmo.py file as 
- 
-rithmo.py 
+Board images and animation frames may be written into
+`~/sagefiles/`; create that directory if needed. Some plotting
+and animation routines are still experimental.
 
-in a directory. In that directory, on the command line, start Python:
+## Run the standalone Tkinter GUI
 
-$ python
+Tkinter and a graphical desktop are required.
 
-Then load the module and start the game application:
+```bash
+python -c 'import rithmo; rithmo.launch_rithmomachia_gui()'
+```
 
->>> import rithmo 
->>> rithmo.launch_rithmomachia_gui()
+The GUI supports human-vs-human and experimental human-vs-computer play.
+The computer presently chooses a random legal *move* and does not perform
+the full pre-/post-move capture search implemented in the Sage module.
+The Tkinter help window also contains placeholder text.
 
-Have fun! Report bugs to wdjoyner@gmail.com please.
+## Rules and configuration
 
+The large Sage code defaults to orthogonal circle movement and a
+square-only decomposition of the pyramids, with 8 × 16 board coordinates.
+Choose `pyramid_decomposition=True` for games that require individually
+capturable pyramid components. Rithmomachia's arithmetic, geometric, and
+musical progression victories are examined by separate functions.
 
+Victory thresholds differ among implementations: for example, functions
+in the SageMath code commonly default to four captured pieces or a value
+of 100, while the Tkinter GUI uses 12 pieces or a value of 500. These are
+**configuration choices**, not evidence that the implementations have
+identical rule settings. Siege/blockade criteria also require reconciliation
+between the Sage, Tkinter, and Godot programs.
+
+## Corrections in `rithmomachia.py`
+
+This Python/SageMath port is based on the later, August 2025 SageMath source
+and includes these targeted changes:
+
+- Convert Sage `^` exponent notation into standard Python `**`, introduce
+  explicit Sage imports and polynomial-ring generators, and remove
+  machine-specific image output directories.
+- Validate the requested **start and destination** together, rather than
+  accepting a destination reachable by an unrelated piece.
+- Reject out-of-bounds moves before reading the matrix; allow explicit
+  `validate=False` only for construction of test positions.
+- Recognize occupied *intermediate* squares when checking potential captures.
+- Normalize the incompatible legacy capture record formats to coordinate
+  pairs and recompute available captures after board mutations.
+- Treat a pyramid capture as removal of a specified subcomponent, or
+  removal of the entire pyramid for a whole-pyramid capture or siege.
+- Calculate goods-victory totals numerically, rather than calling
+  `.degree()` on strings returned for display.
+- Implement a color-symmetric Black musical-pattern check (the standard
+  Black value set may not itself contain musical triples).
+
+The original `.sage` file is retained deliberately as historical source.
+The two extra four-term arithmetic-progression list functions in the newer
+source are present for research; they do not change the three-piece
+proper-victory rules.
+
+## Tests and current verification status
+
+The regression tests in [`tests/`](tests/) do **not** require SageMath.
+They inspect and execute isolated function bodies with mocked board objects.
+
+```bash
+python -m unittest discover -s tests -v
+python -m py_compile rithmomachia.py
+```
+
+**Limitations:** The isolated tests do not prove that the entire SageMath
+module imports successfully under your installed Sage version or that the
+full game, every capture variant, victory condition, GUI and animation flow
+work end-to-end. That still needs a SageMath run and complete game
+regression positions. The Godot scripts also need testing inside a
+working Godot project. Please report reproducible issues with a board
+position, rule variant, expected outcome, and observed outcome.
+
+## Source and background
+
+J. F. C. Richards, “Boissière's Pythagorean Game,” *Scripta
+Mathematica* **12** (1946), 177–217.
+
+This repository includes AI-assisted code revisions. Historical versions
+and detailed source comments remain useful when checking the provenance
+of individual rules.
