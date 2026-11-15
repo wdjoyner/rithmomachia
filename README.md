@@ -13,60 +13,94 @@ yet provide a single, exhaustively validated implementation of every variant.
 
 | Location | Runtime | Purpose |
 | --- | --- | --- |
-| [`rithmomachia.py`](rithmomachia.py) | **SageMath Python** | Large, function-oriented rules, gameplay, computational, plotting, and animation implementation |
+| [`rithmomachia.py`](rithmomachia.py) | **Python 3 (no SageMath)** | Large, function-oriented rules, gameplay, computational, plotting, and animation implementation |
 | [`position_analysis.py`](position_analysis.py) | SageMath Python | Static material/territory/harmony/capture analysis and one-ply move ranking |
+| [`rithmomachia_compat.py`](rithmomachia_compat.py) | Python 3 standard library | Piece-polynomial and matrix support, plus optional Matplotlib drawing adapters |
 | [`rithmo.py`](rithmo.py) | Python 3 + Tkinter | Shorter, object-oriented graphical game with an experimental computer opponent |
 | [`godot-rithmo/`](godot-rithmo/) | Godot 4 / GDScript | Separate graphical implementation and rule-checking scripts |
 | [historical `rithmomachia.sage` on `baseball`](https://github.com/wdjoyner/rithmomachia/blob/baseball/rithmomachia.sage) | SageMath (.sage format) | Previous repository version, preserved on the original branch and in Git history; not the corrected source |
 | [`docs/`](docs/) | PDF and LaTeX | Background on the game and implementation notes |
 | Blender/Matplotlib scripts in the root | Blender/Python | Board and pyramid animation experiments |
 
-**The Python and SageMath programs are separate.** The `.py` extension on
-`rithmomachia.py` does not mean it will run in an ordinary Python
-installation: it imports `sage.all`, uses Sage polynomial rings and matrices,
-and requires a SageMath-enabled Python interpreter.
+**The main engine is now ordinary Python.** The modules `rithmomachia.py` and
+`position_analysis.py` import directly in Python 3 and do not depend on
+SageMath. Historical Sage source is preserved on the `baseball` branch.
 
 The intended development branch is named `main`. The old `baseball` and
 `rithmomachia-tutor` branches remain in the repository. Changing the GitHub
 default branch is a separate repository setting.
 
-## Run the SageMath-based implementation
+## Run the Python rules engine — no SageMath required
 
-Install [SageMath](https://www.sagemath.org/) first. The module also imports
-Matplotlib and NumPy, which are typically available in SageMath installations.
+**Python 3.10 or newer** is sufficient to run the game rules, piece/capture
+calculations, progressions, and position evaluator. You do **not** need
+SageMath, SymPy, or NumPy for those features.
 
-From the repository root:
+The new [rithmomachia_compat.py](rithmomachia_compat.py) supplies small Python
+implementations of the eight piece-polynomial symbols and the 8 × 16 matrix.
+It is intentionally limited to the operations used by this game, not a
+general-purpose computer algebra system.
+
+### macOS Terminal quick start
+
+If you have already cloned the repository under ~/Projects, update it:
 
 ```bash
-sage -python -c 'import rithmomachia as r; G = r.board_initial_matrix(pyramid_decomposition=True); print(r.is_valid_move(G, (6, 0), (3, 0), "white"))'
+cd ~/Projects/rithmomachia
+git switch main
+git pull origin main
 ```
 
-To use the available functions interactively:
+Otherwise clone it first:
 
 ```bash
-sage -python
+mkdir -p ~/Projects
+cd ~/Projects
+git clone https://github.com/wdjoyner/rithmomachia.git
+cd rithmomachia
 ```
+
+Start a normal Python interpreter:
+
+```bash
+python3
+```
+
+At the Python >>> prompt, enter:
 
 ```python
 import rithmomachia as r
+import position_analysis as pa
 
 G = r.board_initial_matrix(pyramid_decomposition=True)
-print(r.is_valid_move(G, (6, 0), (3, 0), "white"))
-G2 = r.move_piece(G, (6, 0), (3, 0))
-# Plotting requires a usable graphics backend:
-# r.board_plot(G2).show()
+pa.display_analysis(G)
+
+# A quick ranking, without expensive capture-method evaluation:
+pa.display_ranked_moves(G, "white", top_n=5, include_captures=False)
 ```
 
-The large SageMath module exposes additional functions such as
-`valid_captures_by_numbering_white`,
-`take_all_captures_white`,
-`is_arithmetical_pattern_white`,
-`display_board_matplotlib`, and gameplay/animation helpers.
-To discover public functions and historical comments, search the source.
+To run these instructions as a program, save the Python lines in a file such
+as analyze.py in the repository root, then run `python3 analyze.py`.
 
-Board images and animation frames may be written into
-`~/sagefiles/`; create that directory if needed. Some plotting
-and animation routines are still experimental.
+For graphical board plots, install optional Python packages (still no Sage):
+
+```bash
+python3 -m pip install matplotlib numpy
+```
+
+Then, in Python:
+
+```python
+r.board_plot(G).save("rithmomachia_board.png")
+```
+
+Some more elaborate graphics and animation utilities remain experimental.
+
+### Python exponent notation
+
+Inside Python code use `C**6` or `S**36`; `C^6` remains a readable
+piece **display** notation. The old `sage:` lines in historical function
+docstrings are examples retained for context, not a Sage dependency.
 
 ## Run the standalone Tkinter GUI
 
@@ -83,7 +117,7 @@ The Tkinter help window also contains placeholder text.
 
 ## Rules and configuration
 
-The large Sage code defaults to orthogonal circle movement and a
+The main Python engine defaults to orthogonal circle movement and a
 square-only decomposition of the pyramids, with 8 × 16 board coordinates.
 Choose `pyramid_decomposition=True` for games that require individually
 capturable pyramid components. Rithmomachia's arithmetic, geometric, and
@@ -98,11 +132,11 @@ between the Sage, Tkinter, and Godot programs.
 
 ## Corrections in `rithmomachia.py`
 
-This Python/SageMath port is based on the later, August 2025 SageMath source
+This standard-Python port is based on the later, August 2025 SageMath source
 and includes these targeted changes:
 
 - Convert Sage `^` exponent notation into standard Python `**`, introduce
-  explicit Sage imports and polynomial-ring generators, and remove
+  explicit Python polynomial-ring generators, and remove
   machine-specific image output directories.
 - Validate the requested **start and destination** together, rather than
   accepting a destination reachable by an unrelated piece.
@@ -126,19 +160,20 @@ proper-victory rules.
 ## Tests and current verification status
 
 The regression tests in [`tests/`](tests/) do **not** require SageMath.
-They inspect and execute isolated function bodies with mocked board objects.
+They include isolated logic probes, mock-engine evaluation tests, and **real
+Python rules-engine integration tests** (initial board, legal moves, captures,
+pyramid subpieces, mathematical progressions, and position ranking).
 
 ```bash
-python -m unittest discover -s tests -v
-python -m py_compile rithmomachia.py
+python3 -m unittest discover -s tests -v
+python3 -m py_compile rithmomachia.py
 ```
 
-**Limitations:** The isolated tests do not prove that the entire SageMath
-module imports successfully under your installed Sage version or that the
-full game, every capture variant, victory condition, GUI and animation flow
-work end-to-end. That still needs a SageMath run and complete game
-regression positions. The Godot scripts also need testing inside a
-working Godot project. Please report reproducible issues with a board
+**Limitations:** These tests prove the tested core operations run without Sage,
+but they do not validate every historical rule variant, the entire game loop,
+all multi-capture combinations, the Tkinter GUI, or every animation helper.
+More comprehensive game and graphics regression tests are still needed.
+The Godot scripts also need testing inside Godot. Please report reproducible issues with a board
 position, rule variant, expected outcome, and observed outcome.
 
 ## Source and background
@@ -153,16 +188,16 @@ of individual rules.
 
 ## Position analysis
 
-The corrected [position_analysis.py](position_analysis.py) adapts the attached
+The Sage-free [position_analysis.py](position_analysis.py) adapts the attached
 `rithmomachia-analysis2.py` evaluator, with material, territorial advancement,
 mathematical harmony, and tactical capture opportunities. The existing move
 ranking functions in `rithmomachia.py` are unchanged; the new evaluator is
 complementary, not a replacement.
 
-In an interactive SageMath-enabled Python session, from the repository root:
+In a standard Python 3 session, from the repository root:
 
 ```bash
-sage -python
+python3
 ```
 
 ```python
@@ -227,13 +262,13 @@ or an opponent reply. In particular, it is not a complete-turn minimax engine.
 `include_captures=False` omits the expensive capture component entirely,
 so its scores should not be compared numerically with full evaluations.
 
-The positional analysis depends on SageMath for the real board/rules engine.
-Its isolated regression tests work with ordinary Python and a mock engine:
+Position analysis now runs against the real standard-Python rules engine.
+Both integration and isolated regression tests use ordinary Python:
 
 ```bash
 python -m unittest discover -s tests -v
-python -m py_compile position_analysis.py
+python3 -m py_compile position_analysis.py
 ```
 
-Full end-to-end SageMath game testing and empirical calibration of the
+Complete-turn game testing across all rules variants and empirical calibration of the
 heuristic weights remain future work.
