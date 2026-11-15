@@ -16,7 +16,7 @@ yet provide a single, exhaustively validated implementation of every variant.
 | [`rithmomachia.py`](rithmomachia.py) | **SageMath Python** | Large, function-oriented rules, gameplay, computational, plotting, and animation implementation |
 | [`rithmo.py`](rithmo.py) | Python 3 + Tkinter | Shorter, object-oriented graphical game with an experimental computer opponent |
 | [`godot-rithmo/`](godot-rithmo/) | Godot 4 / GDScript | Separate graphical implementation and rule-checking scripts |
-| [`rithmomachia.sage`](rithmomachia.sage) | SageMath (.sage format) | Historical predecessor kept for comparison; **not** the corrected source |
+| [historical `rithmomachia.sage` on `baseball`](https://github.com/wdjoyner/rithmomachia/blob/baseball/rithmomachia.sage) | SageMath (.sage format) | Previous repository version, preserved on the original branch and in Git history; not the corrected source |
 | [`docs/`](docs/) | PDF and LaTeX | Background on the game and implementation notes |
 | Blender/Matplotlib scripts in the root | Blender/Python | Board and pyramid animation experiments |
 
@@ -25,7 +25,7 @@ yet provide a single, exhaustively validated implementation of every variant.
 installation: it imports `sage.all`, uses Sage polynomial rings and matrices,
 and requires a SageMath-enabled Python interpreter.
 
-The repository's development branch is named `main`. The old `baseball` and
+The intended development branch is named `main`. The old `baseball` and
 `rithmomachia-tutor` branches remain in the repository. Changing the GitHub
 default branch is a separate repository setting.
 
@@ -117,7 +117,7 @@ and includes these targeted changes:
 - Implement a color-symmetric Black musical-pattern check (the standard
   Black value set may not itself contain musical triples).
 
-The original `.sage` file is retained deliberately as historical source.
+The original `.sage` file was removed from the root of `main` as part of the rename, but remains available on the `baseball` branch and in the repository's commit history.
 The two extra four-term arithmetic-progression list functions in the newer
 source are present for research; they do not change the three-piece
 proper-victory rules.
