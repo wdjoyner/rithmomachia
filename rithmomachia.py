@@ -2438,144 +2438,44 @@ def moves_pyramid_white2(GS, verbose = False):
     return mvs
     
 def is_valid_move(game_state, start_pos, end_pos, player_turn):
-    """ 
-    Checks if a move is valid according to Rithmomachia rules. 
- 
-    Args: 
-      game_state: The 8x16 matrix representing the board. 
-      start_pos: (a0,b0), where a0 = row of the starting position (0-indexed). 
-                                b0 = column of the starting position. 
-      end_pos: (a1, b1), where a1 = row of the ending position. 
-                               b1 = column of the ending position. 
-      player_turn: 'white' or 'black' 
- 
-    Returns: 
-      True if the move is valid, False otherwise. Prints a name
-      of a movable piece if any.
- 
-    EXAMPLES: 
-        sage: GS = board_initial_matrix()
-        sage: is_valid_move(GS, (6, 0), (3, 0), "white")
-        Valid move of a white square.
-        True
-        sage: is_valid_move(GS, (13, 0), (11, 0), "black")
-        False
-        sage: is_valid_move(GS, (0, 13), (0, 11), "black")
-        Valid move of a black triangle.
-        True
+    """Check the entire (start,destination) move, not just its destination."""
+    if not (in_bounds(start_pos) and in_bounds(end_pos)):
+        return False
+    if game_state[start_pos] == 0 or game_state[end_pos] != 0:
+        return False
+    by_color = {
+        "white": (moves_pyramid_white, moves_circle_white, moves_triangle_white, moves_square_white),
+        "black": (moves_pyramid_black, moves_circle_black, moves_triangle_black, moves_square_black)
+    }
+    if player_turn not in by_color:
+        return False
+    return any((start_pos,end_pos) in generate(game_state,verbose=False)
+               for generate in by_color[player_turn])
 
+def move_piece(game_state, start_pos, end_pos, verbose=False, validate=True):
+    """Move a piece on a copy of the board; reject invalid coordinates/geometry.
 
-    """
-    GS = game_state
-    if player_turn == "white":
-        moves_w = [x[1] for x in moves_pyramid_white(GS, verbose = False)]
-        if end_pos in moves_w:
-            print("Valid move of White's pyramid.")
-            return True
-        moves_w = [x[1] for x in moves_circle_white(GS, verbose = False)]
-        if end_pos in moves_w:
-            print("Valid move of a white circle.")
-            return True
-        moves_w = [x[1] for x in moves_triangle_white(GS, verbose = False)]
-        if end_pos in moves_w:
-            print("Valid move of a white triangle.")
-            return True
-        moves_w = [x[1] for x in moves_square_white(GS, verbose = False)]
-        if end_pos in moves_w:
-            print("Valid move of a white square.")
-            return True
-    if player_turn == "black":
-        moves_b = [x[1] for x in moves_pyramid_black(GS, verbose = False)]
-        if end_pos in moves_b:
-            print("Valid move of Black's pyramid.")
-            return True
-        moves_b = [x[1] for x in moves_circle_black(GS, verbose = False)]
-        if end_pos in moves_b:
-            print("Valid move of a black circle.")
-            return True
-        moves_b = [x[1] for x in moves_triangle_black(GS, verbose = False)]
-        if end_pos in moves_b:
-            print("Valid move of a black triangle.")
-            return True
-        moves_b = [x[1] for x in moves_square_black(GS, verbose = False)]
-        if end_pos in moves_b:
-            print("Valid move of a black square.")
-            return True
-    return False
-
-
-def move_piece(game_state, start_pos, end_pos, verbose = False):
-    """ 
-    Moves (*does not capture*) a piece on the game board. 
-
-    Assume: the move is valid. 
-    
-    Args: 
-      game_state: The 8x16 matrix representing the board. 
-      start_pos: (a0,b0), where a0 = row of the starting position (0-indexed). 
-                                b0 = column of the starting position. 
-      end_pos: (a1, b1), where a1 = row of the ending position. 
-                               b1 = column of the ending position. 
-      player_turn: 'white' or 'black' 
- 
-    Returns: 
-      The updated game_state matrix. 
- 
-    EXAMPLES:
-        sage: GS = board_initial_matrix()
-        sage: move_piece(GS, (6, 0), (3, 0))
-	 <8x16 matrix omitted)
-        sage: move_piece(GS, (6, 0), (3, 0), verbose=True)
-        White made this move:  S081a7a4
-	 <8x16 matrix omitted)
-        sage: GS = move_piece(GS, (7, 2), (7, 4))
-        sage: GS = move_piece(GS, (5, 12), (6, 11))
-        sage: GS = move_piece(GS, (7, 4), (7, 6))
-        sage: GS = move_piece(GS, (6, 11), (7, 10))
-        sage: GS = move_piece(GS, (7, 6), (7, 8))
-        sage: captures_triangle_white(GS, verbose = False)
-        [((7, 8), (7, 10))]
-
-
+    Use validate=False only when deliberately constructing an artificial test
+    position. Game turns should always use the default validate=True.
     """
     GS = copy(game_state)
-    a0 = start_pos[0]
-    b0 = start_pos[1]
-    x = copy(GS[a0, b0])
-    if not(in_bounds(start_pos) and in_bounds(end_pos)):
-        print("given coordinates are not in bounds ... ", start_pos, end_pos)
+    if not (in_bounds(start_pos) and in_bounds(end_pos)) or start_pos == end_pos:
+        if verbose: print("Move rejected: invalid positions")
         return GS
-    if x==0:
-        print("Sorry, piece at ", start_pos, " doesn't exist. There is no move to make!")
+    piece = GS[start_pos]
+    if piece == 0 or GS[end_pos] != 0:
+        if verbose: print("Move rejected: empty source or occupied target")
         return GS
-    a1 = end_pos[0]
-    b1 = end_pos[1]
-    if not(GS[a1, b1]==0):
-        print("Sorry, position/coordinate at ", end_pos, " is occupied by ", GS[a1, b1], ". There is no legal move there!")
-        return GS
-    ### replace (a0, b0) entry of GS by 0,
-    ### replace (a1, b1) entry of GS by previous entry in (a0,b0).
+    if validate:
+        side = _piece_side(piece)
+        if side is None or not is_valid_move(GS,start_pos,end_pos,side):
+            if verbose: print("Move rejected: geometry, path, or player mismatch")
+            return GS
     if verbose:
-        pc_letter = str(GS[a0, b0])[0]
-        if pc_letter in ["c", "p", "s", "t"]:
-            my_color = "Odd"
-        else:
-            my_color = "Even"
-        pc_value = str(sum(value_of_piece(GS, a0, b0)))
-        if len(pc_value) == 1:
-            pc_value = "00" + pc_value
-        if len(pc_value) == 2:
-            pc_value = "0" + pc_value
-        alg_mv =  coordinate_to_algebraic(a0, b0) +  coordinate_to_algebraic(a1, b1)
-        if my_color == "Even":
-            print(" White made this move: ",  pc_letter + pc_value + alg_mv)
-        else:
-            print(" Black made this move: ",  pc_letter + pc_value + alg_mv)
-    GS[a1, b1] = x
-    GS[a0, b0] = 0
+        print("Move:",piece,coordinate_to_algebraic(*start_pos),coordinate_to_algebraic(*end_pos))
+    GS[end_pos] = piece
+    GS[start_pos] = 0
     return GS
-
-    
 
 ############ a program that randomly generates a move (quickly),
 ############ displays the game board position and asks for the next move.
@@ -3698,82 +3598,28 @@ def valid_captures_by_numbering_black(game_state, verbose = False):
 
 
 def lands_on(game_state, pc_pos, verbose=False):
+    """Potential landing squares, permitting an occupied destination only.
+
+    Intermediate squares must be empty for triangles, squares and pyramids.
     """
-    returns all the coordinates/positions that are in bounds and
-    in the range of the piece pc in that game_state at coordinates/position pc_pos
-    This doesn't allow jumping over a piece but does allow landing on a piece.
-    For example, if pc_pos is the coordinate of a circle piece then there 
-    is no restriction.
-
-    EXAMPLES:
-        sage: GS = board_initial_matrix()
-        sage: lands_on(GS, [5,5], verbose = True)
-        No piece, so no moves.
-        []
-        sage: lands_on(GS, [0,2])
-        [((0, 2), [0, 4])]
-        sage: lands_on(GS, [0,2], verbose = True)
-        Position/coordinate of  T^81  is:  [0, 2]
-        Possible landing coordinates of  T^81  are: 
-        [((0, 2), [0, 4])]
-        sage: lands_on(GS, [5,3], verbose = True)
-        Position/coordinate of  C^2  is:  [5, 3]
-        Possible landing coordinates of  C^2  are: 
-        [((5, 3), [4, 2]), ((5, 3), [4, 4]), ((5, 3), [6, 2]), ((5, 3), [6, 4])]
-        sage: GSp = board_initial_matrix(pyramid_decomposition=True)     #### needed for pyramid moves
-        sage: lands_on(GSp, [1,1], verbose = True)
-        Position/coordinate of  S^36 + S^25 + T^16 + T^9 + C^4 + C^2 + 91*P  is:  [1, 1]
-        Possible landing coordinates of  S^36 + S^25 + T^16 + T^9 + C^4 + C^2 + 91*P  are: 
-        [((1, 1), [0, 0]), ((1, 1), [0, 2]), ((1, 1), [2, 0]), ((1, 1), [2, 2])]
-
-    """
-    GS = copy(game_state)
-    i0, j0 = pc_pos
-
-    pc = GS[i0, j0]
-    if pc == 0:
-        if verbose: print("No piece, so no moves.")
+    if not in_bounds(pc_pos) or game_state[pc_pos] == 0:
         return []
-
-    # Get a single, reliable list of all occupied squares
-    all_occupied_pos = positions_w(GS) + positions_b(GS)
-    mvs = []
-    
-    # Determine move increments based on piece type
-    vars_pc = pc.variables()
-    increments = []
-    path_check_depth = 0
-
-    if (C in vars_pc) or (c in vars_pc):
-        increments = [[(1, 0)], [(-1, 0)], [(0, 1)], [(0, -1)]]
-        path_check_depth = 0 # Jumps 1 square, no intermediate checks
-    elif (T in vars_pc) or (t in vars_pc):
-        increments = [[(2, 0), (1, 0)], [(-2, 0), (-1, 0)], [(0, 2), (0, 1)], [(0, -2), (0, -1)]]
-        path_check_depth = 1 # Jumps 2 squares, checks 1 intermediate
-    elif (S in vars_pc) or (s in vars_pc) or (P in vars_pc) or (p in vars_pc):
-        increments = [[(3, 0), (2, 0), (1, 0)], [(-3, 0), (-2, 0), (-1, 0)], [(0, 3), (0, 2), (0, 1)], [(0, -3), (0, -2), (0, -1)]]
-        path_check_depth = 2 # Jumps 3 squares, checks 2 intermediate
-
-    for path in increments:
-        dest_coord = (i0 + path[0][0], j0 + path[0][1])
-
-        if not in_bounds(dest_coord):
-            continue
-
-        # Check for blockers in the path
-        path_is_clear = True
-        if path_check_depth > 0:
-            for i in range(1, path_check_depth + 1):
-                intermediate_coord = (i0 + path[i][0], j0 + path[i][1])
-                if intermediate_coord in all_occupied_pos:
-                    path_is_clear = False
-                    break
-        
-        if path_is_clear:
-            mvs.append( (pc_pos, dest_coord) )
-
+    pc = game_state[pc_pos]
+    occupied = {tuple(entry[0]) for entry in positions_w(game_state)}
+    occupied.update(tuple(entry[0]) for entry in positions_b(game_state))
+    v = set(pc.variables())
+    if v.intersection({C,c}): distance=1
+    elif v.intersection({T,t}): distance=2
+    elif v.intersection({S,s,P,p}): distance=3
+    else: return []
+    row,col = pc_pos
+    mvs=[]
+    for dr,dc in ((1,0),(-1,0),(0,1),(0,-1)):
+        dest=(row+distance*dr,col+distance*dc)
+        if in_bounds(dest) and all((row+k*dr,col+k*dc) not in occupied for k in range(1,distance)):
+            mvs.append((tuple(pc_pos),dest))
+    if verbose: print("Possible landing squares:",mvs)
     return mvs
-
 
 def valid_captures_by_addition_white(game_state, verbose = False):
     r""" 
@@ -5864,52 +5710,13 @@ def is_body_common_victory_white(game_state, N0 = 4, verbose=False):
         return (num_caps >= N0) #### Boolean
 
 
-def is_goods_common_victory_black(game_state, N1 = 100):
-    """
-    returns True if Black has a common victory by goods, meaning that 
-    the total value of the pieces that Black has captured is at least N1.
+def is_goods_common_victory_black(game_state,N1=100):
+    """Compare the sum of captured White piece values against the threshold."""
+    return sum(captured_piece_values(game_state,'white',True))>=N1
 
-    Assumes the game state was built with pyramid_decomposition = True
-
-    EXAMPLES:
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: GS = copy(GSp)
-        sage: GS[5,3] = 0; GS[4,3] = 0; GS[2,3] = 0
-        sage: is_goods_common_victory_black(GS, N1 = 100)
-         False
-        sage: is_goods_common_victory_black(GS, N1 = 10)
-         True
-
-    """
-    GS = copy(game_state)
-    cpw = captured_pieces_white(GS, pyramid_decomposition=True)
-    #print(cpw)
-    ttl = sum([x.degree() for x in cpw])
-    return (ttl >= N1)
-
-def is_goods_common_victory_white(game_state, N1 = 100):
-    """
-    returns True if White has a common victory by goods, meaning that 
-    the total value of the pieces that White has captured is at least N1.
-
-    Assumes the game state was built with pyramid_decomposition = True
-
-    EXAMPLES:
-        sage: GSp = board_initial_matrix(pyramid_decomposition = True)
-        sage: GS = copy(GSp)
-        sage: GS[5,13] = 0; GS[4,13] = 0; GS[2,13] = 0  ## "capturing" c^81, c^49, and c^9
-        sage: is_goods_common_victory_white(GS, N1 = 150)
-         False
-        sage: is_goods_common_victory_white(GS, N1 = 100)
-         True
-
-    """
-    GS = copy(game_state)
-    cpb = captured_pieces_black(GS, pyramid_decomposition=True)
-    #print(cpb)
-    ttl = sum([x.degree() for x in cpb])
-    return (ttl >= N1)
-
+def is_goods_common_victory_white(game_state,N1=100):
+    """Compare the sum of captured Black piece values against the threshold."""
+    return sum(captured_piece_values(game_state,'black',True))>=N1
 
 ##############################################################################
 ############### wins/victory
@@ -6417,24 +6224,22 @@ def list_musical_patterns_black():
 ################################### end patterns
 
 
-def is_musical_pattern_black(game_state, verbose = False):
+def is_musical_pattern_black(game_state,verbose=False):
+    """Detect Black musical triples in enemy territory, including variants.
+
+    In the historical standard piece values, Black may have no valid triples.
+    Unlike the old unconditional False this can recognize variant positions.
     """
-    returns True if Black has
-    a) at least 3 pieces in enemy territory,
-    b) there are 3 of these pieces whose values
-       agree (in some order) with one of the
-       musical patterns listed
-    c) the in_a_line condition holds.
-
-    NOTE: * Black has no triple of musical patterns:
-          * there aren't any musical patterns for Black!
-
-    EXAMPLES
-        sage: list_musical_patterns_black()
-         []
-
-    """
-    return (False, None)
+    black_in_white=[(pos,poly) for pos,poly in positions_b(game_state) if pos[1]<8]
+    patterns=set(list_musical_patterns_black())
+    for combination in itertools.combinations(black_in_white,3):
+        vals=[value_of_piece(game_state,*item[0]) for item in combination]
+        for triple in itertools.product(*vals):
+            if tuple(sorted(triple)) in patterns:
+                winning=[str(poly) for _,poly in combination]
+                if verbose: print("Black musical progression",triple)
+                return ('musical',winning)
+    return (False,None)
 
 def is_harmonic_pattern_black(game_state, verbose = False):
     return is_musical_pattern_black(game_state, verbose)
