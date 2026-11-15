@@ -1,4 +1,4 @@
-name: Python syntax and isolated regression tests
+name: Python rules engine and position analysis tests
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile the Sage-backed Python module
-        run: python -m py_compile rithmomachia.py
-      - name: Run Sage-independent regression probes
+      - name: Compile the Python rules engine and evaluator
+        run: python -m py_compile rithmomachia_compat.py rithmomachia.py position_analysis.py
+      - name: Run CPython integration and regression tests
         run: python -m unittest discover -s tests -v
