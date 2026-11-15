@@ -1,10 +1,10 @@
-"""Static position evaluation for the Sage-backed Rithmomachia rules engine.
+"""Static position evaluation for the standard-Python Rithmomachia rules engine.
 
 Adapted from rithmomachia-analysis2.py. Components have weights 40/25/25/10
 (material, territory, harmony, capture), each normalized on its own scale.
 Scores are heuristic, NOT winning probabilities. Positive favors White.
 
-This module is importable without Sage; the engine is imported lazily. A test
+This module and the rules engine run under ordinary Python 3; the engine is imported lazily. A test
 double can be supplied with engine=... to test the integration contract.
 """
 from __future__ import annotations
