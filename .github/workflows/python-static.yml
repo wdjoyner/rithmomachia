@@ -1,0 +1,21 @@
+name: Python syntax and isolated regression tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  static-python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile the Sage-backed Python module
+        run: python -m py_compile rithmomachia.py
+      - name: Run Sage-independent regression probes
+        run: python -m unittest discover -s tests -v
