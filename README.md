@@ -14,6 +14,7 @@ yet provide a single, exhaustively validated implementation of every variant.
 | Location | Runtime | Purpose |
 | --- | --- | --- |
 | [`rithmomachia.py`](rithmomachia.py) | **SageMath Python** | Large, function-oriented rules, gameplay, computational, plotting, and animation implementation |
+| [`position_analysis.py`](position_analysis.py) | SageMath Python | Static material/territory/harmony/capture analysis and one-ply move ranking |
 | [`rithmo.py`](rithmo.py) | Python 3 + Tkinter | Shorter, object-oriented graphical game with an experimental computer opponent |
 | [`godot-rithmo/`](godot-rithmo/) | Godot 4 / GDScript | Separate graphical implementation and rule-checking scripts |
 | [historical `rithmomachia.sage` on `baseball`](https://github.com/wdjoyner/rithmomachia/blob/baseball/rithmomachia.sage) | SageMath (.sage format) | Previous repository version, preserved on the original branch and in Git history; not the corrected source |
@@ -148,3 +149,91 @@ Mathematica* **12** (1946), 177–217.
 This repository includes AI-assisted code revisions. Historical versions
 and detailed source comments remain useful when checking the provenance
 of individual rules.
+
+
+## Position analysis
+
+The corrected [position_analysis.py](position_analysis.py) adapts the attached
+`rithmomachia-analysis2.py` evaluator, with material, territorial advancement,
+mathematical harmony, and tactical capture opportunities. The existing move
+ranking functions in `rithmomachia.py` are unchanged; the new evaluator is
+complementary, not a replacement.
+
+In an interactive SageMath-enabled Python session, from the repository root:
+
+```bash
+sage -python
+```
+
+```python
+import rithmomachia as r
+import position_analysis as pa
+
+G = r.board_initial_matrix(pyramid_decomposition=True)
+report = pa.display_analysis(G)                # complete position report
+print(report["advantage"])                     # White-positive heuristic score
+
+# Fast single-ply ranking of all legal White moves:
+recommendations = pa.rank_moves(G, "white", top_n=5, include_captures=False)
+for result in recommendations:
+    print(result["move"], result["score_change_for_player"])
+
+# Full evaluator (can be substantially slower):
+recommendations = pa.rank_moves(
+    G, "black", top_n=5, include_captures=True
+)
+
+# Optional: limit the positions examined when experimenting.
+# max_candidates uses coordinate order, not a prior strength ranking.
+# pa.rank_moves(G, "white", top_n=3, max_candidates=8)
+```
+
+All functions also accept an explicit `engine=r` parameter to simplify
+testing. `analyze_game_state(G)` returns a dictionary with the same major keys
+as the attached evaluator, including `white_material`,
+`black_territory_control`, `white_harmony_potential`, and `advantage`.
+`display_ranked_moves(G, "white")` prints recommended moves.
+
+### What the position score measures
+
+The signed score is **positive for White and negative for Black**.
+The four component weights (40/25/25/10) are retained from the original
+analysis proposal, but their definitions are normalized:
+
+- **Material (40 points):** difference between each player's fraction of
+  starting material still on the board. This corrects the fact that the two
+  players begin with unequal *absolute* piece values. Pyramids count once;
+  their remaining component value is respected.
+- **Territory (25 points):** difference between the fractions of each
+  player's original 24 pieces currently occupying enemy territory.
+- **Harmony (25 points):** difference between each player's harmony-potential
+  heuristic on a 0–100 scale. Complete patterns score 100, and feasible
+  two-of-three patterns score 25 each, up to 95 if incomplete. Two separate
+  physical pieces are required; the missing value must still be on the board.
+  White and Black use the same scoring rule. The rules engine determines
+  whether a complete pattern exists.
+- **Captures (10 points):** normalized difference in available capture
+  **method records**, not necessarily unique target pieces or guaranteed
+  multi-capture sequences.
+
+The combined score is a heuristic in approximately `[-100, 100]` — **not**
+a probability of winning, a calibrated engine rating, or a proof of strategic
+superiority. A completed pattern is reported as such, but the score does not
+replace the configured victory thresholds or the official end-of-game check.
+
+`rank_moves` evaluates only the state resulting from **one legal board move**.
+It does **not** execute pre-move captures, post-move captures, chained captures,
+or an opponent reply. In particular, it is not a complete-turn minimax engine.
+`include_captures=False` omits the expensive capture component entirely,
+so its scores should not be compared numerically with full evaluations.
+
+The positional analysis depends on SageMath for the real board/rules engine.
+Its isolated regression tests work with ordinary Python and a mock engine:
+
+```bash
+python -m unittest discover -s tests -v
+python -m py_compile position_analysis.py
+```
+
+Full end-to-end SageMath game testing and empirical calibration of the
+heuristic weights remain future work.
