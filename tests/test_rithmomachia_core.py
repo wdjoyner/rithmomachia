@@ -1,7 +1,7 @@
-"""Sage-independent regression probes for the Rithmomachia module.
+"""Focused regression probes for the CPython Rithmomachia module.
 
 Run: python -m unittest discover -s tests -v
-These isolate the revised functions with mocks; they are not full Sage tests.
+These isolate selected function bodies with mocks. Real-engine integration tests are in test_pure_python_integration.py.
 """
 from pathlib import Path
 from copy import copy
@@ -53,7 +53,8 @@ class Piece:
 class CorrectnessProbes(unittest.TestCase):
     def test_python_syntax(self):
         data = SOURCE.read_text(encoding="utf-8")
-        self.assertIn("from sage.all import *", data)
+        self.assertIn("from rithmomachia_compat import *", data)
+        self.assertNotIn("from sage.all import *", data)
         operators = [t.string for t in tokenize.generate_tokens(io.StringIO(data).readline)
                      if t.type == tokenize.OP]
         self.assertNotIn("^", operators)
